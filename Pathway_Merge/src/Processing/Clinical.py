@@ -13,7 +13,7 @@ from pandas import Series, DataFrame, notnull
 from Helpers import bhCorrection, extract_pc, match_series
 from Data.Firehose import read_clinical, get_mutation_matrix, get_cna_matrix
 from Data.Firehose import read_rnaSeq, read_methylation
-from Data.Enrichments import geneSetsToMetaMatrix 
+from Data.Pathways import build_meta_matrix 
 
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
@@ -170,7 +170,7 @@ def run_clinical_bool(cancer, data_path, gene_sets, data_type='mutation'):
         good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[:500]
         p_genes, q_genes = run_tests(tests, lesion_matrix.ix[good_genes])
     clinical['rate'] = log(hit_matrix.sum(0))
-    meta_matrix = geneSetsToMetaMatrix(gene_sets, hit_matrix, 
+    meta_matrix = build_meta_matrix(gene_sets, hit_matrix, 
                                        setFilter=lambda s: s.clip_upper(1))
     tests = get_tests_bool(clinical, surv_cov)
     p_pathways, q_pathways = run_tests(tests, meta_matrix) 
