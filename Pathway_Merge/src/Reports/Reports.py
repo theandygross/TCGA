@@ -200,6 +200,8 @@ def pathway_mutation_section_exp(cancer, gene_sets, cutoff=.25, folder=''):
     pathway_table.to_csv(pathway_table_file)
     keepers = cancer.q_pathways[(cancer.q_pathways < .25).sum(1) > 0].index
     pathway_table = pathway_table.ix[keepers]
+    if 'survival' in pathway_table:
+        pathway_table = pathway_table.sort(columns='survival')
     pathway_table = pathway_table.head(20)
     pathway_table_r = com.convert_to_r_dataframe(pathway_table.replace(nan, 1.23)) #@UndefinedVariable
     if len(pathway_table) == 0:
