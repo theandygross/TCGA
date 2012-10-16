@@ -19,6 +19,8 @@ survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
 MIN_NUM_HITS = 8
 robjects.r.options(warn=-1);
+zz = robjects.r.file("all.Rout", open="wt")
+robjects.r.sink(zz, type='message')
 
 def delambda(f):
     def f_(a): return f(a)
