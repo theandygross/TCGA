@@ -22,6 +22,11 @@ def match_series(a,b):
     b = b[valid]
     return a,b
 
+def split_a_by_b(a,b):
+    a, b = match_series(a, b)
+    groups = [a[b==num] for num in set(b)]
+    return groups
+
 def frame_svd(data_frame):
     '''
     Wrapper for taking in a pandas DataFrame, preforming SVD

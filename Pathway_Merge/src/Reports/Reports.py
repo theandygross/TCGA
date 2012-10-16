@@ -14,6 +14,7 @@ from Processing.Helpers import frame_svd, match_series
 
 from Figures import draw_survival_curves, draw_pathway_count_bar
 from Figures import draw_pathway_age_scatter, draw_pathway_eig_bar
+from Figures import histo_compare
 
 nz = importr('Nozzle.R1')
 bool_ = {True: 'TRUE', False: 'FALSE'}
@@ -250,6 +251,38 @@ def pathway_mutation_section_exp(cancer, gene_sets, cutoff=.25):
     section = nz.addTo(nz.newSubSection('Pathway Mutations'), table1)
     return section
 
+def add_histo_compare(hit_vec, response_vec, table, pos, fig_path, redraw=False):
+    fig_file = fig_path + hit_vec.name + '_' + response_vec.name + '_histo_compare.png'
+    if not os.path.isfile(fig_file) or redraw:
+        fig, ax = plt.subplots(1,1)
+        histo_compare(hit_vec, response_vec, ax=ax)
+        fig.savefig(fig_file)
+    histo_compare_fig = nz.newFigure(fig_file, 'Comparison of pathway level distributions in patients' + 
+                                               'with and without mutation to pathway.')
+    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
+                       nz.addTo(nz.newSection(hit_vec.name), histo_compare_fig))
+    table = nz.addTo(table, result1, row=pos[0], column=pos[1])  
+    return table
+
+def format_interaction_table(path, table, mut_obj, exp_vec):
+    interaction_table_file = path + '/interaction_table.csv'
+    table.to_csv(interaction_table_file)
+    table = table[['pathway','p_val','q_val','survival_p', 'age_p']].sort('p_val').head(20)
+    table_r = com.convert_to_r_dataframe(table) #@UndefinedVariable
+    tableCaption1 = "Association of pathway expression with mutated pathways."
+    table1 = nz.newTable(table_r, tableCaption1, file=interaction_table_file, 
+                         significantDigits=2);
+    section = nz.addTo(nz.newSubSection('Association with Mutations'), table1)
+    
+    #Fill in the details
+    gene_pos = dict((g,i+1) for i,g in enumerate(table.index))
+    col_pos = dict((c,i+1) for i,c in enumerate(table.columns))
+    
+    for g,vec in table.iterrows():
+        table1 = add_histo_compare(mut_obj.meta_matrix.ix[g], exp_vec, table1, 
+                                   (gene_pos[g], col_pos['q_val']),
+                                   path + '/' + FIG_EXT)
+    return table1
         
 def create_clinical_report(cancer, next_cancer, prev_cancer, gene_sets):
     if not os.path.isdir(cancer.report_folder + '/' + FIG_EXT):

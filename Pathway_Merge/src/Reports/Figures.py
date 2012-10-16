@@ -119,16 +119,18 @@ def draw_pathway_age_scatter(p, cancer, file_name='tmp.svg'):
     ax.set_ylabel('Age')
     fig.savefig(file_name)
     
-def histo_compare(hit_vec, response_vec):
+def histo_compare(hit_vec, response_vec, ax=None):
     '''
     Split response_vec by hit_vec and compared histograms.  
     Also plots the kde of the whole response_vec.
     '''
+    if ax is None:
+        fig, ax = plt.subplots(1,1)
     kde1 = gaussian_kde(response_vec)
     x_eval = linspace(-4, 4, num=200)
-    plt.plot(x_eval, kde1(x_eval), 'k-')
+    ax.plot(x_eval, kde1(x_eval), 'k-')
     miss, hit = split_a_by_b(response_vec, hit_vec)
-    plt.hist(miss, bins=20, normed=True, alpha=.2, label='WT');
-    plt.hist(hit, bins=10, normed=True, alpha=.5, label='Mut');
-    plt.legend()
+    ax.hist(miss, bins=20, normed=True, alpha=.2, label='WT');
+    ax.hist(hit, bins=10, normed=True, alpha=.5, label='Mut');
+    ax.legend()
     

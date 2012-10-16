@@ -16,7 +16,7 @@ report_ext = sys.argv[4]
 
 try:
 	cancer_obj = ClinicalObject(cancer, data_path, gene_sets, data_type)
-	if cancer_obj.data_type in ['mutation','amplification','deletion']:
+	if False and cancer_obj.data_type in ['mutation','amplification','deletion']:
 		cancer_obj.filter_bad_pathways(gene_lookup)
 	cancer_obj.report_folder = cancer_obj.data_path + cancer_obj.data_type + '_' + report_ext
 	del cancer_obj.tests #Can't pickle functions at module level, regenerate with Clinical.get_tests_x
