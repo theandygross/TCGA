@@ -4,9 +4,10 @@ Created on Oct 15, 2012
 @author: agross
 '''
 import matplotlib.pyplot as plt
-from numpy import nanmax, sort
+from numpy import nanmax, sort, linspace
+from scipy.stats import gaussian_kde
 
-from Processing.Helpers import match_series
+from Processing.Helpers import match_series, split_a_by_b
 
 import rpy2.robjects as robjects 
 from rpy2.robjects import r
@@ -117,3 +118,17 @@ def draw_pathway_age_scatter(p, cancer, file_name='tmp.svg'):
     ax.set_xlabel('Principal Component Loading')
     ax.set_ylabel('Age')
     fig.savefig(file_name)
+    
+def histo_compare(hit_vec, response_vec):
+    '''
+    Split response_vec by hit_vec and compared histograms.  
+    Also plots the kde of the whole response_vec.
+    '''
+    kde1 = gaussian_kde(response_vec)
+    x_eval = linspace(-4, 4, num=200)
+    plt.plot(x_eval, kde1(x_eval), 'k-')
+    miss, hit = split_a_by_b(response_vec, hit_vec)
+    plt.hist(miss, bins=20, normed=True, alpha=.2, label='WT');
+    plt.hist(hit, bins=10, normed=True, alpha=.5, label='Mut');
+    plt.legend()
+    
