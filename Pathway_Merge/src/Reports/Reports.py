@@ -24,10 +24,8 @@ def generic_header(report, cancer, prev_cancer, next_cancer, folder):
     report = nz.setMaintainerEmail(report, "agross@ucsd.edu" );
     report = nz.setMaintainerAffiliation(report, 'UCSD- Bioinf. and '
                                                 + 'Systems Biology' );
-    report = nz.setPreviousReport(report, prev_cancer.data_path + 
-                                  folder + '/index.html')
-    report = nz.setNextReport(report, next_cancer.data_path + 
-                              folder + '/index.html')
+    report = nz.setPreviousReport(report, prev_cancer.report_folder + '/index.html')
+    report = nz.setNextReport(report, next_cancer.report_folder + '/index.html')
     return report
 
 def add_violin_plot(vec, cancer, table1, pos, fig_path):
@@ -251,8 +249,7 @@ def pathway_mutation_section_exp(cancer, gene_sets, cutoff=.25, folder=''):
     return section
 
         
-def create_clinical_report(cancer, next_cancer, prev_cancer, gene_sets, 
-                           folder='Pathway_Mutations'):
+def create_clinical_report(cancer, next_cancer, prev_cancer, gene_sets):
     if not os.path.isdir(cancer.data_path + folder + '/' + FIG_EXT):
         os.makedirs(cancer.data_path + folder + '/' + FIG_EXT)
     report = nz.newReport('Report for ' + cancer.cancer)
@@ -267,4 +264,4 @@ def create_clinical_report(cancer, next_cancer, prev_cancer, gene_sets,
     else:
         report = nz.addToResults(report, pathway_mutation_section_exp(cancer, gene_sets, 
                                                                   folder=folder))
-    nz.writeReport(report, filename=cancer.data_path + folder + '/index')
+    nz.writeReport(report, filename=cancer.report_folder + '/index')
