@@ -19,7 +19,7 @@ nz = importr('Nozzle.R1')
 bool_ = {True: 'TRUE', False: 'FALSE'}
 FIG_EXT = 'clinical_figures/'
 
-def generic_header(report, cancer, prev_cancer, next_cancer, folder):
+def generic_header(report, cancer, prev_cancer, next_cancer):
     report = nz.setMaintainerName(report, 'Andrew Gross')
     report = nz.setMaintainerEmail(report, "agross@ucsd.edu" );
     report = nz.setMaintainerAffiliation(report, 'UCSD- Bioinf. and '
@@ -53,9 +53,9 @@ def add_survival_curve(vec, cancer, table1, pos, fig_path):
     table1 = nz.addTo(table1, result1, row=pos[0], column=pos[1])
     return table1
     
-def single_gene_section(cancer, hit_matrix, cutoff=.25, folder='/'):
+def single_gene_section(cancer, hit_matrix, cutoff=.25):
     #Format data for report
-    path = cancer.data_path + folder + '/'
+    path = cancer.report_folder + '/'
     gene_table_file = path + 'gene_table.csv'
     hit_matrix = hit_matrix.groupby(level=0).first() #Make index unique
     counts = (hit_matrix.ix[:,cancer.patients] > 0).sum(1)
@@ -132,9 +132,9 @@ def add_survival_curve_pathway(vec, cancer, table1, pos, fig_path):
     table1 = nz.addTo(table1, result1, row=pos[0], column=pos[1])
     return table1
     
-def pathway_mutation_section(cancer, gene_sets, cutoff=.25, folder='/'):
+def pathway_mutation_section(cancer, gene_sets, cutoff=.25):
     #Format data for report
-    path = cancer.data_path + folder + '/'
+    path = cancer.report_folder + '/'
     pathway_table_file = path + 'pathway_table.csv'
     pathway_table = format_pathway_table(cancer, gene_sets)    
     if 'survival' in pathway_table:
@@ -188,9 +188,9 @@ def format_pathway_table_exp(cancer, gene_sets):
     return pathway_table
 
     
-def pathway_mutation_section_exp(cancer, gene_sets, cutoff=.25, folder=''):
+def pathway_mutation_section_exp(cancer, gene_sets, cutoff=.25):
     #Format data for report
-    path = cancer.data_path + folder + '/'
+    path = cancer.report_folder + '/'
     pathway_table_file = path + 'pathway_table.csv'
     pathway_table = format_pathway_table_exp(cancer, gene_sets) 
     if 'survival' in pathway_table:
@@ -250,18 +250,15 @@ def pathway_mutation_section_exp(cancer, gene_sets, cutoff=.25, folder=''):
 
         
 def create_clinical_report(cancer, next_cancer, prev_cancer, gene_sets):
-    if not os.path.isdir(cancer.data_path + folder + '/' + FIG_EXT):
-        os.makedirs(cancer.data_path + folder + '/' + FIG_EXT)
+    if not os.path.isdir(cancer.report_folder + '/' + FIG_EXT):
+        os.makedirs(cancer.report_folder + '/' + FIG_EXT)
     report = nz.newReport('Report for ' + cancer.cancer)
-    report = generic_header(report, cancer, next_cancer, prev_cancer, folder)
+    report = generic_header(report, cancer, next_cancer, prev_cancer)
     if cancer.data_type not in ['expression', 'methylation']:
         hit_matrix = (cancer.hit_matrix if cancer.data_type == 'mutation' else 
               cancer.lesion_matrix)
-        report = nz.addToResults(report, single_gene_section(cancer, hit_matrix, 
-                                                             folder=folder))
-        report = nz.addToResults(report, pathway_mutation_section(cancer, gene_sets, 
-                                                                  folder=folder))
+        report = nz.addToResults(report, single_gene_section(cancer, hit_matrix))
+        report = nz.addToResults(report, pathway_mutation_section(cancer, gene_sets))
     else:
-        report = nz.addToResults(report, pathway_mutation_section_exp(cancer, gene_sets, 
-                                                                  folder=folder))
+        report = nz.addToResults(report, pathway_mutation_section_exp(cancer, gene_sets))
     nz.writeReport(report, filename=cancer.report_folder + '/index')
