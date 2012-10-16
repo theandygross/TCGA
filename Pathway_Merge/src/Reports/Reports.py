@@ -24,8 +24,10 @@ def generic_header(report, cancer, prev_cancer, next_cancer):
     report = nz.setMaintainerEmail(report, "agross@ucsd.edu" );
     report = nz.setMaintainerAffiliation(report, 'UCSD- Bioinf. and '
                                                 + 'Systems Biology' );
-    report = nz.setPreviousReport(report, prev_cancer.report_folder + '/index.html')
-    report = nz.setNextReport(report, next_cancer.report_folder + '/index.html')
+    next_file = cancer.report_folder.replace(cancer.cancer, next_cancer)
+    prev_file = cancer.report_folder.replace(cancer.cancer, prev_cancer)                                           
+    report = nz.setPreviousReport(report, prev_file  + '/index.html')
+    report = nz.setNextReport(report, next_file + '/index.html')
     return report
 
 def add_violin_plot(vec, cancer, table1, pos, fig_path):
