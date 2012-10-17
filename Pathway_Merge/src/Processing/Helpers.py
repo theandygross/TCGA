@@ -6,6 +6,7 @@ Created on Jul 12, 2012
 import pandas as pandas
 from pandas import notnull
 from numpy.linalg import LinAlgError
+from numpy import diag
 
 transferIndex = lambda source,target: pandas.Series(list(target), 
                                                     index=source.index)
@@ -47,3 +48,14 @@ def extract_pc(data_frame, pc_threshold=.2):
         return None
     p = S**2/sum(S**2)
     return vH[0] if p[0] > pc_threshold else None
+
+def drop_first_norm_pc(data_frame):
+    '''
+    Normalize the data_frame by rows and then reconstruct it without the first 
+    principal component.  (Idea is to drop the biggest global pattern.)
+    '''
+    norm = ((data_frame.T - data_frame.mean(1)) / data_frame.std(1)).T
+    U,S,vH = frame_svd(norm.dropna())
+    S[0] = 0   #zero out first pc
+    rest = U.dot(pandas.DataFrame(diag(S)).dot(vH.T))
+    return rest

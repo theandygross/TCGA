@@ -10,10 +10,10 @@ from numpy import nan, sort, log
 from scipy.stats import f_oneway, fisher_exact, pearsonr
 from pandas import Series, DataFrame, notnull
 
-from Helpers import bhCorrection, extract_pc, match_series
+from Helpers import bhCorrection, extract_pc, match_series, drop_first_norm_pc
 from Data.Firehose import read_clinical, get_mutation_matrix, get_cna_matrix
 from Data.Firehose import read_rnaSeq, read_methylation
-from Data.Pathways import build_meta_matrix 
+from Data.Pathways import build_meta_matrix
 
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
@@ -178,7 +178,8 @@ def run_clinical_bool(cancer, data_path, gene_sets, data_type='mutation'):
     p_pathways, q_pathways = run_tests(tests, meta_matrix) 
     return locals()
 
-def run_clinical_real(cancer, data_path, gene_sets, data_type='expression'):
+def run_clinical_real(cancer, data_path, gene_sets, data_type='expression',
+                      drop_pc=False):
     clinical = read_clinical(data_path)
     patients = clinical[['days','censored']].dropna().index
     stddata_path = data_path.replace('analyses', 'stddata')
@@ -187,6 +188,8 @@ def run_clinical_real(cancer, data_path, gene_sets, data_type='expression'):
         data_matrix = data_matrix.groupby(by=lambda n: n.split('|')[0]).mean()
     elif data_type == 'methylation':
         data_matrix = read_methylation(stddata_path)
+    if drop_pc:
+        data_matrix = drop_first_norm_pc(data_matrix)
     pc = dict((p, extract_pc(data_matrix.ix[g].dropna())) for p, g in 
               gene_sets.iteritems())
     pc = DataFrame(dict((p, (v - v.mean()) / v.std()) for p,v in pc.iteritems() if 
@@ -201,11 +204,13 @@ class ClinicalObject(object):
     '''
     Wrapper to store the data in a nice object rather than have to unpack it. 
     '''
-    def __init__(self, cancer, data_path, gene_sets, data_type='mutation'):
+    def __init__(self, cancer, data_path, gene_sets, data_type='mutation',
+                 drop_pc=False):
         if data_type in ['mutation', 'amplification','deletion']:
             data_dict = run_clinical_bool(cancer, data_path, gene_sets, data_type)
         else:
-            data_dict = run_clinical_real(cancer, data_path, gene_sets, data_type)
+            data_dict = run_clinical_real(cancer, data_path, gene_sets, data_type,
+                                          drop_pc)
         self.__dict__ = data_dict
         
     def filter_bad_pathways(self, gene_lookup):

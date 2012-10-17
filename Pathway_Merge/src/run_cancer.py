@@ -13,9 +13,11 @@ cancer = sys.argv[1]
 data_type = sys.argv[2]
 data_path = sys.argv[3]
 report_ext = sys.argv[4]
+drop_pc = True
 
 try:
-	cancer_obj = ClinicalObject(cancer, data_path, gene_sets, data_type)
+	cancer_obj = ClinicalObject(cancer, data_path, gene_sets, data_type,
+								drop_pc)
 	if False and cancer_obj.data_type in ['mutation','amplification','deletion']:
 		cancer_obj.filter_bad_pathways(gene_lookup)
 	cancer_obj.report_folder = cancer_obj.data_path + cancer_obj.data_type + '_' + report_ext
