@@ -252,13 +252,15 @@ def pathway_mutation_section_exp(cancer, gene_sets, cutoff=.25):
     return section
 
 def add_histo_compare(hit_vec, response_vec, table, pos, fig_path, redraw=False):
-    fig_file = fig_path + hit_vec.name + '_' + response_vec.name + '_histo_compare.png'
+    fig_file = (fig_path + str(hit_vec.name) + '_' + str(response_vec.name) + 
+                '_histo_compare.png')
     if not os.path.isfile(fig_file) or redraw:
         fig, ax = plt.subplots(1,1)
         histo_compare(hit_vec, response_vec, ax=ax)
         fig.savefig(fig_file)
-    histo_compare_fig = nz.newFigure(fig_file, 'Comparison of pathway level distributions in patients' + 
-                                               'with and without mutation to pathway.')
+    histo_compare_fig = nz.newFigure(fig_file, 'Comparison of pathway level ' + 
+                                               'distributions in patients with ' + 
+                                               'and without mutation to pathway.')
     result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
                        nz.addTo(nz.newSection(hit_vec.name), histo_compare_fig))
     table = nz.addTo(table, result1, row=pos[0], column=pos[1])  

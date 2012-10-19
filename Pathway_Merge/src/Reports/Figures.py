@@ -50,7 +50,8 @@ def box_plot_pandas(hitVec, expVec, ax='None'):
            positions=list(set(hitVec)));
     ax.set_ylabel('Sub-Cohort Gene Expression')
     ax.set_xlabel('Number of Mutations')
-    ax.set_title(hitVec.name +' x '+ expVec.name)
+    if type(hitVec.name) == str:
+        ax.set_title(hitVec.name +' x '+ expVec.name)
     
 def violin_plot_pandas(hitVec, expVec, ax='None'):
     '''
@@ -70,7 +71,8 @@ def violin_plot_pandas(hitVec, expVec, ax='None'):
         box_plot_pandas(hitVec, expVec, ax=ax)
     ax.set_ylabel('Sub-Cohort Expression')
     ax.set_xlabel('Number of Mutations')
-    ax.set_title(hitVec.name +' x '+ expVec.name)
+    if type(hitVec.name) == str:
+        ax.set_title(hitVec.name +' x '+ expVec.name)
     
 def draw_survival_curves(clinical, hit_vec, filename='tmp.png', show=False, 
                          ax=None, title=True, labels=['No Mutation', 'Mutation']):
@@ -127,7 +129,7 @@ def histo_compare(hit_vec, response_vec, ax=None):
     if ax is None:
         fig, ax = plt.subplots(1,1)
     kde1 = gaussian_kde(response_vec)
-    x_eval = linspace(-4, 4, num=200)
+    x_eval = linspace(min(response_vec), max(response_vec), num=200)
     ax.plot(x_eval, kde1(x_eval), 'k-')
     miss, hit = split_a_by_b(response_vec, hit_vec)
     ax.hist(miss, bins=20, normed=True, alpha=.2, label='WT');
