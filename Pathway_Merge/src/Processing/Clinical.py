@@ -11,9 +11,11 @@ from scipy.stats import f_oneway, fisher_exact, pearsonr
 from pandas import Series, DataFrame, notnull
 
 from Helpers import bhCorrection, extract_pc, match_series, drop_first_norm_pc
+from Helpers import cluster_down, df_to_binary_vec
 from Data.Firehose import read_clinical, get_mutation_matrix, get_cna_matrix
 from Data.Firehose import read_rnaSeq, read_methylation
 from Data.Pathways import build_meta_matrix
+from Data.AgingData import get_age_signal
 
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
@@ -33,7 +35,7 @@ def anova(hit_vec, response_vec):
     hit_vec: Series of labels
     response_vec: Series of measurements
     '''
-    hit_vec = hit_vec.reindex_like(response_vec)
+    hit_vec, response_vec = match_series(hit_vec, response_vec)
     return f_oneway(*[response_vec[hit_vec == num].dropna() 
                       for num in set(hit_vec.dropna())])[1]
 
@@ -49,7 +51,7 @@ def fisher_exact_test(hit_vec, response_vec):
              for num in set([0,1])] for category in set([0,1])]
     return fisher_exact(table)[1]
 
-def pearson_p(a,b): #stole most of this from pandas
+def pearson_p(a,b):
     '''
     Find pearson's correlation and return p-value.
     ------------------------------------------------
@@ -124,7 +126,9 @@ def get_tests_bool(clinical, surv_cov=[]):
     if clinical[['censored','days']].dropna()['censored'].sum() > 2:
         tests['survival'] = lambda vec: get_cox_ph(clinical, vec, covariates=surv_cov)
     if notnull(clinical.age).sum() > 10:
-        tests['age'] = lambda vec: anova(clinical.age, vec)
+        tests['age'] = lambda vec: anova(vec, clinical.age)
+    if ('AMAR' in clinical) and (notnull(clinical.AMAR).sum() > 10):
+        tests['AMAR'] = lambda vec: anova(vec, clinical['AMAR'])
     if notnull(clinical.gender).sum() > 10:
         tests['gender'] = lambda vec: fisher_exact_test(clinical.gender, vec)
     if notnull(clinical.therapy).sum() > 10:
@@ -155,7 +159,15 @@ def run_clinical_bool(cancer, data_path, gene_sets, data_type='mutation'):
     or deletion).
     '''
     surv_cov = ['age','rate']
+    stddata_path = data_path.replace('analyses', 'stddata')
     clinical = read_clinical(data_path)
+    try:
+        meth_age, amar = get_age_signal(stddata_path, clinical)
+        clinical['meth_age'] = meth_age
+        clinical['AMAR'] = amar
+    except:
+        pass  #Probably because there is not a 450k chip for the cancer
+    patients = clinical[['days','censored']].dropna().index
     stddata_path = data_path.replace('analyses', 'stddata')
     if data_type == 'mutation':
         hit_matrix, _ = get_mutation_matrix(cancer, data_path)
@@ -164,13 +176,20 @@ def run_clinical_bool(cancer, data_path, gene_sets, data_type='mutation'):
         gene_counts = sort(hit_matrix.sum(1))
         good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[:500]
         p_genes, q_genes = run_tests(tests, hit_matrix.ix[good_genes])
-    elif data_type in ['amplification', 'deletion']:
+    elif data_type == 'amplification':
         hit_matrix, lesion_matrix = get_cna_matrix(data_path, data_type)
         clinical['rate'] = log(lesion_matrix.sum(0))
         tests = get_tests_bool(clinical, surv_cov)
         gene_counts = sort(lesion_matrix.sum(1))
         good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[:500]
         p_genes, q_genes = run_tests(tests, lesion_matrix.ix[good_genes])
+    elif data_type == 'deletion':
+        hit_matrix, lesion_matrix = get_cna_matrix(data_path, data_type)
+        clinical['rate'] = log(hit_matrix.sum(0))
+        tests = get_tests_bool(clinical, surv_cov)
+        gene_counts = sort(hit_matrix.sum(1))
+        good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[:500]
+        p_genes, q_genes = run_tests(tests, hit_matrix.ix[good_genes])
     clinical['rate'] = log(hit_matrix.sum(0))
     meta_matrix = build_meta_matrix(gene_sets, hit_matrix, 
                                        setFilter=lambda s: s.clip_upper(1))
@@ -223,3 +242,20 @@ class ClinicalObject(object):
                          self.meta_matrix.ix[pathway].sum()*.5)):
                         self.p_pathways[clin_type][pathway] = nan
             self.q_pathways[clin_type] = bhCorrection(self.p_pathways[clin_type])
+            
+    def cluster_down(self, num_clusters=50, draw_dendrogram=False):
+        if self.data_type in ['mutation', 'amplification','deletion']:
+            matrix = (self.meta_matrix > 0).astype(int)
+            agg_function = df_to_binary_vec
+            dist_metric = 'jaccard'
+        else:
+            matrix = self.pc
+            agg_function = extract_pc
+            dist_metric = 'euclidean'
+        r = cluster_down(matrix, agg_function, dist_metric, num_clusters,
+                         draw_dendrogram)
+        self.clustered, self.assignments = r[0], r[1]
+        if draw_dendrogram:
+            return r[2]
+        
+        

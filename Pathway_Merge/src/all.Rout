@@ -1,4 +1,0 @@
-Error in if (any(trunc(table[, c]) != table[, c])) { : 
-  missing value where TRUE/FALSE needed
-Error in if (any(trunc(table[, c]) != table[, c])) { : 
-  missing value where TRUE/FALSE needed

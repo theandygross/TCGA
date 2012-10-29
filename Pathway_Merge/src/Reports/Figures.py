@@ -4,7 +4,7 @@ Created on Oct 15, 2012
 @author: agross
 '''
 import matplotlib.pyplot as plt
-from numpy import nanmax, sort, linspace
+from numpy import nanmax, sort, linspace, arange, rank
 from scipy.stats import gaussian_kde
 
 from Processing.Helpers import match_series, split_a_by_b
@@ -53,14 +53,16 @@ def box_plot_pandas(hitVec, expVec, ax='None'):
     if type(hitVec.name) == str:
         ax.set_title(hitVec.name +' x '+ expVec.name)
     
-def violin_plot_pandas(hitVec, expVec, ax='None'):
+def violin_plot_pandas(hitVec, expVec, ax=None):
     '''
     Wrapper around matplotlib's boxplot function for KW eQTLs
     '''   
     expVec = expVec.dropna()
     hitVec = hitVec.reindex_like(expVec)
-    if ax=='None':
+    if ax is None:
         fig, ax = plt.subplots(1,1)
+    else:
+        fig = plt.gcf()
     try:
         categories = list(set(hitVec.dropna().astype(int)))
         violin_plot(ax, [expVec[hitVec==num] for num in categories], 
@@ -73,6 +75,7 @@ def violin_plot_pandas(hitVec, expVec, ax='None'):
     ax.set_xlabel('Number of Mutations')
     if type(hitVec.name) == str:
         ax.set_title(hitVec.name +' x '+ expVec.name)
+    return fig
     
 def draw_survival_curves(clinical, hit_vec, filename='tmp.png', show=False, 
                          ax=None, title=True, labels=['No Mutation', 'Mutation']):
@@ -98,7 +101,7 @@ def draw_survival_curves(clinical, hit_vec, filename='tmp.png', show=False,
         
 def draw_pathway_count_bar(p, cancer, gene_sets, file_name='tmp.svg'):
     fig, ax = plt.subplots(1,1, figsize=(3+len(gene_sets[p])/15.,2.5))
-    m = cancer.hit_matrix.ix[list(gene_sets[p])]
+    m = cancer.hit_matrix.ix[list(gene_sets[p]), cancer.patients] > 0
     m = m[m.sum(1) > 0]
     m.sum(1).plot(kind='bar', ax=ax, alpha=.4);
     ax.set_xticklabels(m.index, ha='center', va='bottom', position=(0,.1), size=14)
@@ -108,8 +111,10 @@ def draw_pathway_count_bar(p, cancer, gene_sets, file_name='tmp.svg'):
     fig.savefig(file_name)
     
 def draw_pathway_eig_bar(U, file_name='tmp.svg'):
-    fig, ax = plt.subplots(1,1, figsize=(3+len(U[0])/15.,2.5))
-    sort(U[0]).plot(kind='bar', ax=ax, alpha=.4)
+    if rank(U)  == 2:
+        U = U[0]
+    fig, ax = plt.subplots(1,1, figsize=(3+len(U)/15.,2.5))
+    sort(U).plot(kind='bar', ax=ax, alpha=.4)
     ax.set_ylabel('Loading')
     fig.tight_layout()
     fig.savefig(file_name)
@@ -128,6 +133,8 @@ def histo_compare(hit_vec, response_vec, ax=None):
     '''
     if ax is None:
         fig, ax = plt.subplots(1,1)
+    else:
+        fig = fig.gcf()
     kde1 = gaussian_kde(response_vec)
     x_eval = linspace(min(response_vec), max(response_vec), num=200)
     ax.plot(x_eval, kde1(x_eval), 'k-')
@@ -135,4 +142,27 @@ def histo_compare(hit_vec, response_vec, ax=None):
     ax.hist(miss, bins=20, normed=True, alpha=.2, label='WT');
     ax.hist(hit, bins=10, normed=True, alpha=.5, label='Mut');
     ax.legend()
+    return fig
+
+def mut_module_raster(cluster_num, mut, ax=None):
+    assert hasattr(mut, 'clustered')
+    if ax is None:
+        fig, ax = plt.subplots(1,1, figsize=(10,8))
+    else:
+        fig = fig.gcf()
+    p = mut.assignments[mut.assignments == cluster_num].index
+    s = mut.meta_matrix.ix[p].sum()
+    x_order = sort(-s[s > 0]).index
+    y_order = sort(mut.meta_matrix.ix[p].sum(1)).index
+    plt.imshow(mut.meta_matrix.ix[y_order, x_order], aspect=8, 
+               interpolation='Nearest', cmap=plt.cm.bone_r) #@UndefinedVariable
+    ax.set_yticks(range(len(p)))
+    ax.set_yticklabels(p);
+    ax.hlines(arange(len(p)) + .5, 0, len(x_order), colors='grey', alpha=.3, lw=4)
+    ax.set_xlabel('Patients');
+    ax.axvline(x=(mut.clustered.ix[cluster_num] == 1).sum(), ymin=0, 
+               ymax=len(y_order), color='r', alpha=.7, lw=5)
+    ax.set_xbound(0, len(x_order))
+    fig.tight_layout()
+    return fig
     

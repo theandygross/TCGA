@@ -4,17 +4,17 @@ Created on Sep 6, 2012
 @author: agross
 '''
 import os as os
-import matplotlib.pyplot as plt
+import pandas.rpy.common as com
 from pandas import Series
 from numpy import nan
 from rpy2.robjects.packages import importr
-import pandas.rpy.common as com
+
+
 from Figures import violin_plot_pandas
 from Processing.Helpers import frame_svd, match_series
-
 from Figures import draw_survival_curves, draw_pathway_count_bar
 from Figures import draw_pathway_age_scatter, draw_pathway_eig_bar
-from Figures import histo_compare
+from Figures import histo_compare, mut_module_raster
 
 nz = importr('Nozzle.R1')
 bool_ = {True: 'TRUE', False: 'FALSE'}
@@ -33,8 +33,7 @@ def generic_header(report, cancer, prev_cancer, next_cancer):
 
 def add_violin_plot(vec, cancer, table1, pos, fig_path):
     fig_file = fig_path + vec.name + '_age.png'
-    fig, ax = plt.subplots(1,1)
-    violin_plot_pandas(vec > 0, cancer.clinical.age.astype(float), ax=ax)
+    fig = violin_plot_pandas(vec > 0, cancer.clinical.age.astype(float))
     try:
         fig.savefig(fig_file)
     except:
@@ -55,6 +54,17 @@ def add_survival_curve(vec, cancer, table1, pos, fig_path):
                        nz.addTo(nz.newSection(vec.name), sv_fig1))
     table1 = nz.addTo(table1, result1, row=pos[0], column=pos[1])
     return table1
+
+def add_eig_bar(pathway, cancer, table, pos, fig_path):
+    fig_file = cancer.report_folder + '/' + FIG_EXT + pathway + + '.svg'
+    if os.path.isfile(fig_file):
+        data_frame = cancer.data_matrix.ix[cancer.gene_sets[pathway]].dropna()
+        U,S,vH = frame_svd(((data_frame.T - data_frame.mean(1)) / data_frame.std(1)).T)
+        draw_pathway_eig_bar(U, fig_file)
+    sv_fig = nz.newFigure(fig_file, 'Loading for first eigen-patient.')
+    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
+                       nz.addTo(nz.newSection(pathway), sv_fig))
+    table = nz.addTo(table, result1, row=pos[0], column=pos[1])
     
 def single_gene_section(cancer, hit_matrix, cutoff=.25):
     #Format data for report
@@ -255,14 +265,15 @@ def add_histo_compare(hit_vec, response_vec, table, pos, fig_path, redraw=False)
     fig_file = (fig_path + str(hit_vec.name) + '_' + str(response_vec.name) + 
                 '_histo_compare.png')
     if not os.path.isfile(fig_file) or redraw:
-        fig, ax = plt.subplots(1,1)
-        histo_compare(hit_vec, response_vec, ax=ax)
+        fig = histo_compare(hit_vec, response_vec)
         fig.savefig(fig_file)
     histo_compare_fig = nz.newFigure(fig_file, 'Comparison of pathway level ' + 
                                                'distributions in patients with ' + 
                                                'and without mutation to pathway.')
     result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
-                       nz.addTo(nz.newSection(hit_vec.name), histo_compare_fig))
+                       nz.addTo(nz.newSection(str(hit_vec.name) + ' vs. ' + 
+                                str(response_vec.name)), 
+                       histo_compare_fig))
     table = nz.addTo(table, result1, row=pos[0], column=pos[1])  
     return table
 
@@ -285,6 +296,41 @@ def format_interaction_table(path, table, mut_obj, exp_vec):
                                    (gene_pos[g], col_pos['q_val']),
                                    path + '/' + FIG_EXT)
     return table1
+
+def add_mut_module_raster(cluster_num, mut, table, pos, fig_path, redraw=False):
+    fig_file = fig_path + str(cluster_num) + '_mut_module_raster.png'
+    if not os.path.isfile(fig_file) or redraw:
+        fig = mut_module_raster(cluster_num, mut)
+        fig.savefig(fig_file)
+    fig = nz.newFigure(fig_file, 'Breakdown of patients covered by pathways in ' + 
+                                 'the cluster.')
+    p = mut.assignments[mut.assignments == cluster_num].index
+    result1 = nz.addTo(nz.newResult('', isSignificant='FALSE'),
+                       nz.addTo(nz.newSection('Mutation Pathway Cluster ' + 
+                                              str(cluster_num)), 
+                                nz.newParagraph(', '.join(p)), fig))
+    table = nz.addTo(table, result1, row=pos[0], column=pos[1])  
+    return table
+
+def format_pathway_interaction_table(path, table, mut, exp):
+    interaction_table_file = path + '/interaction_table.csv'
+    table.to_csv(interaction_table_file)
+    table_r = com.convert_to_r_dataframe(table) #@UndefinedVariable
+    tableCaption1 = "Association of pathway expression with mutated pathways."
+    table1 = nz.newTable(table_r, tableCaption1, file=interaction_table_file, 
+                         significantDigits=2);
+    #Fill in the details
+    gene_pos = dict((g,i+1) for i,g in enumerate(table.index))
+    col_pos = dict((c,i+1) for i,c in enumerate(table.columns))    
+    for g,vec in table.iterrows():
+        table1 = add_histo_compare(mut.clustered.ix[vec['Mut Group']], 
+                                   exp.clustered.ix[vec['Exp Group']], 
+                                   table1, (gene_pos[g], col_pos['q_val']),
+                                   path + '/' + FIG_EXT)
+        table1 = add_mut_module_raster(vec['Mut Group'], mut, table1, 
+                                       (gene_pos[g], col_pos['Mut Group']), 
+                                       path + '/' + FIG_EXT)
+    return table1
         
 def create_clinical_report(cancer, next_cancer, prev_cancer, gene_sets):
     if not os.path.isdir(cancer.report_folder + '/' + FIG_EXT):
@@ -292,7 +338,7 @@ def create_clinical_report(cancer, next_cancer, prev_cancer, gene_sets):
     report = nz.newReport('Report for ' + cancer.cancer)
     report = generic_header(report, cancer, next_cancer, prev_cancer)
     if cancer.data_type not in ['expression', 'methylation']:
-        hit_matrix = (cancer.hit_matrix if cancer.data_type == 'mutation' else 
+        hit_matrix = (cancer.hit_matrix if cancer.data_type != 'amplification' else 
               cancer.lesion_matrix)
         report = nz.addToResults(report, single_gene_section(cancer, hit_matrix))
         report = nz.addToResults(report, pathway_mutation_section(cancer, gene_sets))

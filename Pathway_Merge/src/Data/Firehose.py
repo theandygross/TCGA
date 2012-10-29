@@ -34,7 +34,7 @@ def read_clinical(data_path):
     return clinical
 
 def get_mutation_matrix(cancer, data_path, q_cutoff=.25):
-    f = data_path + 'Mutation_Significance/'
+    f = data_path + 'MutSigRun2/'
     if os.path.isdir(f):
         mutation_matrix = read_table(f + cancer + '.per_gene.mutation_counts.txt', 
                                      index_col=0)
@@ -68,6 +68,7 @@ def get_cna_matrix(data_path, cna_type='deletion'):
     calls = gistic_lesions['Unique Name'].apply(lambda s: (s.find('CN') < 0) 
                                                 and (s.find(call_label) ==0))
     lesions = gistic_lesions[calls].select(lambda s: 'TCGA' in s, 1) 
+    lesions = (lesions == 2).astype(int)
     return cnas, lesions
 
 def read_rppa(stddata_path, cancer):
