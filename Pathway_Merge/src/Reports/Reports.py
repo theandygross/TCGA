@@ -1,25 +1,123 @@
 '''
-Created on Sep 6, 2012
+Created on Oct 30, 2012
 
 @author: agross
 '''
 import os as os
 import pandas.rpy.common as com
-from pandas import Series
-from numpy import nan
+from pandas import Series, DataFrame
+from numpy import nan, roll
 from rpy2.robjects.packages import importr
 
+from Figures import *
 
-from Figures import violin_plot_pandas
 from Processing.Helpers import frame_svd, match_series
-from Figures import draw_survival_curves, draw_pathway_count_bar
-from Figures import draw_pathway_age_scatter, draw_pathway_eig_bar
-from Figures import histo_compare, mut_module_raster
 
 nz = importr('Nozzle.R1')
 bool_ = {True: 'TRUE', False: 'FALSE'}
 FIG_EXT = 'clinical_figures/'
 SORT_ORDER = ['survival','AMAR','age','gender','radiation','therapy']
+
+roll_df = lambda df, num: df.ix[:,roll(range(df.shape[1]),num)]
+
+def create_figure(cancer, test, vec, file_name, overwrite=False):
+    if overwrite is False and os.path.isfile(file_name):
+        return
+    if test == 'survival':
+        draw_survival_curves(cancer.clinical, vec.clip_upper(1.), 
+                             filename=file_name, title=None)
+    elif test == 'age':
+        violin_plot_pandas(vec > 0, cancer.clinical.age.astype(float), 
+                           filename=file_name)
+    elif test == 'AMAR':
+        violin_plot_pandas(vec > 0, cancer.clinical.AMAR.astype(float), 
+                           filename=file_name)
+    elif test == 'gender':
+        gender_bar_chart(vec > 0, cancer.clinical.gender, filename=file_name)
+
+class NozzleTable(object):
+    def __init__(self, table, path, table_file_name, caption, cutoff=.25,
+                 idx_name='', tests_run=[]):
+        self.path = path
+        self.cutoff = cutoff
+        
+        table = table.sort(columns=[s for s in SORT_ORDER if s in table])
+        table.to_csv(path + table_file_name)
+        keepers = table[(table[tests_run] < cutoff).sum(1) > 0].index
+        table = table.ix[keepers].head(20)
+        
+        index_series = Series(dict((i,i) for i in table.index), name=idx_name)
+        self.table = table.join(index_series)
+        self.table = roll_df(self.table,1)
+        self.tests_run = tests_run
+        self.row_pos = dict((g,i+1) for i,g in enumerate(self.table.index))
+        self.col_pos = dict((c,i+1) for i,c in enumerate(self.table.columns))
+        
+        r_table = self.table.copy()
+        r_table = com.convert_to_r_dataframe(r_table) #@UndefinedVariable
+        self.nozzle_table = nz.newTable(r_table, caption, file=table_file_name, 
+                                        significantDigits=2)
+        
+    def add_to_table(self, fig_file, row, col, caption='', title='',
+                     isSignificant=True):
+        '''
+        Add a figure from a file to the Nozzle table.
+        This is just a wrapper to put a figure in a result section.
+        '''
+        fig = nz.newFigure(fig_file, caption)
+        result = nz.addTo(nz.newResult('', isSignificant=bool_[isSignificant]),
+                          nz.addTo(nz.newSubSection(title), fig))
+        self.nozzle_table = nz.addTo(self.nozzle_table, result, row=self.row_pos[row], 
+                                     column=self.col_pos[col])
+        
+    def fill_in_table(self, cancer, data_frame):
+        for test,vals in self.table[self.tests_run].iteritems():
+            for g in vals[vals < self.cutoff].index:
+                fig_file = self.path + FIG_EXT + g + '_' + test + '.png'
+                create_figure(cancer, test, data_frame.ix[g], fig_file)
+                self.add_to_table(fig_file, g, test, title=test + ' test for ' + g)
+                
+ 
+class PathwayTable(NozzleTable):
+    def __init__(self, cancer, cutoff=.25):
+        path = cancer.report_folder + '/'
+        caption = ('Association of pathway level ' + cancer.data_type + ' patterns' +
+                   ' with patient clinical features')
+        tests_run = list(cancer.q_pathways.columns)
+        
+        annotation = DataFrame(dict((p,get_pathway_annotation_vec(p, cancer)) 
+                       for p in cancer.q_pathways.index)).T
+        pathway_table = annotation.join(cancer.q_pathways)
+        
+        NozzleTable.__init__(self, pathway_table, path, 'pathway_table.csv', caption, 
+                             cutoff, 'pathways', tests_run)
+        
+class HitTable(NozzleTable):
+    def __init__(self, cancer, cutoff=.25):
+        path = cancer.report_folder + '/'
+        marker = ('lession' if cancer.data_type in ['amplification','deletion']
+                   else 'gene')
+        caption = ('Association of single ' + marker + ' ' + cancer.data_type + 
+                   ' with patient clinical features.')
+        
+        hit_matrix = cancer.hit_matrix
+        hit_matrix = hit_matrix.groupby(level=0).sum() #Make index unique
+        tests_run = list(cancer.q_genes.columns)
+        counts = Series((hit_matrix.ix[:,cancer.patients] > 0).sum(1), 
+                        name='n_patients')
+        gene_table = cancer.q_genes.join(counts)
+        gene_table = roll_df(gene_table, 1)
+        
+        NozzleTable.__init__(self, gene_table, path, 'gene_table.csv', caption, 
+                             cutoff, 'genes', tests_run)
+        
+def get_pathway_annotation_vec(p, cancer):
+    genes = cancer.gene_sets[p].intersection(set(cancer.hit_matrix.index))
+    sub_matrix = cancer.hit_matrix.ix[genes, cancer.patients] > 0
+    annot_vec = Series({'n mut genes' :  (sub_matrix.sum(1) > 0).sum(),
+                        'n mut pat' : (sub_matrix.sum() > 0).sum(),
+                        'n genes' : len(cancer.gene_sets[p])})
+    return annot_vec
 
 def generic_header(report, cancer, prev_cancer, next_cancer):
     report = nz.setMaintainerName(report, 'Andrew Gross')
@@ -31,324 +129,3 @@ def generic_header(report, cancer, prev_cancer, next_cancer):
     report = nz.setPreviousReport(report, prev_file  + '/index.html')
     report = nz.setNextReport(report, next_file + '/index.html')
     return report
-
-def add_violin_plot(vec, cancer, table1, pos, fig_path):
-    fig_file = fig_path + vec.name + '_age.png'
-    fig = violin_plot_pandas(vec > 0, cancer.clinical.age.astype(float))
-    try:
-        fig.savefig(fig_file)
-    except:
-        fig
-    age_fig1 = nz.newFigure(fig_file, 'Age of patients with or without ' + 
-                                      'mutation to gene.')
-    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
-                       nz.addTo(nz.newSection(vec.name), age_fig1))
-    table1 = nz.addTo(table1, result1, row=pos[0], column=pos[1])   
-    return table1
-    
-def add_survival_curve(vec, cancer, table1, pos, fig_path):
-    fig_file = fig_path + vec.name + '_survival.png'
-    draw_survival_curves(cancer.clinical, vec.clip_upper(1.), filename=fig_file, title=None)
-    sv_fig1 = nz.newFigure(fig_file, 'Survival of patients with or ' + 
-                                      'without mutation to gene.')
-    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
-                       nz.addTo(nz.newSection(vec.name), sv_fig1))
-    table1 = nz.addTo(table1, result1, row=pos[0], column=pos[1])
-    return table1
-
-def add_eig_bar(pathway, cancer, table, pos, fig_path):
-    fig_file = cancer.report_folder + '/' + FIG_EXT + pathway + + '.svg'
-    if os.path.isfile(fig_file):
-        data_frame = cancer.data_matrix.ix[cancer.gene_sets[pathway]].dropna()
-        U,S,vH = frame_svd(((data_frame.T - data_frame.mean(1)) / data_frame.std(1)).T)
-        draw_pathway_eig_bar(U, fig_file)
-    sv_fig = nz.newFigure(fig_file, 'Loading for first eigen-patient.')
-    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
-                       nz.addTo(nz.newSection(pathway), sv_fig))
-    table = nz.addTo(table, result1, row=pos[0], column=pos[1])
-    
-def add_survival_curve_pathway(vec, cancer, table1, pos, fig_path):
-    fig_file = fig_path + vec.name + '_survival.png'
-    draw_survival_curves(cancer.clinical, vec.clip_upper(1), filename=fig_file, title=None)
-    sv_fig1 = nz.newFigure(fig_file, 'Survival of patients with or ' + 
-                                      'without mutation to gene.')
-    fig_file2 = fig_path + vec.name + '.svg'
-    draw_pathway_count_bar(vec.name, cancer, cancer.gene_sets, fig_file2)
-    sv_fig_2 = nz.newFigure(fig_file2, 'Gene mutation frequencies in pathway.')
-    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
-                       nz.addTo(nz.newSection(vec.name), sv_fig1, sv_fig_2))
-    table1 = nz.addTo(table1, result1, row=pos[0], column=pos[1])
-    return table1
-
-def add_histo_compare(hit_vec, response_vec, table, pos, fig_path, redraw=False):
-    fig_file = (fig_path + str(hit_vec.name) + '_' + str(response_vec.name) + 
-                '_histo_compare.png')
-    if not os.path.isfile(fig_file) or redraw:
-        fig = histo_compare(hit_vec, response_vec)
-        fig.savefig(fig_file)
-    histo_compare_fig = nz.newFigure(fig_file, 'Comparison of pathway level ' + 
-                                               'distributions in patients with ' + 
-                                               'and without mutation to pathway.')
-    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
-                       nz.addTo(nz.newSection(str(hit_vec.name) + ' vs. ' + 
-                                str(response_vec.name)), 
-                       histo_compare_fig))
-    table = nz.addTo(table, result1, row=pos[0], column=pos[1])  
-    return table
-    
-def add_mut_module_raster(cluster_num, mut, table, pos, fig_path, redraw=False):
-    fig_file = fig_path + str(cluster_num) + '_mut_module_raster.png'
-    if not os.path.isfile(fig_file) or redraw:
-        fig = mut_module_raster(cluster_num, mut)
-        fig.savefig(fig_file)
-    fig = nz.newFigure(fig_file, 'Breakdown of patients covered by pathways in ' + 
-                                 'the cluster.')
-    p = mut.assignments[mut.assignments == cluster_num].index
-    result1 = nz.addTo(nz.newResult('', isSignificant='FALSE'),
-                       nz.addTo(nz.newSection('Mutation Pathway Cluster ' + 
-                                              str(cluster_num)), 
-                                nz.newParagraph(', '.join(p)), fig))
-    table = nz.addTo(table, result1, row=pos[0], column=pos[1])  
-    return table
-
-def single_gene_section(cancer, hit_matrix, cutoff=.25):
-    #Format data for report
-    path = cancer.report_folder + '/'
-    gene_table_file = path + 'gene_table.csv'
-    hit_matrix = hit_matrix.groupby(level=0).first() #Make index unique
-    counts = (hit_matrix.ix[:,cancer.patients] > 0).sum(1)
-    counts.name = 'n_patients'
-    genes = Series(dict((i,i) for i in cancer.q_genes.index), name='gene')
-    gene_table = cancer.q_genes.join(counts).join(genes)
-    gene_table = gene_table.ix[:,::-1]
-    if 'survival' in gene_table:
-        gene_table = gene_table.sort(columns='survival')
-    gene_table.to_csv(gene_table_file)
-    genes_to_show = cancer.q_genes[(cancer.q_genes < .2).sum(1) > 0].index
-    gene_table = gene_table.ix[genes_to_show]
-    if 'survival' in gene_table:
-        gene_table = gene_table.sort(columns='survival')
-    gene_table = gene_table.head(20)
-    gene_table_r = com.convert_to_r_dataframe(gene_table) #@UndefinedVariable
-    
-    if len(gene_table) == 0:
-        return nz.addTo(nz.newSubSection('Gene Mutations'), nz.newParagraph(''))
-    
-    #Overview
-    tableCaption1 = "Association of gene mutations with patient clinical features."
-    table1 = nz.newTable(gene_table_r, tableCaption1, file=gene_table_file, 
-                         significantDigits=2);
-    #Fill in the details
-    gene_pos = dict((g,i+1) for i,g in enumerate(gene_table.index))
-    col_pos = dict((c,i+1) for i,c in enumerate(gene_table.columns))
-    
-    #age violin plots
-    if 'age' in gene_table:
-        for g,val in gene_table['age'].iteritems():
-            num_genes = (match_series(hit_matrix.ix[g], cancer.clinical.age)[0] > 0).sum()
-            if val < cutoff and num_genes > 2:
-                table1 = add_violin_plot(hit_matrix.ix[g], cancer, table1, 
-                                         (gene_pos[g], col_pos['age']),
-                                         path + FIG_EXT)
-        
-    #survival curves
-    if 'survival' in gene_table:
-        for g,val in gene_table['survival'].iteritems():
-            if val < cutoff:
-                table1 = add_survival_curve(hit_matrix.ix[g], cancer, table1, (gene_pos[g], 
-                                            col_pos['survival']), path + FIG_EXT) 
-    
-    section = nz.addTo(nz.newSubSection('Gene Mutations'), table1)
-    return section
-
-def format_pathway_table(cancer, gene_sets):
-    pathways = Series(dict((i,i) for i in cancer.q_pathways.index), name='pathway')
-    n_mut_pat = Series((cancer.meta_matrix > 0).sum(1), name='n mut patients')
-    p_genes = lambda p: ((cancer.hit_matrix.ix[gene_sets[p], 
-                                              cancer.patients] > 0).sum(1) > 0).sum()
-    n_mut_genes = Series(dict((p, p_genes(p)) for p in cancer.meta_matrix.index),
-                         name='n mut genes')
-    n_genes = Series(dict((p, len(gene_sets[p])) for p in cancer.meta_matrix.index),
-                     name='n genes')
-    pathway_table = cancer.q_pathways.join(n_genes).join(n_mut_genes).join(n_mut_pat)
-    pathway_table = pathway_table.join(pathways)
-    pathway_table = pathway_table.ix[:, ::-1]
-    if 'survival' in pathway_table:
-        pathway_table.sort(columns='survival')
-    return pathway_table
-
-
-    
-def pathway_mutation_section(cancer, gene_sets, cutoff=.25):
-    #Format data for report
-    path = cancer.report_folder + '/'
-    pathway_table_file = path + 'pathway_table.csv'
-    pathway_table = format_pathway_table(cancer, gene_sets)    
-    if 'survival' in pathway_table:
-        pathway_table = pathway_table.sort(columns='survival')
-    pathway_table.to_csv(pathway_table_file)
-    keepers = cancer.q_pathways[(cancer.q_pathways < .25).sum(1) > 0].index
-    pathway_table = pathway_table.ix[keepers]
-    if 'survival' in pathway_table:
-        pathway_table = pathway_table.sort(columns='survival')
-    pathway_table = pathway_table.head(20)
-    pathway_table_r = com.convert_to_r_dataframe(pathway_table.replace(nan, 1.23)) #@UndefinedVariable
-    if len(pathway_table) == 0:
-        return nz.addTo(nz.newSubSection('Pathway Mutations'), nz.newParagraph(''))
-    
-    #Overview
-    tableCaption1 = ('Association of pathway level mutations with patient' + 
-                     'clinical features.')
-    table1 = nz.newTable(pathway_table_r, tableCaption1, file=pathway_table_file, 
-                             significantDigits=2);                      
-   
-    #Fill in the details
-    pathway_pos = dict((p,i+1) for i,p in enumerate(pathway_table.index))
-    col_pos = dict((c,i+1) for i,c in enumerate(pathway_table.columns))
-    
-    #age violin plots
-    if 'age' in pathway_table:
-        for g,val in pathway_table['age'].iteritems():
-            num_patients = (match_series(cancer.meta_matrix.ix[g], cancer.clinical.age)[0] > 0).sum()
-            if val < cutoff and num_patients > 2:
-                table1 = add_violin_plot(cancer.meta_matrix.ix[g], cancer, table1, 
-                                         (pathway_pos[g], col_pos['age']),
-                                         path + FIG_EXT)        
-    
-    #survival curves
-    if 'survival' in pathway_table:
-        for g,val in pathway_table['survival'].iteritems():
-            if val < cutoff:
-                table1 = add_survival_curve_pathway(cancer.meta_matrix.ix[g], cancer, table1, 
-                            (pathway_pos[g], col_pos['survival']), path + FIG_EXT) 
-                
-    section = nz.addTo(nz.newSubSection('Pathway Mutations'), table1)
-    return section
-
-def format_pathway_table_exp(cancer, gene_sets):
-    pathways = Series(dict((i,i) for i in cancer.q_pathways.index), name='pathway')
-    n_genes = Series(dict((p, len(gene_sets[p])) for p in cancer.pc.index),
-                     name='n genes')
-    pathway_table = cancer.q_pathways.join(n_genes)
-    pathway_table = pathway_table.join(pathways)
-    pathway_table = pathway_table.ix[:, range(pathway_table.shape[1]-1, -1, -1)]
-    return pathway_table
-
-    
-def pathway_mutation_section_exp(cancer, gene_sets, cutoff=.25):
-    #Format data for report
-    path = cancer.report_folder + '/'
-    pathway_table_file = path + 'pathway_table.csv'
-    pathway_table = format_pathway_table_exp(cancer, gene_sets) 
-    if 'survival' in pathway_table:
-        pathway_table.sort(columns='survival')
-    pathway_table.to_csv(pathway_table_file)
-    keepers = cancer.q_pathways[(cancer.q_pathways < .25).sum(1) > 0].index
-    pathway_table = pathway_table.ix[keepers]
-    if 'survival' in pathway_table:
-        pathway_table = pathway_table.sort(columns='survival')
-    pathway_table = pathway_table.head(20)
-    pathway_table_r = com.convert_to_r_dataframe(pathway_table.replace(nan, 1.23)) #@UndefinedVariable
-    if len(pathway_table) == 0:
-        return nz.addTo(nz.newSubSection('Expressed Pathways'), nz.newParagraph(''))
-    
-    #Overview
-    tableCaption1 = ('Association of pathway level expression patterns with patient' + 
-                     'clinical features.')
-    table1 = nz.newTable(pathway_table_r, tableCaption1, file=pathway_table_file, 
-                             significantDigits=2);                      
-   
-    #Fill in the details
-    pathway_pos = dict((p,i) for i,p in enumerate(pathway_table.index))
-    col_pos = dict((c,i) for i,c in enumerate(pathway_table.columns))
-    
-    #age scatter plots
-    for p in (pathway_table['age'][pathway_table['age'] < cutoff]).index:
-        fig_file = path + FIG_EXT + p + '_age.png'
-        draw_pathway_age_scatter(p, cancer, fig_file)
-        age_fig1 = nz.newFigure(fig_file, 'Age of patients with or without' +
-                                           'mutation to pathway.')
-        result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
-                           nz.addTo(nz.newSection(p), age_fig1))
-        table1 = nz.addTo(table1, result1, row=pathway_pos[p]+1, 
-                          column=col_pos['age']+1)
-        
-    #survival curves
-    for p in (pathway_table['survival'][pathway_table['survival'] < cutoff]).index:
-        fig_file = path + FIG_EXT + p + '_survival.png'
-        data_frame = cancer.data_matrix.ix[gene_sets[p]].dropna()
-        U,S,vH = frame_svd(((data_frame.T - data_frame.mean(1)) / data_frame.std(1)).T)
-        
-        strat = (vH[0] > vH[0].std()).astype(int) - (vH[0] < -vH[0].std()) + 1
-        draw_survival_curves(cancer.clinical, Series(strat, name='pc'), 
-                             labels=['low','mid','high'], filename=fig_file)
-        sv_fig1 = nz.newFigure(fig_file, 'Survival of patients with ' + 
-                                          'varying levels of pathway expression.')
-        fig_file2 = path + FIG_EXT + p + '.svg'
-        draw_pathway_eig_bar(U, fig_file2)
-        sv_fig_2 = nz.newFigure(fig_file2, 'Loading for first eigen-patient.')
-        result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
-                           nz.addTo(nz.newSection(p), sv_fig1, sv_fig_2))
-        table1 = nz.addTo(table1, result1, row=pathway_pos[p]+1, 
-                          column=col_pos['survival']+1)
-        
-    section = nz.addTo(nz.newSubSection('Pathway Mutations'), table1)
-    return section
-
-
-
-def format_interaction_table(path, table, mut_obj, exp_vec):
-    interaction_table_file = path + '/interaction_table.csv'
-    table.to_csv(interaction_table_file)
-    table = table[['pathway','p_val','q_val','survival_p', 'age_p']].sort('p_val').head(20)
-    table_r = com.convert_to_r_dataframe(table) #@UndefinedVariable
-    tableCaption1 = "Association of pathway expression with mutated pathways."
-    table1 = nz.newTable(table_r, tableCaption1, file=interaction_table_file, 
-                         significantDigits=2);
-    section = nz.addTo(nz.newSubSection('Association with Mutations'), table1)
-    
-    #Fill in the details
-    gene_pos = dict((g,i+1) for i,g in enumerate(table.index))
-    col_pos = dict((c,i+1) for i,c in enumerate(table.columns))
-    
-    for g,vec in table.iterrows():
-        table1 = add_histo_compare(mut_obj.meta_matrix.ix[g], exp_vec, table1, 
-                                   (gene_pos[g], col_pos['q_val']),
-                                   path + '/' + FIG_EXT)
-    return table1
-
-
-
-def format_pathway_interaction_table(path, table, mut, exp):
-    interaction_table_file = path + '/interaction_table.csv'
-    table.to_csv(interaction_table_file)
-    table_r = com.convert_to_r_dataframe(table) #@UndefinedVariable
-    tableCaption1 = "Association of pathway expression with mutated pathways."
-    table1 = nz.newTable(table_r, tableCaption1, file=interaction_table_file, 
-                         significantDigits=2);
-    #Fill in the details
-    gene_pos = dict((g,i+1) for i,g in enumerate(table.index))
-    col_pos = dict((c,i+1) for i,c in enumerate(table.columns))    
-    for g,vec in table.iterrows():
-        table1 = add_histo_compare(mut.clustered.ix[vec['Mut Group']], 
-                                   exp.clustered.ix[vec['Exp Group']], 
-                                   table1, (gene_pos[g], col_pos['q_val']),
-                                   path + '/' + FIG_EXT)
-        table1 = add_mut_module_raster(vec['Mut Group'], mut, table1, 
-                                       (gene_pos[g], col_pos['Mut Group']), 
-                                       path + '/' + FIG_EXT)
-    return table1
-        
-def create_clinical_report(cancer, next_cancer, prev_cancer, gene_sets):
-    if not os.path.isdir(cancer.report_folder + '/' + FIG_EXT):
-        os.makedirs(cancer.report_folder + '/' + FIG_EXT)
-    report = nz.newReport('Report for ' + cancer.cancer)
-    report = generic_header(report, cancer, next_cancer, prev_cancer)
-    if cancer.data_type not in ['expression', 'methylation']:
-        hit_matrix = (cancer.hit_matrix if cancer.data_type != 'amplification' else 
-              cancer.lesion_matrix)
-        report = nz.addToResults(report, single_gene_section(cancer, hit_matrix))
-        report = nz.addToResults(report, pathway_mutation_section(cancer, gene_sets))
-    else:
-        report = nz.addToResults(report, pathway_mutation_section_exp(cancer, gene_sets))
-    nz.writeReport(report, filename=cancer.report_folder + '/index')
