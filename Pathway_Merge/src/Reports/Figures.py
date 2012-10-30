@@ -53,28 +53,27 @@ def box_plot_pandas(hitVec, expVec, ax='None'):
     if type(hitVec.name) == str:
         ax.set_title(hitVec.name +' x '+ expVec.name)
     
-def violin_plot_pandas(hitVec, expVec, ax=None):
+def violin_plot_pandas(bin_vec, real_vec, ax=None):
     '''
-    Wrapper around matplotlib's boxplot function for KW eQTLs
+    Wrapper around matplotlib's boxplot function to add violin profile.
     '''   
-    expVec = expVec.dropna()
-    hitVec = hitVec.reindex_like(expVec)
+    bin_vec, real_vec = match_series(bin_vec, real_vec)
     if ax is None:
         fig, ax = plt.subplots(1,1)
     else:
         fig = plt.gcf()
     try:
-        categories = list(set(hitVec.dropna().astype(int)))
-        violin_plot(ax, [expVec[hitVec==num] for num in categories], 
+        categories = list(set(bin_vec.astype(int)))
+        violin_plot(ax, [real_vec[bin_vec==num] for num in categories], 
                     pos=categories, bp=True)
-        ax.set_xticklabels([str(c) +' (n=%i)'%sum(hitVec==c) 
+        ax.set_xticklabels([str(c) +' (n=%i)'%sum(bin_vec==c) 
                             for c in categories])
     except:
-        box_plot_pandas(hitVec, expVec, ax=ax)
+        box_plot_pandas(bin_vec, real_vec, ax=ax)
     ax.set_ylabel('Sub-Cohort Expression')
     ax.set_xlabel('Number of Mutations')
-    if type(hitVec.name) == str:
-        ax.set_title(hitVec.name +' x '+ expVec.name)
+    if type(bin_vec.name) == str:
+        ax.set_title(bin_vec.name +' x '+ real_vec.name)
     return fig
     
 def draw_survival_curves(clinical, hit_vec, filename='tmp.png', show=False, 

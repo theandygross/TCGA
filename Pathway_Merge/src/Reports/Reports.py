@@ -19,6 +19,7 @@ from Figures import histo_compare, mut_module_raster
 nz = importr('Nozzle.R1')
 bool_ = {True: 'TRUE', False: 'FALSE'}
 FIG_EXT = 'clinical_figures/'
+SORT_ORDER = ['survival','AMAR','age','gender','radiation','therapy']
 
 def generic_header(report, cancer, prev_cancer, next_cancer):
     report = nz.setMaintainerName(report, 'Andrew Gross')
@@ -66,6 +67,50 @@ def add_eig_bar(pathway, cancer, table, pos, fig_path):
                        nz.addTo(nz.newSection(pathway), sv_fig))
     table = nz.addTo(table, result1, row=pos[0], column=pos[1])
     
+def add_survival_curve_pathway(vec, cancer, table1, pos, fig_path):
+    fig_file = fig_path + vec.name + '_survival.png'
+    draw_survival_curves(cancer.clinical, vec.clip_upper(1), filename=fig_file, title=None)
+    sv_fig1 = nz.newFigure(fig_file, 'Survival of patients with or ' + 
+                                      'without mutation to gene.')
+    fig_file2 = fig_path + vec.name + '.svg'
+    draw_pathway_count_bar(vec.name, cancer, cancer.gene_sets, fig_file2)
+    sv_fig_2 = nz.newFigure(fig_file2, 'Gene mutation frequencies in pathway.')
+    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
+                       nz.addTo(nz.newSection(vec.name), sv_fig1, sv_fig_2))
+    table1 = nz.addTo(table1, result1, row=pos[0], column=pos[1])
+    return table1
+
+def add_histo_compare(hit_vec, response_vec, table, pos, fig_path, redraw=False):
+    fig_file = (fig_path + str(hit_vec.name) + '_' + str(response_vec.name) + 
+                '_histo_compare.png')
+    if not os.path.isfile(fig_file) or redraw:
+        fig = histo_compare(hit_vec, response_vec)
+        fig.savefig(fig_file)
+    histo_compare_fig = nz.newFigure(fig_file, 'Comparison of pathway level ' + 
+                                               'distributions in patients with ' + 
+                                               'and without mutation to pathway.')
+    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
+                       nz.addTo(nz.newSection(str(hit_vec.name) + ' vs. ' + 
+                                str(response_vec.name)), 
+                       histo_compare_fig))
+    table = nz.addTo(table, result1, row=pos[0], column=pos[1])  
+    return table
+    
+def add_mut_module_raster(cluster_num, mut, table, pos, fig_path, redraw=False):
+    fig_file = fig_path + str(cluster_num) + '_mut_module_raster.png'
+    if not os.path.isfile(fig_file) or redraw:
+        fig = mut_module_raster(cluster_num, mut)
+        fig.savefig(fig_file)
+    fig = nz.newFigure(fig_file, 'Breakdown of patients covered by pathways in ' + 
+                                 'the cluster.')
+    p = mut.assignments[mut.assignments == cluster_num].index
+    result1 = nz.addTo(nz.newResult('', isSignificant='FALSE'),
+                       nz.addTo(nz.newSection('Mutation Pathway Cluster ' + 
+                                              str(cluster_num)), 
+                                nz.newParagraph(', '.join(p)), fig))
+    table = nz.addTo(table, result1, row=pos[0], column=pos[1])  
+    return table
+
 def single_gene_section(cancer, hit_matrix, cutoff=.25):
     #Format data for report
     path = cancer.report_folder + '/'
@@ -132,18 +177,7 @@ def format_pathway_table(cancer, gene_sets):
         pathway_table.sort(columns='survival')
     return pathway_table
 
-def add_survival_curve_pathway(vec, cancer, table1, pos, fig_path):
-    fig_file = fig_path + vec.name + '_survival.png'
-    draw_survival_curves(cancer.clinical, vec.clip_upper(1), filename=fig_file, title=None)
-    sv_fig1 = nz.newFigure(fig_file, 'Survival of patients with or ' + 
-                                      'without mutation to gene.')
-    fig_file2 = fig_path + vec.name + '.svg'
-    draw_pathway_count_bar(vec.name, cancer, cancer.gene_sets, fig_file2)
-    sv_fig_2 = nz.newFigure(fig_file2, 'Gene mutation frequencies in pathway.')
-    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
-                       nz.addTo(nz.newSection(vec.name), sv_fig1, sv_fig_2))
-    table1 = nz.addTo(table1, result1, row=pos[0], column=pos[1])
-    return table1
+
     
 def pathway_mutation_section(cancer, gene_sets, cutoff=.25):
     #Format data for report
@@ -261,21 +295,7 @@ def pathway_mutation_section_exp(cancer, gene_sets, cutoff=.25):
     section = nz.addTo(nz.newSubSection('Pathway Mutations'), table1)
     return section
 
-def add_histo_compare(hit_vec, response_vec, table, pos, fig_path, redraw=False):
-    fig_file = (fig_path + str(hit_vec.name) + '_' + str(response_vec.name) + 
-                '_histo_compare.png')
-    if not os.path.isfile(fig_file) or redraw:
-        fig = histo_compare(hit_vec, response_vec)
-        fig.savefig(fig_file)
-    histo_compare_fig = nz.newFigure(fig_file, 'Comparison of pathway level ' + 
-                                               'distributions in patients with ' + 
-                                               'and without mutation to pathway.')
-    result1 = nz.addTo(nz.newResult('', isSignificant='TRUE'),
-                       nz.addTo(nz.newSection(str(hit_vec.name) + ' vs. ' + 
-                                str(response_vec.name)), 
-                       histo_compare_fig))
-    table = nz.addTo(table, result1, row=pos[0], column=pos[1])  
-    return table
+
 
 def format_interaction_table(path, table, mut_obj, exp_vec):
     interaction_table_file = path + '/interaction_table.csv'
@@ -297,20 +317,7 @@ def format_interaction_table(path, table, mut_obj, exp_vec):
                                    path + '/' + FIG_EXT)
     return table1
 
-def add_mut_module_raster(cluster_num, mut, table, pos, fig_path, redraw=False):
-    fig_file = fig_path + str(cluster_num) + '_mut_module_raster.png'
-    if not os.path.isfile(fig_file) or redraw:
-        fig = mut_module_raster(cluster_num, mut)
-        fig.savefig(fig_file)
-    fig = nz.newFigure(fig_file, 'Breakdown of patients covered by pathways in ' + 
-                                 'the cluster.')
-    p = mut.assignments[mut.assignments == cluster_num].index
-    result1 = nz.addTo(nz.newResult('', isSignificant='FALSE'),
-                       nz.addTo(nz.newSection('Mutation Pathway Cluster ' + 
-                                              str(cluster_num)), 
-                                nz.newParagraph(', '.join(p)), fig))
-    table = nz.addTo(table, result1, row=pos[0], column=pos[1])  
-    return table
+
 
 def format_pathway_interaction_table(path, table, mut, exp):
     interaction_table_file = path + '/interaction_table.csv'

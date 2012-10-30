@@ -4,7 +4,7 @@ Created on Oct 29, 2012
 @author: agross
 '''
 import os as os
-import subprocess as subprocess
+from subprocess import call, check_output
 from pandas import read_table
 
 METH_FOLDER = 'methylation__humanmethylation450__jhu_usc_edu__Level_3/'
@@ -16,8 +16,7 @@ def _get_folder(firehose_path, cancer, date):
     folder = stddata_path + '/' + METH_FOLDER
     return folder
 
-def pull_out_beta_values(folder, probes='All',
-                         outfile='beta_values.txt'):
+def pull_out_beta_values(folder, probes='All', outfile='beta_values.txt'):
     
     curdir = os.getcwd()
     os.chdir(folder)
@@ -25,18 +24,18 @@ def pull_out_beta_values(folder, probes='All',
     if probes != 'All':
         target_file = 'picked.txt'
         query = '\\|'.join(['Hybridization REF'] + list(probes))
-        subprocess.call(['grep', '\'' + query + '\'', METH_FILE],
-                        stdout=open(target_file,'wb'))
+        call(['grep', '\'' + query + '\'', METH_FILE], 
+             stdout=open(target_file,'wb'))
     else:
         target_file = METH_FILE
-    cols = subprocess.check_output(['awk', '-F\t', '{print NF; exit}', target_file])
+    cols = check_output(['awk', '-F\t', '{print NF; exit}', target_file])
     cols = int(cols.strip())
     cols = ','.join(map(str, range(2, int(cols)+1,4)))
     
-    subprocess.call(['cut', '-f' + cols, target_file], stdout=open('tmp','wb'))
-    subprocess.call(['cut', '-f1,3', target_file], stdout=open('idx','wb'))
-    subprocess.call(['paste', 'idx', 'tmp', '-d\t'], stdout=open(outfile,'wb'))
-    subprocess.call(['rm', 'tmp', 'idx'])
+    call(['cut', '-f' + cols, target_file], stdout=open('tmp','wb'))
+    call(['cut', '-f1,3', target_file], stdout=open('idx','wb'))
+    call(['paste', 'idx', 'tmp', '-d\t'], stdout=open(outfile,'wb'))
+    call(['rm', 'tmp', 'idx'])
     
     os.chdir(curdir)
     
@@ -64,7 +63,7 @@ def run_all_cancers(firehose_path, date, probeset='All', recalc=False):
             print cancer
             pull_out_beta_values(folder, probeset, outfile)
             if probeset == 'All':
-                average_beta_values_on_genes(cancer, firehose_path, date)
+                average_beta_values_on_genes(folder)
         else:
             print 'No data for ' + cancer +'.'
     

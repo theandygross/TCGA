@@ -7,7 +7,6 @@ sub-network find algorithms
 @author: agross
 '''
 import pandas as pandas
-from scipy.stats import hypergeom #@UnresolvedImport
 
 def read_in_pathways(mSigDbFile):
     '''
