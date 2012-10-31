@@ -20,20 +20,23 @@ SORT_ORDER = ['survival','AMAR','age','gender','radiation','therapy']
 
 roll_df = lambda df, num: df.ix[:,roll(range(df.shape[1]),num)]
 
-def create_figure(cancer, test, vec, file_name, overwrite=False):
-    if overwrite is False and os.path.isfile(file_name):
+def create_figure(cancer, type, vec, file_name, overwrite=False):
+    if (overwrite is False) and os.path.isfile(file_name):
         return
-    if test == 'survival':
+    if type == 'survival':
         draw_survival_curves(cancer.clinical, vec.clip_upper(1.), 
                              filename=file_name, title=None)
-    elif test == 'age':
+    elif type == 'age':
         violin_plot_pandas(vec > 0, cancer.clinical.age.astype(float), 
                            filename=file_name)
-    elif test == 'AMAR':
+    elif type == 'AMAR':
         violin_plot_pandas(vec > 0, cancer.clinical.AMAR.astype(float), 
                            filename=file_name)
-    elif test == 'gender':
+    elif type == 'gender':
         gender_bar_chart(vec > 0, cancer.clinical.gender, filename=file_name)
+        
+    elif type == 'pathway_bar':
+        draw_pathway_count_bar(vec.name, cancer, cancer.gene_sets, file_name)
 
 class NozzleTable(object):
     def __init__(self, table, path, table_file_name, caption, cutoff=.25,
@@ -58,50 +61,71 @@ class NozzleTable(object):
         self.nozzle_table = nz.newTable(r_table, caption, file=table_file_name, 
                                         significantDigits=2)
         
-    def add_to_table(self, fig_file, row, col, caption='', title='',
+    def add_to_table(self, fig_files, row, col, captions='', title='',
                      isSignificant=True):
         '''
         Add a figure from a file to the Nozzle table.
-        This is just a wrapper to put a figure in a result section.
+        This is just a wrapper to put a figure(s) in a result section.
         '''
-        fig = nz.newFigure(fig_file, caption)
+        if type(fig_files) == str:
+            fig_files = [fig_files]
+            captions = [captions]
+        elif len(captions) != len(fig_files):
+            captions = [captions]*len(fig_files)
+        figs = [nz.newFigure(file, caption) for file, caption 
+                in zip(fig_files, captions)]
         result = nz.addTo(nz.newResult('', isSignificant=bool_[isSignificant]),
-                          nz.addTo(nz.newSubSection(title), fig))
-        self.nozzle_table = nz.addTo(self.nozzle_table, result, row=self.row_pos[row], 
-                                     column=self.col_pos[col])
-        
-    def fill_in_table(self, cancer, data_frame):
-        for test,vals in self.table[self.tests_run].iteritems():
-            for g in vals[vals < self.cutoff].index:
-                fig_file = self.path + FIG_EXT + g + '_' + test + '.png'
-                create_figure(cancer, test, data_frame.ix[g], fig_file)
-                self.add_to_table(fig_file, g, test, title=test + ' test for ' + g)
-                
+                          nz.addTo(nz.newSubSection(title), *figs))
+        self.nozzle_table = nz.addTo(self.nozzle_table, result, 
+                                     row=self.row_pos[row], 
+                                     column=self.col_pos[col])                
  
 class PathwayTable(NozzleTable):
     def __init__(self, cancer, cutoff=.25):
         path = cancer.report_folder + '/'
-        caption = ('Association of pathway level ' + cancer.data_type + ' patterns' +
-                   ' with patient clinical features')
+        caption = ('Association of pathway level ' + cancer.data_type + 
+                   ' patients with patient clinical features')
         tests_run = list(cancer.q_pathways.columns)
         
         annotation = DataFrame(dict((p,get_pathway_annotation_vec(p, cancer)) 
                        for p in cancer.q_pathways.index)).T
         pathway_table = annotation.join(cancer.q_pathways)
+        pathway_table = pathway_table[pathway_table['n mut pat'] > 3]
         
-        NozzleTable.__init__(self, pathway_table, path, 'pathway_table.csv', caption, 
-                             cutoff, 'pathways', tests_run)
+        NozzleTable.__init__(self, pathway_table, path, 'pathway_table.csv', 
+                             caption, cutoff, 'pathways', tests_run)
+        
+    def fill_in_table(self, cancer, data_frame):
+        for p,vec in self.table.iterrows():
+            file_name = self.path + FIG_EXT + p + '.png'
+            create_figure(cancer, 'pathway_bar', vec, file_name)
+            
+        for test,vals in self.table[self.tests_run].iteritems():
+            t_caption  = (test.capitalize() + ' association for patients ' + 
+                        'with or without ' + cancer.data_type + ' to genes ' + 
+                        'in pathway.')
+            b_caption = ('Distribution of ' + cancer.data_type + 's to genes' + 
+                         ' in the pathway.')
+            for g in vals[vals < self.cutoff].index: #@NoEffect, does have effect
+                title = test + ' test for ' + g
+                fig_file = self.path + FIG_EXT + g + '_' + test + '.png'
+                create_figure(cancer, test, data_frame.ix[g], fig_file)
+                path_file = self.path + FIG_EXT + g + '.png'          
+                self.add_to_table([fig_file, path_file], g, test, 
+                                  [t_caption, b_caption], title)
+        
         
 class HitTable(NozzleTable):
     def __init__(self, cancer, cutoff=.25):
         path = cancer.report_folder + '/'
-        marker = ('lession' if cancer.data_type in ['amplification','deletion']
-                   else 'gene')
-        caption = ('Association of single ' + marker + ' ' + cancer.data_type + 
-                   ' with patient clinical features.')
+        self.marker = ('region' if cancer.data_type == 'amplification' 
+                       else 'gene')
+        caption = ('Association of single ' + self.marker + ' ' + 
+                   cancer.data_type + ' with patient clinical features.')
         
-        hit_matrix = cancer.hit_matrix
-        hit_matrix = hit_matrix.groupby(level=0).sum() #Make index unique
+        hit_matrix = (cancer.lesion_matrix if (cancer.data_type == 
+                      'amplification') else cancer.hit_matrix)
+        hit_matrix = hit_matrix.groupby(level=0).first() #Make index unique
         tests_run = list(cancer.q_genes.columns)
         counts = Series((hit_matrix.ix[:,cancer.patients] > 0).sum(1), 
                         name='n_patients')
@@ -109,7 +133,18 @@ class HitTable(NozzleTable):
         gene_table = roll_df(gene_table, 1)
         
         NozzleTable.__init__(self, gene_table, path, 'gene_table.csv', caption, 
-                             cutoff, 'genes', tests_run)
+                             cutoff, self.marker, tests_run)
+        
+    def fill_in_table(self, cancer, data_frame):
+        for test,vals in self.table[self.tests_run].iteritems():
+            caption  = (test.capitalize() + ' association for patients ' + 
+                        'with or without ' + cancer.data_type + ' to ' + 
+                        self.marker + '.') 
+            for g in vals[vals < self.cutoff].index: #@NoEffect, does have effect
+                fig_file = self.path + FIG_EXT + g + '_' + test + '.png'
+                title = test + ' test for ' + g
+                create_figure(cancer, test, data_frame.ix[g], fig_file)
+                self.add_to_table(fig_file, g, test, caption, title)
         
 def get_pathway_annotation_vec(p, cancer):
     genes = cancer.gene_sets[p].intersection(set(cancer.hit_matrix.index))
