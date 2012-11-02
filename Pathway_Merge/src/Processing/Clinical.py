@@ -8,7 +8,7 @@ import pandas.rpy.common as com
 
 from numpy import nan, sort, log
 from scipy.stats import f_oneway, fisher_exact, pearsonr
-from pandas import Series, DataFrame, notnull
+from pandas import Series, DataFrame, notnull, crosstab
 
 from Helpers import bhCorrection, extract_pc, match_series, drop_first_norm_pc
 from Helpers import cluster_down, df_to_binary_vec
@@ -46,10 +46,8 @@ def fisher_exact_test(hit_vec, response_vec):
     hit_vec: Series of labels (boolean, or (0,1))
     response_vec: Series of measurements (boolean, or (0,1))
     '''
-    hit_vec = hit_vec.reindex_like(response_vec)
-    table = [[(response_vec[hit_vec == num] == category).sum()
-             for num in set([0,1])] for category in set([0,1])]
-    return fisher_exact(table)[1]
+    assert (len(set(hit_vec)) == 2) and (len(set(response_vec)) == 2) 
+    return fisher_exact(crosstab(hit_vec, response_vec))[1]
 
 def pearson_p(a,b):
     '''
@@ -103,6 +101,8 @@ def get_tests_real(clinical, surv_cov=[]):
         tests['survival'] = lambda vec: get_cox_ph(clinical, vec, covariates=surv_cov)
     if notnull(clinical.age).sum() > 10:
         tests['age'] = lambda vec: pearson_p(clinical.age, vec)
+    if ('AMAR' in clinical) and (notnull(clinical.AMAR).sum() > 10):
+        tests['AMAR'] = lambda vec: pearson_p(vec, clinical['AMAR'])
     if notnull(clinical.gender).sum() > 10:
         tests['gender'] = lambda vec: anova(clinical.gender, vec)
     if notnull(clinical.therapy).sum() > 10:
@@ -199,7 +199,14 @@ def run_clinical_bool(cancer, data_path, gene_sets, data_type='mutation'):
 
 def run_clinical_real(cancer, data_path, gene_sets, data_type='expression',
                       drop_pc=False):
+    stddata_path = data_path.replace('analyses', 'stddata')
     clinical = read_clinical(data_path)
+    try:
+        meth_age, amar = get_age_signal(stddata_path, clinical)
+        clinical['meth_age'] = meth_age
+        clinical['AMAR'] = amar
+    except:
+        pass  #Probably because there is not a 450k chip for the cancer
     patients = clinical[['days','censored']].dropna().index
     stddata_path = data_path.replace('analyses', 'stddata')
     if data_type == 'expression':

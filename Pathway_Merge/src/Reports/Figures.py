@@ -11,7 +11,7 @@ from Processing.Helpers import match_series, split_a_by_b
 
 import rpy2.robjects as robjects 
 from rpy2.robjects import r
-from pandas import DataFrame
+from pandas import crosstab
 import pandas.rpy.common as com 
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
@@ -79,18 +79,14 @@ def violin_plot_pandas(bin_vec, real_vec, ax=None, filename=None):
         fig.savefig(filename)
     return fig
     
-def gender_bar_chart(bin_vec, gender_vec, ax=None, filename=None):
+def fischer_bar_chart(bin_vec, response_vec, ax=None, filename=None):
     if ax is None:
         fig, ax = plt.subplots(1,1)
-    bin_vec, gender_vec = match_series(bin_vec, gender_vec)
-    hit_count = bincount(gender_vec[bin_vec[bin_vec == True].index].astype(int))
-    wt_count = bincount(gender_vec[bin_vec[bin_vec == False].index].astype(int))
-    df = DataFrame({'mut' : hit_count, 'wt': wt_count}, index=['male','female'])
-    df.T.plot(kind='bar', ax=ax)
+    t = crosstab(bin_vec, response_vec)
+    t.plot(kind='bar', ax=ax)
     if filename is not None:
         fig.savefig(filename)
-    return fig
-    
+    return fig    
     
 def draw_survival_curves(clinical, hit_vec, filename='tmp.png', show=False, 
                          ax=None, title=True, labels=['No Mutation', 'Mutation']):

@@ -24,7 +24,7 @@ def pull_out_beta_values(folder, probes='All', outfile='beta_values.txt'):
     if probes != 'All':
         target_file = 'picked.txt'
         query = '\\|'.join(['Hybridization REF'] + list(probes))
-        call(['grep', '\'' + query + '\'', METH_FILE], 
+        call(['grep', query, METH_FILE], 
              stdout=open(target_file,'wb'))
     else:
         target_file = METH_FILE
