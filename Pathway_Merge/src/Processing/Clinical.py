@@ -8,7 +8,7 @@ import pandas.rpy.common as com
 
 from numpy import nan, sort, log
 from scipy.stats import f_oneway, fisher_exact, pearsonr
-from pandas import Series, DataFrame, notnull, crosstab
+from pandas import Series, DataFrame, notnull, crosstab, read_csv
 
 from Helpers import bhCorrection, extract_pc, match_series, drop_first_norm_pc
 from Helpers import cluster_down, df_to_binary_vec
@@ -16,6 +16,18 @@ from Data.Firehose import read_clinical, get_mutation_matrix, get_cna_matrix
 from Data.Firehose import read_rnaSeq, read_methylation
 from Data.Pathways import build_meta_matrix
 from Data.AgingData import get_age_signal
+
+
+REAL_VARIABLES = ['AMAR','rate','age']
+BINARY_VARIABLES = ['gender', 'therapy', 'radiation', 'triple_neg', 'triple_pos',
+                    'ER_pos','PR_pos','her2_pos', 'lymphnode_n0n1', 'tumor_t1t2',
+                    'post_menopause']
+SURVIVAL_TESTS = {'survival' : {'event_var' : 'deceased', 'time_var' : 'days', 
+                                'covariates' : ['age', 'rate']},
+                  'event_free_survival' : {'event_var' : 'event', 
+                                           'time_var' : 'event_free_survival', 
+                                           'covariates' : ['age', 'rate']}
+                  }
 
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
@@ -46,7 +58,8 @@ def fisher_exact_test(hit_vec, response_vec):
     hit_vec: Series of labels (boolean, or (0,1))
     response_vec: Series of measurements (boolean, or (0,1))
     '''
-    assert (len(set(hit_vec)) == 2) and (len(set(response_vec)) == 2) 
+    assert ((len(set(hit_vec.dropna())) <= 2) and 
+            (len(set(response_vec.dropna())) <= 2)) 
     return fisher_exact(crosstab(hit_vec, response_vec))[1]
 
 def pearson_p(a,b):
@@ -59,7 +72,8 @@ def pearson_p(a,b):
     r,p = pearsonr(a,b)
     return p
 
-def get_cox_ph(clinical, hit_vec, covariates=[]):
+def get_cox_ph(clinical, hit_vec, covariates=[], time_var='days',
+               event_var='censored'):
     '''
     Fit a cox proportial hazzards model to the data.
     Returns a p-value on the hit_vec coefficient. 
@@ -73,19 +87,19 @@ def get_cox_ph(clinical, hit_vec, covariates=[]):
     hit_vec.name = 'pathway'
     factors = ['pathway'] + covariates
     df = clinical.join(hit_vec)
-    patients = clinical[['age','censored']].dropna().index
-    df = df.ix[patients]
+    df = df[factors + [time_var, event_var]]
+    #df = df.ix[patients]
     df[factors] = (df[factors] - df[factors].mean())
-
     df = com.convert_to_r_dataframe(df) #@UndefinedVariable
-    fmla = robjects.Formula('Surv(days, censored) ~ ' + '*'.join(factors))
+    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ '+ '*'.join(factors)
+    fmla = robjects.Formula(fmla)
     try:
         s = survival.coxph(fmla, df)
         results = com.convert_robj(dict(base.summary(s).iteritems())['coefficients'])
         return results.ix['pathway','Pr(>|z|)']
     except robjects.rinterface.RRuntimeError:
         return 1.23
-
+    
 def get_tests_real(clinical, surv_cov=[]):
     '''
     Gets clinical association tests for a real valued response variable.
@@ -111,7 +125,7 @@ def get_tests_real(clinical, surv_cov=[]):
         tests['radiation'] = lambda vec: anova(clinical.therapy, vec)
     return tests
 
-def get_tests_bool(clinical, surv_cov=[]):
+def get_tests_bool(clinical, survival_tests, real_variables, binary_variables):
     '''
     Gets clinical association tests for a boolean valued response variable.
     (IE mutation, CNA, ...)
@@ -122,20 +136,23 @@ def get_tests_bool(clinical, surv_cov=[]):
     covariates: names of covariates to be passed to the cox model,
                 (must be columns in clinical DataFrame)
     '''
-    tests = {}
-    if clinical[['censored','days']].dropna()['censored'].sum() > 2:
-        tests['survival'] = lambda vec: get_cox_ph(clinical, vec, covariates=surv_cov)
-    if notnull(clinical.age).sum() > 10:
-        tests['age'] = lambda vec: anova(vec, clinical.age)
-    if ('AMAR' in clinical) and (notnull(clinical.AMAR).sum() > 10):
-        tests['AMAR'] = lambda vec: anova(vec, clinical['AMAR'])
-    if notnull(clinical.gender).sum() > 10:
-        tests['gender'] = lambda vec: fisher_exact_test(clinical.gender, vec)
-    if notnull(clinical.therapy).sum() > 10:
-        tests['therapy'] = lambda vec: fisher_exact_test(clinical.therapy, vec)
-    if notnull(clinical.radiation).sum() > 10:
-        tests['radiation'] = lambda vec: fisher_exact_test(clinical.therapy, vec)
-    return tests
+    check_surv = lambda s: len(clinical[[s['event_var'], 
+                                         s['time_var']]].dropna()) > 2
+    make_surv = lambda args: lambda vec: get_cox_ph(clinical, vec, **args)
+    surv_tests = dict((test, make_surv(args)) for test,args in 
+                      survival_tests.iteritems() if check_surv(args))
+    
+    check_test = lambda t: (t in clinical) and (notnull(clinical[t]).sum() > 10)
+    make_anova = lambda test: lambda vec: anova(vec, clinical[test])
+    real_tests = dict((test, make_anova(test)) for test in real_variables
+                      if check_test(test))
+    
+    make_fisher = lambda test: lambda vec: fisher_exact_test(vec, clinical[test])
+    bin_tests = dict((test, make_fisher(test)) for test in binary_variables
+                      if check_test(test))
+    
+    return dict(list(surv_tests.items()) + list(real_tests.items()) + 
+                list(bin_tests.items()))
 
 def run_tests(tests, data_frame):
     '''
@@ -158,43 +175,33 @@ def run_clinical_bool(cancer, data_path, gene_sets, data_type='mutation'):
     Runs clinical tests for boolean type data (mutation, amplification, 
     or deletion).
     '''
-    surv_cov = ['age','rate']
     stddata_path = data_path.replace('analyses', 'stddata')
-    clinical = read_clinical(data_path)
+    clinical = read_csv(stddata_path + 'Clinical/compiled.csv', index_col=0)
     try:
         meth_age, amar = get_age_signal(stddata_path, clinical)
         clinical['meth_age'] = meth_age
         clinical['AMAR'] = amar
     except:
         pass  #Probably because there is not a 450k chip for the cancer
-    patients = clinical[['days','censored']].dropna().index
-    stddata_path = data_path.replace('analyses', 'stddata')
+    patients = clinical[['days','deceased']].dropna().index
     if data_type == 'mutation':
         hit_matrix, _ = get_mutation_matrix(cancer, data_path)
-        clinical['rate'] = log(hit_matrix.sum(0))
-        tests = get_tests_bool(clinical, surv_cov)
-        gene_counts = sort(hit_matrix.sum(1))
-        good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[:500]
-        p_genes, q_genes = run_tests(tests, hit_matrix.ix[good_genes])
-    elif data_type == 'amplification':
+    elif data_type in ['amplification', 'deletion']:
         hit_matrix, lesion_matrix = get_cna_matrix(data_path, data_type)
-        clinical['rate'] = log(lesion_matrix.sum(0))
-        tests = get_tests_bool(clinical, surv_cov)
-        gene_counts = sort(lesion_matrix.sum(1))
-        good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[:500]
-        p_genes, q_genes = run_tests(tests, lesion_matrix.ix[good_genes])
-    elif data_type == 'deletion':
-        hit_matrix, lesion_matrix = get_cna_matrix(data_path, data_type)
-        clinical['rate'] = log(hit_matrix.sum(0))
-        tests = get_tests_bool(clinical, surv_cov)
-        gene_counts = sort(hit_matrix.sum(1))
-        good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[:500]
-        p_genes, q_genes = run_tests(tests, hit_matrix.ix[good_genes])
+    
+    single_matrix = lesion_matrix if data_type == 'amplification' else hit_matrix
+    single_matrix = single_matrix.clip_upper(1.)
+    clinical['rate'] = log(single_matrix.sum(0))
+    tests = get_tests_bool(clinical, SURVIVAL_TESTS, REAL_VARIABLES, BINARY_VARIABLES)
+    gene_counts = sort(single_matrix.sum(1))
+    good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[:500]
+    p_genes, q_genes = run_tests(tests, single_matrix.ix[good_genes])
+    
     clinical['rate'] = log(hit_matrix.sum(0))
     meta_matrix = build_meta_matrix(gene_sets, hit_matrix, 
-                                       setFilter=lambda s: s.clip_upper(1))
-    tests = get_tests_bool(clinical, surv_cov)
-    p_pathways, q_pathways = run_tests(tests, meta_matrix) 
+                                    setFilter=lambda s: s.clip_upper(1))
+    tests = get_tests_bool(clinical, SURVIVAL_TESTS, REAL_VARIABLES, BINARY_VARIABLES)
+    p_pathways, q_pathways = run_tests(tests, meta_matrix.clip_upper(1.)) 
     return locals()
 
 def run_clinical_real(cancer, data_path, gene_sets, data_type='expression',
