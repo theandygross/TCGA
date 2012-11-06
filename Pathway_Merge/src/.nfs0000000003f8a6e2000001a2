@@ -1,2 +1,0 @@
-Error in fitter(X, Y, strats, offset, init, control, weights = weights,  : 
-  NA/NaN/Inf in foreign function call (arg 6)

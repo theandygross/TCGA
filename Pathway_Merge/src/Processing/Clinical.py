@@ -48,8 +48,8 @@ def anova(hit_vec, response_vec):
     response_vec: Series of measurements
     '''
     hit_vec, response_vec = match_series(hit_vec, response_vec)
-    return f_oneway(*[response_vec[hit_vec == num].dropna() 
-                      for num in set(hit_vec.dropna())])[1]
+    return f_oneway(*[hit_vec[response_vec == num].dropna() 
+                      for num in set(response_vec.dropna())])[1]
 
 def fisher_exact_test(hit_vec, response_vec):
     '''
@@ -112,7 +112,8 @@ def get_tests_real(clinical, surv_cov=[]):
     '''
     tests = {}
     if notnull(clinical.days).sum() > 10:
-        tests['survival'] = lambda vec: get_cox_ph(clinical, vec, covariates=surv_cov)
+        tests['survival'] = lambda vec: get_cox_ph(clinical, vec, 
+                                                   covariates=surv_cov)
     if notnull(clinical.age).sum() > 10:
         tests['age'] = lambda vec: pearson_p(clinical.age, vec)
     if ('AMAR' in clinical) and (notnull(clinical.AMAR).sum() > 10):
@@ -192,7 +193,8 @@ def run_clinical_bool(cancer, data_path, gene_sets, data_type='mutation'):
     single_matrix = lesion_matrix if data_type == 'amplification' else hit_matrix
     single_matrix = single_matrix.clip_upper(1.)
     clinical['rate'] = log(single_matrix.sum(0))
-    tests = get_tests_bool(clinical, SURVIVAL_TESTS, REAL_VARIABLES, BINARY_VARIABLES)
+    tests = get_tests_bool(clinical, SURVIVAL_TESTS, REAL_VARIABLES, 
+                           BINARY_VARIABLES)
     gene_counts = sort(single_matrix.sum(1))
     good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[:500]
     p_genes, q_genes = run_tests(tests, single_matrix.ix[good_genes])
@@ -200,7 +202,8 @@ def run_clinical_bool(cancer, data_path, gene_sets, data_type='mutation'):
     clinical['rate'] = log(hit_matrix.sum(0))
     meta_matrix = build_meta_matrix(gene_sets, hit_matrix, 
                                     setFilter=lambda s: s.clip_upper(1))
-    tests = get_tests_bool(clinical, SURVIVAL_TESTS, REAL_VARIABLES, BINARY_VARIABLES)
+    tests = get_tests_bool(clinical, SURVIVAL_TESTS, REAL_VARIABLES, 
+                           BINARY_VARIABLES)
     p_pathways, q_pathways = run_tests(tests, meta_matrix.clip_upper(1.)) 
     return locals()
 
