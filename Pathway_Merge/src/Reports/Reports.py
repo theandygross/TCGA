@@ -16,24 +16,21 @@ from Processing.Helpers import frame_svd, match_series
 nz = importr('Nozzle.R1')
 bool_ = {True: 'TRUE', False: 'FALSE'}
 FIG_EXT = 'clinical_figures/'
-SORT_ORDER = ['survival','AMAR','age','gender','radiation','therapy']
+SORT_ORDER = ['event_free_survival','AMAR','age','gender','radiation','therapy']
 
 roll_df = lambda df, num: df.ix[:,roll(range(df.shape[1]),num)]
 
 def create_figure(cancer, type, vec, file_name, overwrite=False):
     if (overwrite is False) and os.path.isfile(file_name):
         return
-    if type == 'survival':
+    if type in cancer.survival_tests:
         draw_survival_curves(cancer.clinical, vec.clip_upper(1.), 
-                             filename=file_name, title=None)
-    elif type == 'age':
-        violin_plot_pandas(vec > 0, cancer.clinical.age.astype(float), 
+                             filename=file_name, **cancer.survival_tests[type])
+    elif type in cancer.real_variables:
+        violin_plot_pandas(vec > 0, cancer.clinical[type].astype(float), 
                            filename=file_name)
-    elif type == 'AMAR':
-        violin_plot_pandas(vec > 0, cancer.clinical.AMAR.astype(float), 
-                           filename=file_name)
-    elif type == 'gender':
-        gender_bar_chart(vec > 0, cancer.clinical.gender, filename=file_name)
+    elif type in cancer.binary_variables:
+        fischer_bar_chart(vec > 0, cancer.clinical[type], filename=file_name)
         
     elif type == 'pathway_bar':
         draw_pathway_count_bar(vec.name, cancer, cancer.gene_sets, file_name)
@@ -44,7 +41,8 @@ class NozzleTable(object):
         self.path = path
         self.cutoff = cutoff
         
-        table = table.sort(columns=[s for s in SORT_ORDER if s in table])
+        table = table.sort(columns=[s for s in SORT_ORDER if s in table
+                                    and len(table[s].unique()) > 1])
         table.to_csv(path + table_file_name)
         keepers = table[(table[tests_run] < cutoff).sum(1) > 0].index
         table = table.ix[keepers].head(20)
@@ -56,7 +54,7 @@ class NozzleTable(object):
         self.row_pos = dict((g,i+1) for i,g in enumerate(self.table.index))
         self.col_pos = dict((c,i+1) for i,c in enumerate(self.table.columns))
         
-        r_table = self.table.copy()
+        r_table = self.table.copy().fillna(1.)
         r_table = com.convert_to_r_dataframe(r_table) #@UndefinedVariable
         self.nozzle_table = nz.newTable(r_table, caption, file=table_file_name, 
                                         significantDigits=2)

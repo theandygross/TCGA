@@ -11,7 +11,7 @@ from Processing.Helpers import match_series, split_a_by_b
 
 import rpy2.robjects as robjects 
 from rpy2.robjects import r
-from pandas import crosstab
+from pandas import crosstab, DataFrame
 import pandas.rpy.common as com 
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
@@ -88,7 +88,7 @@ def fischer_bar_chart(bin_vec, response_vec, ax=None, filename=None):
         fig.savefig(filename)
     return fig    
     
-def draw_survival_curves(clinical, hit_vec, filename='tmp.png', show=False, 
+def draw_survival_curves_KM(clinical, hit_vec, filename='tmp.png', show=False, 
                          ax=None, title=True, labels=['No Mutation', 'Mutation']):
     hit_vec.name = 'pathway'
     df = clinical.join(hit_vec)
@@ -109,6 +109,54 @@ def draw_survival_curves(clinical, hit_vec, filename='tmp.png', show=False,
         ax.imshow(img)
         ax.set_axis_off()
         ax.get_figure().tight_layout()
+        
+def draw_survival_curves(clinical, hit_vec, covariates=[], time_var='days',
+                         event_var='censored', filename='tmp.png',
+                         labels=['No Mutation', 'Mutation']):
+    if not all([cov in clinical for cov in covariates]):
+        missing = [cov for cov in covariates if cov not in clinical]
+        covariates = [cov for cov in covariates if cov in clinical]
+    
+    hit_vec.name = 'pathway'
+    factors = ['pathway'] + covariates
+    df = clinical.join(hit_vec)
+    df['event']  = df.event.fillna(0)
+    df = df[factors + [time_var, event_var]]
+    df = df.dropna()
+    df[covariates] = (df[covariates] - df[covariates].mean())
+    df_r = com.convert_to_r_dataframe(df) #@UndefinedVariable
+    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ '+ '*'.join(factors)
+    fmla = robjects.Formula(fmla)
+    
+    s = survival.coxph(fmla, df_r)
+    results = com.convert_robj(dict(base.summary(s).iteritems())['coefficients'])
+    
+    df_2 = DataFrame({'pathway' : [0,1]})
+    for cov in covariates:
+        df_2[cov] = [df[cov].median()]*2
+    df_2 = com.convert_to_r_dataframe(df_2) #@UndefinedVariable
+    
+    f = survival.survfit(s, newdata=df_2)
+    ls = r('2:' + str(len(set(hit_vec))+1)) #R line styles
+    r.png(filename=filename, width=int(400*1.61), height=400)
+    r.par(mfrow=r.c(1,2))
+    r.plot(f, lty=1, col=ls, lwd=3, cex=1.5, xlab='Days to Event', 
+           ylab= 'Adj. Survival');
+    r.text(0, labels='p = ' + '%3.2e'%results.ix['pathway'].ix[-1], pos=4)
+    r.title('Cox PH Model')
+    
+    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ pathway'  
+    fmla = robjects.Formula(fmla) 
+    s = survival.survdiff(fmla, df_r)
+    p = str(s).split('\n\n')[-1].strip().split(', ')[-1]
+    r.plot(survival.survfit(fmla, df_r), lty=1, col=ls, lwd=3, cex=1.5, 
+                            xlab='Days to Event', ylab= 'Survival');
+    r.text(0, labels=p, pos=4)
+    r.title('Kaplan-Meyer')
+    r.legend(nanmax(df[time_var]) * .5, .95, labels, lty=1, col=ls)
+    r('dev.off()');    
+        
+
         
 def draw_pathway_count_bar(p, cancer, gene_sets, file_name='tmp.svg'):
     fig, ax = plt.subplots(1,1, figsize=(3+len(gene_sets[p])/15.,2.5))
