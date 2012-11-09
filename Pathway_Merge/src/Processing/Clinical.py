@@ -165,7 +165,7 @@ def run_clinical_bool(cancer, clinical, data_path, gene_sets,
     tests = get_tests(clinical, survival_tests, real_variables, binary_variables,
                       var_type='boolean')
     gene_counts = sort(single_matrix.sum(1))
-    good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[:500]
+    good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[-500:]
     p_genes, q_genes = run_tests(tests, single_matrix.ix[good_genes])
     
     clinical['rate'] = log(hit_matrix.sum(0))
@@ -224,7 +224,7 @@ class ClinicalObject(object):
                                        binary_variables, data_type, drop_pc)
         self.__dict__ = o_dict
         self.stddata_path = stddata_path
-        self.data_path = stddata_path
+        self.data_path = data_path
         #self.patients = clinical[['days','censored']].dropna().index
         
         
