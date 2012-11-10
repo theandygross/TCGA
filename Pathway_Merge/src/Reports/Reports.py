@@ -16,7 +16,9 @@ from Processing.Helpers import frame_svd, match_series
 nz = importr('Nozzle.R1')
 bool_ = {True: 'TRUE', False: 'FALSE'}
 FIG_EXT = 'clinical_figures/'
-SORT_ORDER = ['event_free_survival','AMAR','age','gender','radiation','therapy']
+SORT_ORDER = ['event_free_survival', 'survival', 'tumor_t1t2', 'lymphnode_n0n1',
+              'metastatic_recurrence', 'organ_subdivision', 'AMAR','age', 'rate', 
+              'gender','radiation', 'therapy']
 
 roll_df = lambda df, num: df.ix[:,roll(range(df.shape[1]),num)]
 

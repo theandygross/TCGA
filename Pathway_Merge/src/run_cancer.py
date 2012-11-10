@@ -9,6 +9,19 @@ from Processing.Clinical import ClinicalObject
 PATHWAY_FILE = '/cellar/users/agross/Data/GeneSets/c2.cp.v3.0.symbols_edit.csv'
 gene_sets, gene_lookup = read_in_pathways(PATHWAY_FILE)
 
+REAL_VARIABLES = ['AMAR','rate','age','karnofsky_performance', 'pack_years']
+BINARY_VARIABLES = ['gender', 'therapy', 'radiation', 'triple_neg', 'triple_pos',
+                    'ER_pos','PR_pos','her2_pos', 'lymphnode_n0n1', 'tumor_t1t2',
+                    'post_menopause', 'histo_g1g2', 'neo_status', 'chemo', 
+                    'hormones''complete_response', 'metastatic_recurrence',
+                    'new_tumor','smoker', 'drinker']
+SURVIVAL_TESTS = {'survival' : {'event_var' : 'deceased', 'time_var' : 'days', 
+                                'covariates' : ['age', 'rate']},
+                  'event_free_survival' : {'event_var' : 'event', 
+                                           'time_var' : 'event_free_survival', 
+                                           'covariates' : ['age', 'rate']}
+                  }
+
 cancer = sys.argv[1]
 data_type = sys.argv[2]
 data_path = sys.argv[3]
@@ -17,12 +30,17 @@ drop_pc = True
 
 try:
 	cancer_obj = ClinicalObject(cancer, data_path, gene_sets, data_type,
-								drop_pc)
-	if False and cancer_obj.data_type in ['mutation','amplification','deletion']:
+								survival_tests=SURVIVAL_TESTS, 
+								real_variables=REAL_VARIABLES,
+                        		binary_variables=BINARY_VARIABLES,
+                        		drop_pc=drop_pc)
+	if cancer_obj.data_type in ['mutation','amplification','deletion']:
 		cancer_obj.filter_bad_pathways(gene_lookup)
-	cancer_obj.report_folder = cancer_obj.data_path + cancer_obj.data_type + '_' + report_ext
+	cancer_obj.report_folder = (cancer_obj.data_path + cancer_obj.data_type + 
+								'_' + report_ext)
 	del cancer_obj.tests #Can't pickle functions at module level, regenerate with Clinical.get_tests_x
-	pickle.dump(cancer_obj, open(cancer_obj.report_folder + '/ClinicalObject.p', 'wb'))
+	pickle.dump(cancer_obj, open(cancer_obj.report_folder + '/ClinicalObject.p', 
+								'wb'))
 	print cancer + ' sucess!'
 except:
 	print cancer + ' fail!'

@@ -11,7 +11,7 @@ from scipy.stats import f_oneway, fisher_exact, pearsonr
 from pandas import Series, DataFrame, notnull, crosstab, read_csv
 
 from Helpers import bhCorrection, extract_pc, match_series, drop_first_norm_pc
-from Helpers import cluster_down, df_to_binary_vec
+from Helpers import cluster_down, df_to_binary_vec, run_rate_permutation
 from Data.Firehose import read_clinical, get_mutation_matrix, get_cna_matrix
 from Data.Firehose import read_rnaSeq, read_methylation
 from Data.Pathways import build_meta_matrix
@@ -24,6 +24,9 @@ MIN_NUM_HITS = 8
 robjects.r.options(warn=-1);
 zz = robjects.r.file("all.Rout", open="wt")
 robjects.r.sink(zz, type='message')
+
+GENE_LENGTHS = read_csv('/cellar/users/agross/Data/GeneSets/coding_lengths.csv', 
+                        index_col=0, squeeze=True)
 
 def delambda(f):
     def f_(a): return f(a)
@@ -173,7 +176,12 @@ def run_clinical_bool(cancer, clinical, data_path, gene_sets,
                                     setFilter=lambda s: s.clip_upper(1))
     tests = get_tests(clinical, survival_tests, real_variables, binary_variables,
                       var_type='boolean')
-    p_pathways, q_pathways = run_tests(tests, meta_matrix.clip_upper(1.)) 
+    p_pathways, q_pathways = run_tests(tests, meta_matrix.clip_upper(1.))
+    
+    lengths = GENE_LENGTHS.ix[hit_matrix.index].dropna()
+    _res = run_rate_permutation(meta_matrix, hit_matrix, gene_sets, 
+                               lengths, tests['rate'])
+    q_pathways['rate']  = _res 
     return locals()
 
 def run_clinical_real(cancer, clinical, stddata_path, gene_sets,

@@ -6,7 +6,8 @@ Created on Jul 12, 2012
 import matplotlib.pyplot as plt
 from pandas import Series, DataFrame, notnull
 from numpy.linalg import LinAlgError
-from numpy import diag, sort
+from numpy import array, diag, sort
+from numpy.random import random_integers
 
 from scipy.cluster import hierarchy
 from scipy.spatial import distance
@@ -90,3 +91,37 @@ def cluster_down(df, agg_function, dist_metric='euclidean', num_clusters=50,
         ax.set_yticks([])
         return clustered, c, fig
     return clustered, c
+
+def get_random_genes(bp, lengths):
+    s = 0
+    genes = []
+    new_gene = 0
+    while s < (bp + new_gene/2.):
+        i = random_integers(0, len(lengths)-1)
+        genes.append(i)
+        new_gene = lengths.ix[i]
+        s += new_gene
+    genes = lengths.index[genes]
+    return genes
+
+def do_perm(f, vec, hit_mat, bp, lengths, iterations):
+    real_val = f(vec > 0)
+    results = []
+    for i in range(iterations):
+        perm = hit_mat.ix[get_random_genes(bp, lengths)].sum() > 0
+        results.append(f(perm))
+    return sum(array(results) <  real_val) / float(len(results))
+
+def run_rate_permutation(df, hit_mat, gene_sets, lengths, f):
+    res = {}
+    for p,genes in gene_sets.iteritems():
+        if p not in df.index:
+            continue
+        bp = lengths[lengths.index.isin(genes)].sum()
+        iterations = 10
+        res[p] = do_perm(f, df.ix[p], hit_mat, bp, lengths, iterations)
+        while (res[p] <= (10./iterations)) and (iterations <= 2500):
+            res[p] = do_perm(f, df.ix[p], hit_mat, bp, lengths, iterations)
+            iterations = iterations * 5
+    res = sort(Series(res))
+    return res
