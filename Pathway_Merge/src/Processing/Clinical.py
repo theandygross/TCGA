@@ -6,6 +6,7 @@ Created on Oct 9, 2012
 import rpy2.robjects as robjects
 import pandas.rpy.common as com 
 
+
 from numpy import nan, sort, log
 from scipy.stats import f_oneway, fisher_exact, pearsonr
 from pandas import Series, DataFrame, notnull, crosstab, read_csv
@@ -68,7 +69,7 @@ def pearson_p(a,b):
     return p
 
 def get_cox_ph(clinical, hit_vec, covariates=[], time_var='days',
-               event_var='censored'):
+               event_var='censored', return_val='p'):
     '''
     Fit a cox proportial hazzards model to the data.
     Returns a p-value on the hit_vec coefficient. 
@@ -89,14 +90,22 @@ def get_cox_ph(clinical, hit_vec, covariates=[], time_var='days',
     #df = df.ix[patients]
     df[factors] = (df[factors] - df[factors].mean())
     df = com.convert_to_r_dataframe(df) #@UndefinedVariable
-    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ '+ '*'.join(factors)
+    #fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ '+ '+'.join(factors)
+    interactions = '+'.join(['pathway*' + c for c in covariates])
+    if len(covariates) == 0:
+        interactions = 'pathway'
+    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ ' + interactions
     fmla = robjects.Formula(fmla)
     try:
         s = survival.coxph(fmla, df)
         results = com.convert_robj(dict(base.summary(s).iteritems())['coefficients'])
-        return results.ix['pathway','Pr(>|z|)']
     except robjects.rinterface.RRuntimeError:
         return 1.23
+    if return_val == 'p':
+        return results.ix['pathway','Pr(>|z|)']
+    else:
+        print dict(base.summary(s).iteritems())['logtest']
+        return results
     
 def get_tests(clinical, survival_tests, real_variables, binary_variables,
               var_type='boolean'):
@@ -110,21 +119,22 @@ def get_tests(clinical, survival_tests, real_variables, binary_variables,
     covariates: names of covariates to be passed to the cox model,
                 (must be columns in clinical DataFrame)
     '''
-    check_surv = lambda s: len(clinical[[s['event_var'], 
-                                         s['time_var']]].dropna()) > 2
+    check_surv = lambda s: ((s['event_var'] in clinical) and 
+                 (len(clinical[[s['event_var'], s['time_var']]].dropna()) > 2))
     make_surv = lambda args: lambda vec: get_cox_ph(clinical, vec, **args)
     surv_tests = dict((test, make_surv(args)) for test,args in 
                       survival_tests.iteritems() if check_surv(args))
     
     check_test = lambda t: (t in clinical) and (notnull(clinical[t]).sum() > 10)
     make_anova = lambda test: lambda vec: anova(vec, clinical[test])
+    make_anova_r = lambda test: lambda vec: anova(clinical[test], vec)
     make_fisher = lambda test: lambda vec: fisher_exact_test(vec, clinical[test])
     make_pcc = lambda test: lambda vec: pearson_p(vec, clinical[test])
     
     if var_type == 'boolean':
         real_test, bin_test = make_anova, make_fisher
     elif var_type == 'real':
-        real_test, bin_test = make_pcc, make_anova
+        real_test, bin_test = make_pcc, make_anova_r
             
     real_tests = dict((test, real_test(test)) for test in real_variables
                       if check_test(test))    
@@ -202,6 +212,7 @@ def run_clinical_real(cancer, clinical, stddata_path, gene_sets,
     #clinical['pc'] = extract_pc(data_matrix.dropna(), pc_threshold=0)
     tests  = get_tests(clinical, survival_tests, real_variables, 
                        binary_variables, var_type='real')
+    #return locals()
     p_pathways, q_pathways = run_tests(tests, pc)
     return locals()
 
@@ -215,6 +226,8 @@ class ClinicalObject(object):
                  binary_variables=[]):
         stddata_path = data_path.replace('analyses', 'stddata')
         clinical = read_csv(stddata_path + 'Clinical/compiled.csv', index_col=0)
+        if hasattr(clinical, 'event'):
+            clinical['event'] = clinical[['event','deceased']].sum(1).clip_upper(1.)
         try:
             meth_age, amar = get_age_signal(stddata_path, clinical)
             clinical['meth_age'] = meth_age

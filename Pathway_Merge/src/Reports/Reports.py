@@ -22,7 +22,7 @@ SORT_ORDER = ['event_free_survival', 'survival', 'tumor_t1t2', 'lymphnode_n0n1',
 
 roll_df = lambda df, num: df.ix[:,roll(range(df.shape[1]),num)]
 
-def create_figure(cancer, type, vec, file_name, overwrite=False):
+def create_figure(cancer, type, vec, file_name, overwrite=True):
     if (overwrite is False) and os.path.isfile(file_name):
         return
     if type in cancer.survival_tests:

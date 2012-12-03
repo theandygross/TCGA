@@ -14,12 +14,18 @@ BINARY_VARIABLES = ['gender', 'therapy', 'radiation', 'triple_neg', 'triple_pos'
                     'ER_pos','PR_pos','her2_pos', 'lymphnode_n0n1', 'tumor_t1t2',
                     'post_menopause', 'histo_g1g2', 'neo_status', 'chemo', 
                     'hormones''complete_response', 'metastatic_recurrence',
-                    'new_tumor','smoker', 'drinker']
+                    'new_tumor','smoker', 'drinker', 'aml_cyto_risk_favorable',
+                    'morphology_m1m2', 'normal_cyto', 'abnormallymphocyte', 
+                    'bonemarrowbandcell', 'bonemarrowbasophil', 'bonemarrowblastcell',
+                    'bonemarrowcellularity', 'bonemarrowlabeosinophil', 
+                    'bonemarrowlymphocyte', 'bonemarrowmyelocyte', 'bonemarrowneutrophil', 
+                    'bonemarrowprolymphocyte', 'bonemarrowpromonocytecount', 
+                    'bonemarrowpromyelocyte', 'monocyte']
 SURVIVAL_TESTS = {'survival' : {'event_var' : 'deceased', 'time_var' : 'days', 
-                                'covariates' : ['age', 'rate']},
+                                'covariates' : ['age']},
                   'event_free_survival' : {'event_var' : 'event', 
                                            'time_var' : 'event_free_survival', 
-                                           'covariates' : ['age', 'rate']}
+                                           'covariates' : ['age']}
                   }
 
 cancer = sys.argv[1]

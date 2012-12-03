@@ -120,12 +120,16 @@ def draw_survival_curves(clinical, hit_vec, covariates=[], time_var='days',
     hit_vec.name = 'pathway'
     factors = ['pathway'] + covariates
     df = clinical.join(hit_vec)
-    df['event']  = df.event.fillna(0)
+    df[event_var]  = df[event_var].fillna(0)
     df = df[factors + [time_var, event_var]]
     df = df.dropna()
     df[covariates] = (df[covariates] - df[covariates].mean())
     df_r = com.convert_to_r_dataframe(df) #@UndefinedVariable
-    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ '+ '*'.join(factors)
+    #fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ '+ '*'.join(factors)
+    interactions = '+'.join(['pathway*' + c for c in covariates])
+    if len(covariates) == 0:
+        interactions = 'pathway'
+    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ ' + interactions
     fmla = robjects.Formula(fmla)
     
     s = survival.coxph(fmla, df_r)
