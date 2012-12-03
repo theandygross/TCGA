@@ -88,7 +88,7 @@ def fischer_bar_chart(bin_vec, response_vec, ax=None, filename=None):
         fig.savefig(filename)
     return fig    
     
-def draw_survival_curves_KM(clinical, hit_vec, filename='tmp.png', show=False, 
+def draw_survival_curves_KM_old(clinical, hit_vec, filename='tmp.png', show=False, 
                          ax=None, title=True, labels=['No Mutation', 'Mutation']):
     hit_vec.name = 'pathway'
     df = clinical.join(hit_vec)
@@ -109,6 +109,37 @@ def draw_survival_curves_KM(clinical, hit_vec, filename='tmp.png', show=False,
         ax.imshow(img)
         ax.set_axis_off()
         ax.get_figure().tight_layout()
+        
+def draw_survival_curves_KM(clinical, hit_vec, time_var='days', event_var='deceased',
+                            filename='tmp.png', show=False, ax=None, title=True, 
+                            labels=['No Mutation', 'Mutation'], colors=['blue','red'], 
+                            ann=None):
+    if not hasattr(hit_vec, 'name'):
+        hit_vec.name = 'pathway'
+    df = clinical[[time_var, event_var]].join(hit_vec)
+    df = df.dropna()
+    df_r = com.convert_to_r_dataframe(df) #@UndefinedVariable
+    fmla = robjects.Formula('Surv(' + time_var + ', ' + event_var + ') ~ ' + 
+                            hit_vec.name)
+    fit = survival.survfit(fmla, df_r)
+    ls = r('2:' + str(len(set(hit_vec))+1)) #R line styles
+    if filename.endswith('.png'):
+        r.png(filename=filename, width=300, height=250, res=100, pointsize=8)
+    else:
+        r.pdf(filename, width=4.5, height=3.75)
+    s = survival.survdiff(fmla, df_r)
+    p = str(s).split('\n\n')[-1].strip().split(', ')[-1]
+    ls = r.c(*colors)
+    r.plot(survival.survfit(fmla, df_r), lty=1, col=ls, lwd=3, cex=1.5, 
+                            xlab='Days to Event', ylab= 'Survival');
+    if title:
+        r('title')(hit_vec.name)
+    r('legend')(nanmax(df[time_var]) * .5,.9, labels, lty=1, col=ls, lwd=3)
+    if ann=='p':
+        r.text(0, labels='logrank ' + p, pos=4)
+    elif ann != None:
+        r.text(0, labels=ann, pos=4)
+    r('dev.off()')
         
 def draw_survival_curves(clinical, hit_vec, covariates=[], time_var='days',
                          event_var='censored', filename='tmp.png',
@@ -162,13 +193,27 @@ def draw_survival_curves(clinical, hit_vec, covariates=[], time_var='days',
         
 
         
-def draw_pathway_count_bar(p, cancer, gene_sets, file_name='tmp.svg'):
+def draw_pathway_count_bar_old(p, cancer, gene_sets, file_name='tmp.svg'):
     fig, ax = plt.subplots(1,1, figsize=(3+len(gene_sets[p])/15.,2.5))
     m = cancer.hit_matrix.ix[list(gene_sets[p]), cancer.patients] > 0
     m = m[m.sum(1) > 0]
     m.sum(1).plot(kind='bar', ax=ax, alpha=.4);
     ax.set_xticklabels(m.index, ha='center', va='bottom', position=(0,.1), size=14)
     ax.set_ylabel('# Patients')
+    
+    fig.tight_layout()
+    fig.savefig(file_name)
+    
+def draw_pathway_count_bar(p, cancer, file_name='tmp.svg', colors='red'):
+    fig, ax = plt.subplots(1,1, figsize=(3+len(cancer.gene_sets[p])/30.,2))
+    m = cancer.hit_matrix.ix[list(cancer.gene_sets[p]), cancer.patients] > 0
+    m = sort(m[m.sum(1) > 0].sum(1))
+    #colors = ['orange']*(len(m))
+    m.plot(kind='bar', ax=ax, alpha=.7, color=colors);
+    ax.set_yticks(range(m.max()+1))
+    ax.set_yticklabels(range(m.max()+1), size=14)
+    ax.set_xticklabels(m.index, ha='center', va='bottom', position=(0,.1), size=20)
+    ax.set_ylabel('# Patients', size=16)
     
     fig.tight_layout()
     fig.savefig(file_name)
