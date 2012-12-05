@@ -53,8 +53,8 @@ def box_plot_pandas(hitVec, expVec, ax='None'):
     ax.set_xlabel('Number of Mutations')
     if type(hitVec.name) == str:
         ax.set_title(hitVec.name +' x '+ expVec.name)
-    
-def violin_plot_pandas(bin_vec, real_vec, ax=None, filename=None):
+
+def violin_plot_pandas(bin_vec, real_vec, label='', ax=None, filename=None):
     '''
     Wrapper around matplotlib's boxplot function to add violin profile.
     '''   
@@ -64,15 +64,15 @@ def violin_plot_pandas(bin_vec, real_vec, ax=None, filename=None):
     else:
         fig = plt.gcf()
     try:
-        categories = list(set(bin_vec.astype(int)))
+        categories = sorted(bin_vec.value_counts().index)
         violin_plot(ax, [real_vec[bin_vec==num] for num in categories], 
                     pos=categories, bp=True)
         ax.set_xticklabels([str(c) +' (n=%i)'%sum(bin_vec==c) 
                             for c in categories])
     except:
         box_plot_pandas(bin_vec, real_vec, ax=ax)
-    ax.set_ylabel('Sub-Cohort Expression')
-    ax.set_xlabel('Number of Mutations')
+    ax.set_ylabel(real_vec.name)
+    ax.set_xlabel(bin_vec.name)
     if type(bin_vec.name) == str:
         ax.set_title(bin_vec.name +' x '+ real_vec.name)
     if filename is not None:
@@ -166,9 +166,9 @@ def draw_survival_curves(clinical, hit_vec, covariates=[], time_var='days',
     s = survival.coxph(fmla, df_r)
     results = com.convert_robj(dict(base.summary(s).iteritems())['coefficients'])
     
-    df_2 = DataFrame({'pathway' : [0,1]})
+    df_2 = DataFrame({'pathway' : sorted(set(hit_vec))})
     for cov in covariates:
-        df_2[cov] = [df[cov].median()]*2
+        df_2[cov] = [df[cov].median()]*len(df_2)
     df_2 = com.convert_to_r_dataframe(df_2) #@UndefinedVariable
     
     f = survival.survfit(s, newdata=df_2)
@@ -189,7 +189,7 @@ def draw_survival_curves(clinical, hit_vec, covariates=[], time_var='days',
     r.text(0, labels=p, pos=4)
     r.title('Kaplan-Meyer')
     r.legend(nanmax(df[time_var]) * .5, .95, labels, lty=1, col=ls)
-    r('dev.off()');    
+    r('dev.off()');  
         
 
         
@@ -233,6 +233,13 @@ def draw_pathway_age_scatter(p, cancer, file_name='tmp.svg'):
     ax.set_xlabel('Principal Component Loading')
     ax.set_ylabel('Age')
     fig.savefig(file_name)
+    
+def series_scatter(s1, s2, filename='tmp.svg'):
+    fig, ax = plt.subplots(1,1, figsize=(6,4))
+    ax.scatter(*match_series(s1, s2), alpha=.5, s=75)
+    ax.set_xlabel(s1.name)
+    ax.set_ylabel(s2.name)
+    fig.savefig(filename)
     
 def histo_compare(hit_vec, response_vec, ax=None):
     '''

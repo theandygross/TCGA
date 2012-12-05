@@ -35,7 +35,7 @@ def create_figure(cancer, type, vec, file_name, overwrite=True):
         fischer_bar_chart(vec > 0, cancer.clinical[type], filename=file_name)
         
     elif type == 'pathway_bar':
-        draw_pathway_count_bar(vec.name, cancer, cancer.gene_sets, file_name)
+        draw_pathway_count_bar(vec.name, cancer, file_name)
 
 class NozzleTable(object):
     def __init__(self, table, path, table_file_name, caption, cutoff=.25,
