@@ -33,13 +33,13 @@ def read_clinical(data_path):
     clinical = clinical.replace('male',True).replace('female',False)
     return clinical
 
-def get_mutation_matrix(cancer, data_path, q_cutoff=.25):
+def get_mutation_matrix(cancer, data_path, q_cutoff=.25, get_mutsig=False):
     f = data_path + 'MutSigRun2/'
     if os.path.isdir(f):
         mutation_matrix = read_table(f + cancer + '.per_gene.mutation_counts.txt', 
                                      index_col=0)
-        mutation_matrix = mutation_matrix.select(lambda s: s.count('_') == 2, axis=1)
-        adjust_barcodes = lambda s: '-'.join(['TCGA'] + s.split('_')[1:])
+        mutation_matrix = mutation_matrix.select(lambda s: s.count('_') >= 2, axis=1)
+        adjust_barcodes = lambda s: '-'.join(['TCGA'] + s.split('_')[1:3])
         mutation_matrix = mutation_matrix.rename(columns=adjust_barcodes)
         mutsig = read_table(f + cancer +  '.sig_genes.txt', index_col=1)
         if mutsig.q.dtype != type(.1):
@@ -50,7 +50,10 @@ def get_mutation_matrix(cancer, data_path, q_cutoff=.25):
                                    index_col=0)
         mutation_matrix = mutation_matrix.apply(np.nan_to_num)
         sig_genes = np.array(mutation_matrix[mutation_matrix.sum(1) > 3].index)
-    return mutation_matrix, sig_genes
+    if get_mutsig:
+        return mutation_matrix, mutsig
+    else:
+        return mutation_matrix, sig_genes
 
 def get_cna_matrix(data_path, cna_type='deletion'):
     gistic_ext = data_path + 'CopyNumber_Gistic2/'

@@ -6,7 +6,7 @@ sub-network find algorithms
 
 @author: agross
 '''
-import pandas as pandas
+from pandas import DataFrame
 
 def read_in_pathways(mSigDbFile):
     '''
@@ -38,14 +38,14 @@ def read_in_pathways(mSigDbFile):
     return geneSets, geneLookup
 
 
-def build_meta_matrix(geneSets, geneMatrix, minGroupSize=4, setFilter=None):
-    if not isinstance(geneSets, dict):
-        geneSets = dict(enumerate(geneSets))
-    metaMatrix = dict((group, geneMatrix.ix[genes].sum(0)) for group,genes in
-                      geneSets.items())
-    metaMatrix = pandas.DataFrame(metaMatrix)
-    if setFilter is not None: 
-        metaMatrix = metaMatrix.apply(setFilter, axis=0)
-    sizeFilter = lambda s: s.sum() in range(minGroupSize+1,len(metaMatrix)-minGroupSize)
-    metaMatrix = metaMatrix.T[metaMatrix.apply(sizeFilter)]
-    return metaMatrix
+def build_meta_matrix(gene_sets, gene_matrix, min_size=4, set_filter=None):
+    if not isinstance(gene_sets, dict):
+        gene_sets = dict(list(enumerate(gene_sets)))
+    meta_matrix = DataFrame({group: gene_matrix.ix[genes].sum(0) 
+                             for group,genes in gene_sets.items()})
+    if set_filter is not None: 
+        meta_matrix = meta_matrix.apply(set_filter, axis=0)
+    keepers = meta_matrix.sum().isin(range(min_size, 
+                                           len(meta_matrix) - min_size))
+    meta_matrix = meta_matrix.ix[:,keepers].T
+    return meta_matrix

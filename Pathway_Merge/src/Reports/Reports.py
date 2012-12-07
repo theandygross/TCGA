@@ -19,23 +19,113 @@ FIG_EXT = 'clinical_figures/'
 SORT_ORDER = ['event_free_survival', 'survival', 'tumor_t1t2', 'lymphnode_n0n1',
               'metastatic_recurrence', 'organ_subdivision', 'AMAR','age', 'rate', 
               'gender','radiation', 'therapy']
+DATA_TYPE = {'mutation': 'bool', 'amplification': 'bool', 'deletion': 'bool',
+             'methylation': 'real', 'expression': 'real'}
 
 roll_df = lambda df, num: df.ix[:,roll(range(df.shape[1]),num)]
 
-def create_figure(cancer, type, vec, file_name, overwrite=True):
-    if (overwrite is False) and os.path.isfile(file_name):
-        return
-    if type in cancer.survival_tests:
-        draw_survival_curves(cancer.clinical, vec.clip_upper(1.), 
-                             filename=file_name, **cancer.survival_tests[type])
-    elif type in cancer.real_variables:
-        violin_plot_pandas(vec > 0, cancer.clinical[type].astype(float), 
-                           filename=file_name)
-    elif type in cancer.binary_variables:
-        fischer_bar_chart(vec > 0, cancer.clinical[type], filename=file_name)
+def generic_header(report, cancer, prev_cancer, next_cancer):
+    report = nz.setMaintainerName(report, 'Andrew Gross')
+    report = nz.setMaintainerEmail(report, "agross@ucsd.edu" );
+    report = nz.setMaintainerAffiliation(report, 'UCSD- Bioinf. and '
+                                                + 'Systems Biology' );
+    next_file = cancer.report_folder.replace(cancer.cancer, next_cancer)
+    prev_file = cancer.report_folder.replace(cancer.cancer, prev_cancer)                                           
+    report = nz.setPreviousReport(report, prev_file  + '/index.html')
+    report = nz.setNextReport(report, next_file + '/index.html')
+    return report
+
+def draw_clinical_figs(cancer):
+    for var, vals in cancer.clinical.iteritems():
+        fig_file = cancer.report_folder + '/' + FIG_EXT + var + '.png'
+        if os.path.isfile(fig_file) or (vals.notnull().sum() < 5):
+            continue
+        fig, ax = plt.subplots()
+        if (vals.dtype in ['object', 'bool']) or (len(set(vals)) < 3):
+            vals.value_counts().plot(kind='bar', title=var, ax=ax)
+            ax.set_ylabel('Number of Patients')
+        elif vals.dtype in ['float', 'float64', 'int', 'int64']:
+            vals.hist(ax=ax)
+            ax.set_xlabel(var)
+        fig.savefig(fig_file)
         
-    elif type == 'pathway_bar':
+def create_clinical_overview(cancer):
+    results = []
+    for var in cancer.clinical:
+        f = cancer.report_folder + '/' + FIG_EXT + var + '.png'
+        res = nz.newResult(var, isSignificant=False)
+        res = nz.addTo(res, nz.addTo(nz.newSection(var), nz.newFigure(f)))
+        results.append(res)
+    l = [['\t',nz.asSummary(r)] for r in results]
+    l = [b for a in l for b in a]
+    par = nz.newParagraph(*l)
+    clin = nz.addTo(nz.newSubSection('Clinical Variables'), par)
+    return clin
+
+def desc(s):
+    return Series({'FDR.25' : sum(s < .25),
+                   'Best' : s.idxmin(),
+                   'Best q-value' : s.min()})
+
+def make_nz_table(table, idx_name, caption):
+    index_series = Series(dict((i,i) for i in table.index), name=idx_name)
+    table = table.join(index_series)
+    table = roll_df(table,1)
+    r_table = table.copy().fillna(1.)
+    r_table = com.convert_to_r_dataframe(r_table)
+    nozzle_table = nz.newTable(r_table, caption, significantDigits=2)
+    return nozzle_table
+
+def get_association_overview(cancer):
+    association_overview = nz.newSubSection('Association Overview')
+    if len(cancer.q_genes) > 0:
+        gene_summary = cancer.q_genes.apply(desc).T
+        caption = ('Summary of clinical associations with ' + cancer.data_type)
+        gene_summary = make_nz_table(gene_summary, 'test', caption)
+        association_overview = nz.addTo(association_overview, gene_summary)
+    
+    path_summary = cancer.q_pathways.apply(desc).T
+    caption = ('Summary of clinical associations with ' + cancer.data_type)
+    path_summary = make_nz_table(path_summary, 'test', caption)
+    association_overview = nz.addTo(association_overview, path_summary)
+    return association_overview
+
+def create_figure(cancer, fig_type, vec, file_name, overwrite=True):
+    if (overwrite is False) and os.path.isfile(file_name):
+        return 
+    if DATA_TYPE[cancer.data_type] == 'bool':
+        create_figure_bool(cancer, fig_type, vec, file_name)
+    else:
+        create_figure_real(cancer, fig_type, vec, file_name)
+    
+def create_figure_bool(cancer, fig_type, vec, file_name):
+    if fig_type in cancer.survival_tests:
+        draw_survival_curves(cancer.clinical, vec.clip_upper(1.), 
+                             filename=file_name, **cancer.survival_tests[fig_type])
+    elif fig_type in cancer.real_variables:
+        violin_plot_pandas(vec > 0, cancer.clinical[fig_type].astype(float), 
+                           filename=file_name)
+    elif fig_type in cancer.binary_variables:
+        fischer_bar_chart(vec > 0, cancer.clinical[fig_type], filename=file_name)
+    elif fig_type == 'pathway_bar':
         draw_pathway_count_bar(vec.name, cancer, file_name)
+        
+def create_figure_real(cancer, fig_type, vec, file_name):
+    if fig_type in cancer.survival_tests:
+        hit_vec = -1*(vec < -1) + (vec > 1)
+        draw_survival_curves(cancer.clinical, hit_vec, filename=file_name, 
+                             labels=['low','normal','high'],
+                             **cancer.survival_tests[fig_type])
+    elif fig_type in cancer.real_variables:
+        series_scatter(vec, cancer.clinical[fig_type].astype(float), 
+                       filename=file_name)
+    elif fig_type in cancer.binary_variables:
+        violin_plot_pandas(cancer.clinical[fig_type], vec, filename=file_name)
+        
+    elif fig_type == 'pathway_bar':
+        genes = cancer.gene_sets[vec.name]
+        U,S,vH = frame_svd(cancer.data_matrix.ix[genes].dropna())
+        draw_pathway_eig_bar(U, file_name)
 
 class NozzleTable(object):
     def __init__(self, table, path, table_file_name, caption, cutoff=.25,
@@ -87,10 +177,15 @@ class PathwayTable(NozzleTable):
                    ' patients with patient clinical features')
         tests_run = list(cancer.q_pathways.columns)
         
-        annotation = DataFrame(dict((p,get_pathway_annotation_vec(p, cancer)) 
-                       for p in cancer.q_pathways.index)).T
-        pathway_table = annotation.join(cancer.q_pathways)
-        pathway_table = pathway_table[pathway_table['n mut pat'] > 3]
+        if DATA_TYPE[cancer.data_type] == 'bool':
+            annotation = DataFrame(dict((p,get_pathway_annotation_vec(p, cancer)) 
+                           for p in cancer.q_pathways.index)).T
+            pathway_table = annotation.join(cancer.q_pathways)
+            pathway_table = pathway_table[pathway_table['n mut pat'] > 3]
+        else:
+            pathway_size = Series({p: len(cancer.gene_sets[p]) for p 
+                              in cancer.q_pathways.index},name='n genes')
+            pathway_table = DataFrame(pathway_size).join(cancer.q_pathways)
         
         NozzleTable.__init__(self, pathway_table, path, 'pathway_table.csv', 
                              caption, cutoff, 'pathways', tests_run)
@@ -154,13 +249,46 @@ def get_pathway_annotation_vec(p, cancer):
                         'n genes' : len(cancer.gene_sets[p])})
     return annot_vec
 
-def generic_header(report, cancer, prev_cancer, next_cancer):
-    report = nz.setMaintainerName(report, 'Andrew Gross')
-    report = nz.setMaintainerEmail(report, "agross@ucsd.edu" );
-    report = nz.setMaintainerAffiliation(report, 'UCSD- Bioinf. and '
-                                                + 'Systems Biology' );
-    next_file = cancer.report_folder.replace(cancer.cancer, next_cancer)
-    prev_file = cancer.report_folder.replace(cancer.cancer, prev_cancer)                                           
-    report = nz.setPreviousReport(report, prev_file  + '/index.html')
-    report = nz.setNextReport(report, next_file + '/index.html')
-    return report
+def create_clinical_report(cancer, next_cancer, prev_cancer):
+    if not os.path.isdir(cancer.report_folder + '/' + FIG_EXT):
+        os.makedirs(cancer.report_folder + '/' + FIG_EXT)
+    report = nz.newReport('Report for ' + cancer.cancer)
+    report = generic_header(report, cancer, next_cancer, prev_cancer)
+    
+    clin = create_clinical_overview(cancer)
+    draw_clinical_figs(cancer)
+    no_association = (cancer.q_genes < .5).sum().add(
+                     (cancer.q_pathways < .5).sum(), fill_value=0) == 0
+    no_a = nz.newParagraph(('No associations obtained for: \n' + 
+                 ', '.join(no_association[no_association].index)))
+    report = nz.addToSummary(report, no_a)
+    report = nz.addToSummary(report, clin)
+    
+    cancer.q_genes = cancer.q_genes.ix[:,no_association==False]
+    cancer.p_genes = cancer.p_genes.ix[:,no_association==False]
+    cancer.q_pathways = cancer.q_pathways.ix[:,no_association==False]
+    cancer.p_pathways = cancer.p_pathways.ix[:,no_association==False]
+    report = nz.addToSummary(report, get_association_overview(cancer))
+    
+    if hasattr(cancer, 'q_genes') and len(cancer.q_genes.dropna()) > 0:
+        gene_table = HitTable(cancer)
+        df = cancer.hit_matrix if gene_table.marker == 'gene' else cancer.lesion_matrix
+        df = df.groupby(level=0).first()
+        
+        gene_table.fill_in_table(cancer, df)
+        section = nz.addTo(nz.newSubSection(gene_table.marker.capitalize() + ' ' + 
+                           cancer.data_type), gene_table.nozzle_table)
+        report = nz.addToResults(report, section)
+    
+    pathway_table = PathwayTable(cancer)
+    if len(pathway_table.table) > 0:
+        if hasattr(cancer, 'meta_matrix'):
+            meta_matrix = cancer.meta_matrix
+        else:
+            meta_matrix = cancer.pc
+        pathway_table.fill_in_table(cancer, meta_matrix)
+        section = nz.addTo(nz.newSubSection('Pathway ' + cancer.data_type), 
+                           pathway_table.nozzle_table)
+        report = nz.addToResults(report, section)
+        
+    nz.writeReport(report, filename=cancer.report_folder + '/index')

@@ -183,7 +183,7 @@ def run_clinical_bool(cancer, clinical, data_path, gene_sets,
     
     clinical['rate'] = log(hit_matrix.sum(0))
     meta_matrix = build_meta_matrix(gene_sets, hit_matrix, 
-                                    setFilter=lambda s: s.clip_upper(1))
+                                    set_filter=lambda s: s.clip_upper(1))
     tests = get_tests(clinical, survival_tests, real_variables, binary_variables,
                       var_type='boolean')
     p_pathways, q_pathways = run_tests(tests, meta_matrix.clip_upper(1.))

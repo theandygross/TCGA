@@ -9,7 +9,8 @@ from Processing.Clinical import ClinicalObject
 PATHWAY_FILE = '/cellar/users/agross/Data/GeneSets/c2.cp.v3.0.symbols_edit.csv'
 gene_sets, gene_lookup = read_in_pathways(PATHWAY_FILE)
 
-REAL_VARIABLES = ['AMAR','rate','age','karnofsky_performance', 'pack_years']
+REAL_VARIABLES = ['AMAR','rate','age','karnofsky_performance', 'pack_years',
+                  'pct_tumor_invasion', 'height', 'weight', 'neo_area']
 BINARY_VARIABLES = ['gender', 'therapy', 'radiation', 'triple_neg', 'triple_pos',
                     'ER_pos','PR_pos','her2_pos', 'lymphnode_n0n1', 'tumor_t1t2',
                     'post_menopause', 'histo_g1g2', 'neo_status', 'chemo', 
@@ -20,12 +21,14 @@ BINARY_VARIABLES = ['gender', 'therapy', 'radiation', 'triple_neg', 'triple_pos'
                     'bonemarrowcellularity', 'bonemarrowlabeosinophil', 
                     'bonemarrowlymphocyte', 'bonemarrowmyelocyte', 'bonemarrowneutrophil', 
                     'bonemarrowprolymphocyte', 'bonemarrowpromonocytecount', 
-                    'bonemarrowpromyelocyte', 'monocyte']
+                    'bonemarrowpromyelocyte', 'monocyte', 'venous_invasion',
+                    'lymphatic_invasion', 'calcium_level', 'white_cell_count',
+                    'tumor_focality']
 SURVIVAL_TESTS = {'survival' : {'event_var' : 'deceased', 'time_var' : 'days', 
-                                'covariates' : ['age']},
+                                'covariates' : ['age', 'rate']},
                   'event_free_survival' : {'event_var' : 'event', 
                                            'time_var' : 'event_free_survival', 
-                                           'covariates' : ['age']}
+                                           'covariates' : ['age', 'rate']}
                   }
 
 cancer = sys.argv[1]
