@@ -20,7 +20,8 @@ SORT_ORDER = ['event_free_survival', 'survival', 'tumor_t1t2', 'lymphnode_n0n1',
               'metastatic_recurrence', 'organ_subdivision', 'AMAR','age', 'rate', 
               'gender','radiation', 'therapy']
 DATA_TYPE = {'mutation': 'bool', 'amplification': 'bool', 'deletion': 'bool',
-             'methylation': 'real', 'expression': 'real'}
+             'methylation': 'real', 'expression': 'real', 
+             'expression_array': 'real'}
 
 roll_df = lambda df, num: df.ix[:,roll(range(df.shape[1]),num)]
 

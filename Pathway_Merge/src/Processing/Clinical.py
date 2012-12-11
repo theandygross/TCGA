@@ -13,8 +13,8 @@ from pandas import Series, DataFrame, notnull, crosstab, read_csv
 
 from Helpers import bhCorrection, extract_pc, match_series, drop_first_norm_pc
 from Helpers import cluster_down, df_to_binary_vec, run_rate_permutation
-from Data.Firehose import read_clinical, get_mutation_matrix, get_cna_matrix
-from Data.Firehose import read_rnaSeq, read_methylation
+from Data.Firehose import get_mutation_matrix, get_cna_matrix
+from Data.Firehose import read_rnaSeq, read_methylation, read_mrna
 from Data.Pathways import build_meta_matrix
 from Data.AgingData import get_age_signal
 
@@ -201,11 +201,13 @@ def run_clinical_real(cancer, clinical, stddata_path, gene_sets,
     if data_type == 'expression':
         data_matrix = read_rnaSeq(stddata_path)
         data_matrix = data_matrix.groupby(by=lambda n: n.split('|')[0]).mean()
+    elif data_type == 'expression_array':
+        data_matrix = read_mrna(stddata_path)
     elif data_type == 'methylation':
         data_matrix = read_methylation(stddata_path)
     if drop_pc:
         data_matrix = drop_first_norm_pc(data_matrix)
-    pc = dict((p, extract_pc(data_matrix.ix[g].dropna())) for p, g in 
+    pc = dict((p, extract_pc(data_matrix.ix[g])) for p, g in 
               gene_sets.iteritems())
     pc = DataFrame(dict((p, (v - v.mean()) / v.std()) for p,v in pc.iteritems() if 
                    type(v) != type(None))).T

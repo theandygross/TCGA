@@ -5,7 +5,7 @@ Created on Jul 12, 2012
 '''
 import matplotlib.pyplot as plt
 from pandas import Series, DataFrame, notnull
-from numpy.linalg import LinAlgError
+from numpy.linalg import LinAlgError, svd
 from numpy import array, diag, sort
 from numpy.random import random_integers
 
@@ -31,13 +31,14 @@ def split_a_by_b(a,b):
     groups = [a[b==num] for num in set(b)]
     return groups
 
-def frame_svd(data_frame):
+def frame_svd(data_frame, impute='mean'):
     '''
     Wrapper for taking in a pandas DataFrame, preforming SVD
     and outputting the U, S, and vH matricies in DataFrame form.
     '''
-    from numpy.linalg import svd #@UnresolvedImport
-    from pandas import DataFrame
+    if impute == 'mean':
+        data_frame = data_frame.dropna(thresh=int(data_frame.shape[1] * .75))
+        data_frame = data_frame.fillna(data_frame.mean())
     
     U,S,vH = svd(data_frame.as_matrix(), full_matrices=False)
     U = DataFrame(U, index=data_frame.index)
@@ -65,7 +66,7 @@ def drop_first_norm_pc(data_frame):
     principal component.  (Idea is to drop the biggest global pattern.)
     '''
     norm = ((data_frame.T - data_frame.mean(1)) / data_frame.std(1)).T
-    U,S,vH = frame_svd(norm.dropna())
+    U,S,vH = frame_svd(norm)
     S[0] = 0   #zero out first pc
     rest = U.dot(DataFrame(diag(S)).dot(vH.T))
     return rest
