@@ -9,15 +9,14 @@ import Data.Methylation as Methylation
 PROBE_PATH = ('/cellar/users/menzies/Work/MethylCs/' + 
               'suppTable3_fromGH_20120517.txt')
 
-def get_age_signal(stddata_path, clinical):
+def get_age_signal(data_path, clinical):
     '''
     Goes through stddata directory, reads in the picked beta values
     for the reduced set of methylation probes used in Greg's aging
     model, then calculates the predicted age as well as the apearant
     methylomic aging rate (AMAR).
     '''
-    folder = (stddata_path + 'methylation__humanmethylation450' + 
-              '__jhu_usc_edu__Level_3/')
+    folder = ('/ucsd_processing/methylation450/')
     table = read_table(folder + 'beta_values_picked.txt', index_col=0)
     table = table.rename(columns=lambda s: s[:12] if s!=table.columns[0] 
                          else 'symbol')

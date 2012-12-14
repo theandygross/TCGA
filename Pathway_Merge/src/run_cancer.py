@@ -31,28 +31,42 @@ SURVIVAL_TESTS = {'survival' : {'event_var' : 'deceased', 'time_var' : 'days',
                                            'covariates' : ['age', 'rate']}
                   }
 
+def pickle_cancer_obj(c):
+    '''
+    Make the cancer object picklable, and drop the file size
+    by getting rid of genes with no mutations (note these are
+    still stored in the gene_counts attribute). 
+    '''
+    if hasattr(c, 'hit_matrix'):
+        altered = c.hit_matrix.index[c.hit_matrix.sum(1)>0]
+        c.hit_matrix = c.hit_matrix.ix[altered]
+    if hasattr(c, 'single_matrix'):
+        altered = c.single_matrix.index[c.single_matrix.sum(1)>0]
+        c.single_matrix = c.single_matrix.ix[altered]
+
+    del c.tests
+    pickle.dump(c, open(c.data_path + c.report_folder + 'ClinicalObject.p', 
+                        'wb'))
+    return c
+
 cancer = sys.argv[1]
 data_type = sys.argv[2]
 data_path = sys.argv[3]
-report_ext = sys.argv[4]
+report_folder = sys.argv[4]
 drop_pc = True
 
 try:
-	cancer_obj = ClinicalObject(cancer, data_path, gene_sets, data_type,
-								survival_tests=SURVIVAL_TESTS, 
-								real_variables=REAL_VARIABLES,
-                        		binary_variables=BINARY_VARIABLES,
-                        		drop_pc=drop_pc)
-	if cancer_obj.data_type in ['mutation','amplification','deletion']:
-		cancer_obj.filter_bad_pathways(gene_lookup)
-	cancer_obj.report_folder = (cancer_obj.data_path + cancer_obj.data_type + 
-								'_' + report_ext)
-	del cancer_obj.tests #Can't pickle functions at module level, regenerate with Clinical.get_tests_x
-	pickle.dump(cancer_obj, open(cancer_obj.report_folder + '/ClinicalObject.p', 
-								'wb'))
-	print cancer + ' sucess!'
+    cancer_obj = ClinicalObject(cancer, data_path, gene_sets, data_type,
+                                survival_tests=SURVIVAL_TESTS, 
+                                real_variables=REAL_VARIABLES,
+                                binary_variables=BINARY_VARIABLES,
+                                drop_pc=drop_pc)
+    cancer_obj.report_folder = report_folder
+    pickle_cancer_obj(cancer_obj)
+    print cancer + ' sucess!'
+
 except:
-	print cancer + ' fail!'
-	sys.exit(-1)
+    print cancer + ' fail!'
+    sys.exit(-1)
 
 sys.exit(0)

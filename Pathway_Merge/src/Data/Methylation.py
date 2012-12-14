@@ -49,13 +49,17 @@ def average_beta_values_on_genes(folder):
                          else 'symbol')
     table = table.groupby(by='symbol').mean()
     table.to_csv(folder + 'averaged_on_genes.csv')
-   
-def run_all_cancers(firehose_path, date, probeset='All', recalc=False): 
-    date_ = '_'.join([date[:4], date[4:6], date[6:8]])
-    outfile = ('beta_values.txt' if probeset == 'All' else 
-               'beta_values_picked.txt')
-    for cancer in os.listdir(firehose_path + 'stddata__' + date_):
-        folder = _get_folder(firehose_path, cancer, date)
+    
+     
+def run_all_cancers(data_path, probeset='All', recalc=False):     
+    for cancer in os.listdir(data_path + 'stddata/'):
+        outpath = data_path + '/'.join(['ucsd_processing', cancer, 
+                                        'methylation450']) + '/'
+        if not os.path.isdir(outpath):
+            os.makedirs(outpath)
+        outfile = outpath + ('beta_values.txt' if probeset == 'All' else 
+                             'beta_values_picked.txt')
+        folder = data_path + '/'.join(['stddata', cancer, METH_FOLDER])
         if os.path.isfile(folder + outfile) and not recalc:
             print 'Using precalculated data for ' + cancer + '.'
             continue
@@ -63,7 +67,9 @@ def run_all_cancers(firehose_path, date, probeset='All', recalc=False):
             print cancer
             pull_out_beta_values(folder, probeset, outfile)
             if probeset == 'All':
-                average_beta_values_on_genes(folder)
+                average_beta_values_on_genes(outpath)
         else:
             print 'No data for ' + cancer +'.'
+            
+            
     

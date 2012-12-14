@@ -82,7 +82,7 @@ def get_cox_ph(clinical, hit_vec, covariates=[], time_var='days',
     if not all([cov in clinical for cov in covariates]):
         missing = [cov for cov in covariates if cov not in clinical]
         covariates = [cov for cov in covariates if cov in clinical]
-        print ', '.join(missing) + ' not in clinical data... running anyway.'
+        #print ', '.join(missing) + ' not in clinical data... running anyway.'
     hit_vec.name = 'pathway'
     factors = ['pathway'] + covariates
     df = clinical.join(hit_vec)
@@ -170,7 +170,7 @@ def run_clinical_bool(cancer, clinical, data_path, gene_sets,
     if data_type == 'mutation':
         hit_matrix, _ = get_mutation_matrix(cancer, data_path)
     elif data_type in ['amplification', 'deletion']:
-        hit_matrix, lesion_matrix = get_cna_matrix(data_path, data_type)
+        hit_matrix, lesion_matrix = get_cna_matrix(cancer, data_path, data_type)
     
     single_matrix = lesion_matrix if data_type == 'amplification' else hit_matrix
     single_matrix = single_matrix.clip_upper(1.)
@@ -194,17 +194,17 @@ def run_clinical_bool(cancer, clinical, data_path, gene_sets,
     q_pathways['rate']  = _res 
     return locals()
 
-def run_clinical_real(cancer, clinical, stddata_path, gene_sets,
+def run_clinical_real(cancer, clinical, data_path, gene_sets,
                       survival_tests, real_variables, binary_variables,
                       data_type='expression', drop_pc=False):
     
     if data_type == 'expression':
-        data_matrix = read_rnaSeq(stddata_path)
+        data_matrix = read_rnaSeq(cancer, data_path)
         data_matrix = data_matrix.groupby(by=lambda n: n.split('|')[0]).mean()
     elif data_type == 'expression_array':
-        data_matrix = read_mrna(stddata_path)
+        data_matrix = read_mrna(cancer, data_path)
     elif data_type == 'methylation':
-        data_matrix = read_methylation(stddata_path)
+        data_matrix = read_methylation(cancer, data_path)
     if drop_pc:
         data_matrix = drop_first_norm_pc(data_matrix)
     pc = dict((p, extract_pc(data_matrix.ix[g])) for p, g in 
@@ -226,12 +226,12 @@ class ClinicalObject(object):
     def __init__(self, cancer, data_path, gene_sets, data_type='mutation',
                  drop_pc=False, survival_tests={}, real_variables=[],
                  binary_variables=[]):
-        stddata_path = data_path.replace('analyses', 'stddata')
-        clinical = read_csv(stddata_path + 'Clinical/compiled.csv', index_col=0)
+        clinical = read_csv(data_path + '/'.join(['ucsd_processing', cancer, 
+                                      'Clinical','compiled.csv']), index_col=0)
         if hasattr(clinical, 'event'):
             clinical['event'] = clinical[['event','deceased']].sum(1).clip_upper(1.)
         try:
-            meth_age, amar = get_age_signal(stddata_path, clinical)
+            meth_age, amar = get_age_signal(data_path , clinical)
             clinical['meth_age'] = meth_age
             clinical['AMAR'] = amar
         except:
@@ -242,11 +242,10 @@ class ClinicalObject(object):
                                        survival_tests, real_variables, 
                                        binary_variables, data_type)
         else:
-            o_dict = run_clinical_real(cancer, clinical, stddata_path, 
+            o_dict = run_clinical_real(cancer, clinical, data_path, 
                                        gene_sets, survival_tests, real_variables, 
                                        binary_variables, data_type, drop_pc)
         self.__dict__ = o_dict
-        self.stddata_path = stddata_path
         self.data_path = data_path
         #self.patients = clinical[['days','censored']].dropna().index
         

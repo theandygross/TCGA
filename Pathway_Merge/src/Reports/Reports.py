@@ -4,14 +4,12 @@ Created on Oct 30, 2012
 @author: agross
 '''
 import os as os
-import pandas.rpy.common as com
-from pandas import Series, DataFrame
-from numpy import nan, roll
+from pandas import Series
+from numpy import roll
 from rpy2.robjects.packages import importr
 
 from Figures import *
-
-from Processing.Helpers import frame_svd, match_series
+from Processing.Helpers import frame_svd
 
 nz = importr('Nozzle.R1')
 bool_ = {True: 'TRUE', False: 'FALSE'}
@@ -29,16 +27,19 @@ def generic_header(report, cancer, prev_cancer, next_cancer):
     report = nz.setMaintainerName(report, 'Andrew Gross')
     report = nz.setMaintainerEmail(report, "agross@ucsd.edu" );
     report = nz.setMaintainerAffiliation(report, 'UCSD- Bioinf. and '
-                                                + 'Systems Biology' );
-    next_file = cancer.report_folder.replace(cancer.cancer, next_cancer)
-    prev_file = cancer.report_folder.replace(cancer.cancer, prev_cancer)                                           
-    report = nz.setPreviousReport(report, prev_file  + '/index.html')
-    report = nz.setNextReport(report, next_file + '/index.html')
+                                                + 'Systems Biology' ); 
+    '''Little wonky due to relative paths but works'''
+    page_ext = cancer.report_folder.split('/')[2:-1] +  ['index.html']                                       
+    next_page = '../../../' + '/'.join([next_cancer] + page_ext)  
+    prev_page = '../../../' + '/'.join([prev_cancer] + page_ext)                    
+    report = nz.setPreviousReport(report, next_page, next_cancer)
+    report = nz.setNextReport(report, prev_page, prev_cancer)
     return report
 
 def draw_clinical_figs(cancer):
+    fig_dir = cancer.data_path + cancer.report_folder + FIG_EXT
     for var, vals in cancer.clinical.iteritems():
-        fig_file = cancer.report_folder + '/' + FIG_EXT + var + '.png'
+        fig_file = fig_dir + var + '.png'
         if os.path.isfile(fig_file) or (vals.notnull().sum() < 5):
             continue
         fig, ax = plt.subplots()
@@ -51,9 +52,12 @@ def draw_clinical_figs(cancer):
         fig.savefig(fig_file)
         
 def create_clinical_overview(cancer):
+    fig_dir = cancer.data_path + cancer.report_folder + FIG_EXT
+    if not os.path.isdir(fig_dir):
+        os.makedirs(fig_dir)
     results = []
     for var in cancer.clinical:
-        f = cancer.report_folder + '/' + FIG_EXT + var + '.png'
+        f = fig_dir + var + '.png'
         res = nz.newResult(var, isSignificant=False)
         res = nz.addTo(res, nz.addTo(nz.newSection(var), nz.newFigure(f)))
         results.append(res)
@@ -91,7 +95,7 @@ def get_association_overview(cancer):
     association_overview = nz.addTo(association_overview, path_summary)
     return association_overview
 
-def create_figure(cancer, fig_type, vec, file_name, overwrite=True):
+def create_figure(cancer, fig_type, vec, file_name, overwrite=False):
     if (overwrite is False) and os.path.isfile(file_name):
         return 
     if DATA_TYPE[cancer.data_type] == 'bool':
@@ -173,7 +177,7 @@ class NozzleTable(object):
  
 class PathwayTable(NozzleTable):
     def __init__(self, cancer, cutoff=.25):
-        path = cancer.report_folder + '/'
+        path = cancer.data_path + cancer.report_folder + '/'
         caption = ('Association of pathway level ' + cancer.data_type + 
                    ' patients with patient clinical features')
         tests_run = list(cancer.q_pathways.columns)
@@ -213,7 +217,7 @@ class PathwayTable(NozzleTable):
         
 class HitTable(NozzleTable):
     def __init__(self, cancer, cutoff=.25):
-        path = cancer.report_folder + '/'
+        path = cancer.data_path + cancer.report_folder + '/'
         self.marker = ('region' if cancer.data_type == 'amplification' 
                        else 'gene')
         caption = ('Association of single ' + self.marker + ' ' + 
@@ -221,9 +225,10 @@ class HitTable(NozzleTable):
         
         hit_matrix = (cancer.lesion_matrix if (cancer.data_type == 
                       'amplification') else cancer.hit_matrix)
-        hit_matrix = hit_matrix.groupby(level=0).first() #Make index unique
+        hit_matrix = hit_matrix.groupby(level=0).first()
         tests_run = list(cancer.q_genes.columns)
-        counts = Series((hit_matrix.ix[:,cancer.patients] > 0).sum(1), 
+        patients = cancer.clinical[['age', 'deceased']].dropna().index
+        counts = Series((hit_matrix.ix[:, patients] > 0).sum(1), 
                         name='n_patients')
         gene_table = cancer.q_genes.join(counts)
         gene_table = roll_df(gene_table, 1)
@@ -244,7 +249,8 @@ class HitTable(NozzleTable):
         
 def get_pathway_annotation_vec(p, cancer):
     genes = cancer.gene_sets[p].intersection(set(cancer.hit_matrix.index))
-    sub_matrix = cancer.hit_matrix.ix[genes, cancer.patients] > 0
+    patients = cancer.clinical[['age', 'deceased']].dropna().index
+    sub_matrix = cancer.hit_matrix.ix[genes, patients] > 0
     annot_vec = Series({'n mut genes' :  (sub_matrix.sum(1) > 0).sum(),
                         'n mut pat' : (sub_matrix.sum() > 0).sum(),
                         'n genes' : len(cancer.gene_sets[p])})
@@ -273,9 +279,10 @@ def create_clinical_report(cancer, next_cancer, prev_cancer):
     
     if hasattr(cancer, 'q_genes') and len(cancer.q_genes.dropna()) > 0:
         gene_table = HitTable(cancer)
-        df = cancer.hit_matrix if gene_table.marker == 'gene' else cancer.lesion_matrix
+        df = (cancer.hit_matrix if gene_table.marker == 'gene' else
+              cancer.lesion_matrix)
         df = df.groupby(level=0).first()
-        
+        #df = cancer.hit_matrix.groupby(level=0).first()
         gene_table.fill_in_table(cancer, df)
         section = nz.addTo(nz.newSubSection(gene_table.marker.capitalize() + ' ' + 
                            cancer.data_type), gene_table.nozzle_table)
@@ -292,4 +299,4 @@ def create_clinical_report(cancer, next_cancer, prev_cancer):
                            pathway_table.nozzle_table)
         report = nz.addToResults(report, section)
         
-    nz.writeReport(report, filename=cancer.report_folder + '/index')
+    nz.writeReport(report, filename=cancer.data_path + cancer.report_folder + 'index')

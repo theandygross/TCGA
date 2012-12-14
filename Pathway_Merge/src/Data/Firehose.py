@@ -34,7 +34,7 @@ def read_clinical(data_path):
     return clinical
 
 def get_mutation_matrix(cancer, data_path, q_cutoff=.25, get_mutsig=False):
-    f = data_path + 'MutSigRun2/'
+    f = data_path + '/'.join(['broad_analyses', cancer, 'MutSigRun2',''])
     if os.path.isdir(f):
         mutation_matrix = read_table(f + cancer + '.per_gene.mutation_counts.txt', 
                                      index_col=0)
@@ -46,8 +46,9 @@ def get_mutation_matrix(cancer, data_path, q_cutoff=.25, get_mutsig=False):
             mutsig.q = mutsig.q.map(lambda s: float(s.replace('<','')))
         sig_genes = np.array(mutsig[mutsig.q < .25].index)
     else:
-        mutation_matrix = read_csv(data_path + 'From_Stddata/mutation_matrix.csv', 
-                                   index_col=0)
+        mutation_matrix = data_path + '/'.join(['ucsd_processing', 'mutation', 
+                                                'mutation_matrix.csv'])
+        mutation_matrix = read_csv(mutation_matrix, index_col=0)
         mutation_matrix = mutation_matrix.apply(np.nan_to_num)
         sig_genes = np.array(mutation_matrix[mutation_matrix.sum(1) > 3].index)
     if get_mutsig:
@@ -55,8 +56,8 @@ def get_mutation_matrix(cancer, data_path, q_cutoff=.25, get_mutsig=False):
     else:
         return mutation_matrix, sig_genes
 
-def get_cna_matrix(data_path, cna_type='deletion'):
-    gistic_ext = data_path + 'CopyNumber_Gistic2/'
+def get_cna_matrix(cancer, data_path, cna_type='deletion'):
+    gistic_ext = data_path + '/'.join(['broad_analyses', cancer, 'CopyNumber_Gistic2', ''])
     gistic = read_table(gistic_ext + 'all_thresholded.by_genes.txt', index_col=0)
     gistic = gistic.rename(columns=lambda s: s[:12])
     gistic = gistic.ix[:,2:]
@@ -74,16 +75,17 @@ def get_cna_matrix(data_path, cna_type='deletion'):
     lesions = (lesions == 2).astype(int)
     return cnas, lesions
 
-def read_rppa(stddata_path, cancer):
+def read_rppa(data_path, cancer):
     data_type = 'RPPA_AnnotateWithGene'
-    rppa = read_table(stddata_path +  data_type + '/' + cancer.cancer + '.rppa.txt',
-                         index_col=0)
+    rppa = read_table(data_path +  'stddata/RPPA_AnnotateWithGene/' + 
+                      cancer.cancer + '.rppa.txt', index_col=0)
     rppa = rppa.rename(columns=lambda s: s[:12]) #short barcode format
     rppa = np.log2(rppa.astype(np.float))
     rppa = rppa.ix[:,cancer.patients]
     return rppa
 
-def read_rnaSeq(stddata_path, patients=None):
+def read_rnaSeq(cancer, data_path, patients=None):
+    stddata_path = data_path + '/'.join(['stddata', cancer,''])
     data_types = filter(lambda f: f[:6] == 'rnaseq', os.listdir(stddata_path))
     data_type = sorted(data_types)[-1]
     if data_type.split('__')[0] == 'rnaseqv2':
@@ -102,18 +104,20 @@ def read_rnaSeq(stddata_path, patients=None):
     rnaSeq = np.log2(rnaSeq.astype(np.float))
     return rnaSeq
 
-def read_methylation(stddata_path, patients=None):
-    data_types = filter(lambda f: f[:11] == 'methylation', os.listdir(stddata_path))
-    data_type = sorted([d for d in data_types if os.path.isfile(stddata_path + d + 
+def read_methylation(cancer, data_path, patients=None):
+    processed_data_path = data_path + '/'.join(['ucsd_processing', cancer,''])
+    data_types = filter(lambda f: f[:11] == 'methylation', os.listdir(processed_data_path))
+    data_type = sorted([d for d in data_types if os.path.isfile(processed_data_path + d + 
                                                       '/averaged_on_genes.csv')])[-1]
-    meth = read_csv(stddata_path +  data_type + '/averaged_on_genes.csv', index_col=0)
+    meth = read_csv(processed_data_path +  data_type + '/averaged_on_genes.csv', index_col=0)
     if patients is not None:
         meth  = meth.ix[:, patients]
     meth = meth.dropna(thresh=100)
     meth = meth.astype(np.float)
     return meth
 
-def read_mrna(stddata_path, patients=None, num_genes='All'):
+def read_mrna(cancer, data_path, patients=None, num_genes='All'):
+    stddata_path = data_path + '/'.join(['stddata', cancer,''])
     chips = filter(lambda f: 'transcriptome__agilent' in f, os.listdir(stddata_path))
     data_type = sorted(chips)[-1]
     mrna = read_table(stddata_path +  data_type + 
@@ -128,7 +132,8 @@ def read_mrna(stddata_path, patients=None, num_genes='All'):
         mrna = mrna.ix[variable]
     return mrna
 
-def read_mirna(stddata_path, cancer):
+def read_mirna(cancer, data_path):
+    stddata_path = data_path + '/'.join(['stddata', cancer,''])
     data_type = 'mirnaseq__illuminahiseq_mirnaseq__bcgsc_ca__Level_3'
     mirna_ga = read_table(stddata_path +  data_type.replace('hiseq', 'ga') + 
                           '/miR_gene_expression_data.txt', 
@@ -148,14 +153,14 @@ def read_mirna(stddata_path, cancer):
     #mirna = mirna.ix[variable]
     return mirna
 
-def read_cnmf(file_name, data_path):
-    nmf_file = data_path + file_name + '/cnmf.normalized.gct'
+def read_cnmf(cancer, file_name, data_path):
+    nmf_file = data_path + '/'.join(['broad_analyses', cancer, file_name, 
+                                     'cnmf.normalized.gct'])
     if not os.path.isfile(nmf_file):
         print 'Missing ' + file_name + ' file.'
         return None
     data_type = file_name.split('_')[0]
-    data = read_table(data_path + file_name + '/cnmf.normalized.gct', 
-                             index_col=0, skiprows=[0,1], sep='\t')
+    data = read_table(nmf_file, index_col=0, skiprows=[0,1], sep='\t')
     data = data.rename(index=lambda s: data_type + '_' + s, 
                        columns=lambda s: s.replace('.','-')[:12])
     data = data.select(lambda s: 'TCGA' in s, axis=1)

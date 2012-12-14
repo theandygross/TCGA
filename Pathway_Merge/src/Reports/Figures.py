@@ -206,7 +206,8 @@ def draw_pathway_count_bar_old(p, cancer, gene_sets, file_name='tmp.svg'):
     
 def draw_pathway_count_bar(p, cancer, file_name='tmp.svg', colors='red'):
     fig, ax = plt.subplots(1,1, figsize=(3+len(cancer.gene_sets[p])/30.,2))
-    m = cancer.hit_matrix.ix[list(cancer.gene_sets[p]), cancer.patients] > 0
+    patients = cancer.clinical[['age', 'deceased']].dropna().index
+    m = cancer.hit_matrix.ix[list(cancer.gene_sets[p]), patients] > 0
     m = sort(m[m.sum(1) > 0].sum(1))
     #colors = ['orange']*(len(m))
     m.plot(kind='bar', ax=ax, alpha=.7, color=colors);
