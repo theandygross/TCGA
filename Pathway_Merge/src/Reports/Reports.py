@@ -11,12 +11,13 @@ from rpy2.robjects.packages import importr
 from Figures import *
 from Processing.Helpers import frame_svd
 
+
 nz = importr('Nozzle.R1')
 bool_ = {True: 'TRUE', False: 'FALSE'}
 FIG_EXT = 'clinical_figures/'
 SORT_ORDER = ['event_free_survival', 'survival', 'tumor_t1t2', 'lymphnode_n0n1',
               'metastatic_recurrence', 'organ_subdivision', 'AMAR','age', 'rate', 
-              'gender','radiation', 'therapy']
+              'gender','radiation', 'therapy', 'rate_non']
 DATA_TYPE = {'mutation': 'bool', 'amplification': 'bool', 'deletion': 'bool',
              'methylation': 'real', 'expression': 'real', 
              'expression_array': 'real'}
@@ -227,7 +228,10 @@ class HitTable(NozzleTable):
                       'amplification') else cancer.hit_matrix)
         hit_matrix = hit_matrix.groupby(level=0).first()
         tests_run = list(cancer.q_genes.columns)
-        patients = cancer.clinical[['age', 'deceased']].dropna().index
+        if 'deceased' in cancer.clinical:
+            patients = cancer.clinical[['age', 'deceased']].dropna().index
+        else:
+            patients = cancer.clinical.columns
         counts = Series((hit_matrix.ix[:, patients] > 0).sum(1), 
                         name='n_patients')
         gene_table = cancer.q_genes.join(counts)
@@ -249,7 +253,10 @@ class HitTable(NozzleTable):
         
 def get_pathway_annotation_vec(p, cancer):
     genes = cancer.gene_sets[p].intersection(set(cancer.hit_matrix.index))
-    patients = cancer.clinical[['age', 'deceased']].dropna().index
+    if 'deceased' in cancer.clinical:
+        patients = cancer.clinical[['age', 'deceased']].dropna().index
+    else:
+        patients = cancer.clinical.index
     sub_matrix = cancer.hit_matrix.ix[genes, patients] > 0
     annot_vec = Series({'n mut genes' :  (sub_matrix.sum(1) > 0).sum(),
                         'n mut pat' : (sub_matrix.sum() > 0).sum(),

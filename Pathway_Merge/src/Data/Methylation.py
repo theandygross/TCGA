@@ -54,7 +54,7 @@ def average_beta_values_on_genes(folder):
 def run_all_cancers(data_path, probeset='All', recalc=False):     
     for cancer in os.listdir(data_path + 'stddata/'):
         outpath = data_path + '/'.join(['ucsd_processing', cancer, 
-                                        'methylation450']) + '/'
+                                        'methylation450', ''])
         if not os.path.isdir(outpath):
             os.makedirs(outpath)
         outfile = outpath + ('beta_values.txt' if probeset == 'All' else 

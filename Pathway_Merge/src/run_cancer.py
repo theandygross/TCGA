@@ -28,6 +28,11 @@ SURVIVAL_TESTS = {'survival' : {'event_var' : 'deceased', 'time_var' : 'days',
                                 'covariates' : ['age', 'rate']},
                   'event_free_survival' : {'event_var' : 'event', 
                                            'time_var' : 'event_free_survival', 
+                                           'covariates' : ['age', 'rate']},
+                  'survival_5y' : {'event_var' : 'deceased_5y', 'time_var' : 'days_5y', 
+                                   'covariates' : ['age', 'rate']},
+                  'event_free_survival_5y' : {'event_var' : 'event_5y', 
+                                           'time_var' : 'event_free_survival_5y', 
                                            'covariates' : ['age', 'rate']}
                   }
 

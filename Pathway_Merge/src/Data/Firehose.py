@@ -41,10 +41,6 @@ def get_mutation_matrix(cancer, data_path, q_cutoff=.25, get_mutsig=False):
         mutation_matrix = mutation_matrix.select(lambda s: s.count('_') >= 2, axis=1)
         adjust_barcodes = lambda s: '-'.join(['TCGA'] + s.split('_')[1:3])
         mutation_matrix = mutation_matrix.rename(columns=adjust_barcodes)
-        mutsig = read_table(f + cancer +  '.sig_genes.txt', index_col=1)
-        if mutsig.q.dtype != type(.1):
-            mutsig.q = mutsig.q.map(lambda s: float(s.replace('<','')))
-        sig_genes = np.array(mutsig[mutsig.q < .25].index)
     else:
         mutation_matrix = data_path + '/'.join(['ucsd_processing', 'mutation', 
                                                 'mutation_matrix.csv'])
@@ -52,8 +48,13 @@ def get_mutation_matrix(cancer, data_path, q_cutoff=.25, get_mutsig=False):
         mutation_matrix = mutation_matrix.apply(np.nan_to_num)
         sig_genes = np.array(mutation_matrix[mutation_matrix.sum(1) > 3].index)
     if get_mutsig:
+        mutsig = read_table(f + cancer +  '.sig_genes.txt', index_col=1)
+        if mutsig.q.dtype != type(.1):
+            mutsig.q = mutsig.q.map(lambda s: float(s.replace('<','')))
+        sig_genes = np.array(mutsig[mutsig.q < .25].index)
         return mutation_matrix, mutsig
     else:
+        sig_genes = np.array(mutation_matrix[mutation_matrix.sum(1) > 3].index)
         return mutation_matrix, sig_genes
 
 def get_cna_matrix(cancer, data_path, cna_type='deletion'):
@@ -72,7 +73,7 @@ def get_cna_matrix(cancer, data_path, cna_type='deletion'):
     calls = gistic_lesions['Unique Name'].apply(lambda s: (s.find('CN') < 0) 
                                                 and (s.find(call_label) ==0))
     lesions = gistic_lesions[calls].select(lambda s: 'TCGA' in s, 1) 
-    lesions = (lesions == 2).astype(int)
+    lesions = (lesions == cna_val).astype(int)
     return cnas, lesions
 
 def read_rppa(data_path, cancer):
@@ -101,7 +102,7 @@ def read_rnaSeq(cancer, data_path, patients=None):
     if patients is not None:
         rnaSeq  = rnaSeq.ix[:, patients]
     rnaSeq = rnaSeq.dropna(thresh=100)
-    rnaSeq = np.log2(rnaSeq.astype(np.float))
+    #rnaSeq = np.log2(rnaSeq.astype(np.float))
     return rnaSeq
 
 def read_methylation(cancer, data_path, patients=None):

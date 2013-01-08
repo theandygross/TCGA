@@ -6,7 +6,6 @@ from collections import defaultdict
 
 from pandas import DataFrame
 
-from Data.Pathways import read_in_pathways
 from Reports.Reports import create_clinical_report
 
 clinical_obj = sys.argv[1]
@@ -23,9 +22,10 @@ def get_gene_lookup(gene_sets):
 cancer = pickle.load(open(clinical_obj, 'rb'))
 
 if hasattr(cancer, 'p_genes'):
-    gene_lookup = get_gene_lookup(cancer.gene_sets)
-    cancer.filter_bad_pathways(gene_lookup)
-    cancer.q_pathways = cancer.q_pathways.fillna(1.)
+    if hasattr(cancer, 'filter_bad_pathways'):
+        gene_lookup = get_gene_lookup(cancer.gene_sets)
+        cancer.filter_bad_pathways(gene_lookup)
+        cancer.q_pathways = cancer.q_pathways.fillna(1.)
 else:
     cancer.q_genes = DataFrame(columns=cancer.q_pathways.columns)
     cancer.p_genes = DataFrame(columns=cancer.q_pathways.columns)

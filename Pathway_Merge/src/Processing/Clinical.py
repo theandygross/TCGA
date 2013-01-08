@@ -33,13 +33,15 @@ def delambda(f):
     def f_(a): return f(a)
     return f_
 
-def anova(hit_vec, response_vec):
+def anova(hit_vec, response_vec, min_size=5):
     '''
     Wrapper to do a one way anova on pandas Series
     ------------------------------------------------
     hit_vec: Series of labels
     response_vec: Series of measurements
     '''
+    if hit_vec.value_counts().min < min_size:
+        return nan
     hit_vec, response_vec = match_series(hit_vec, response_vec)
     return f_oneway(*[response_vec[hit_vec == num] for num in 
                       hit_vec.unique()])[1]
@@ -68,7 +70,7 @@ def pearson_p(a,b):
     _,p = pearsonr(a,b)
     return p
 
-def get_cox_ph(clinical, hit_vec, covariates=[], time_var='days',
+def get_cox_ph_o(clinical, hit_vec, covariates=[], time_var='days',
                event_var='censored', return_val='p'):
     '''
     Fit a cox proportial hazzards model to the data.
@@ -103,9 +105,54 @@ def get_cox_ph(clinical, hit_vec, covariates=[], time_var='days',
         return 1.23
     if return_val == 'p':
         return results.ix['pathway','Pr(>|z|)']
-    else:
-        print dict(base.summary(s).iteritems())['logtest']
+    elif return_val == 'coef':
         return results
+    elif return_val == 'model':
+        m = dict(base.summary(s).iteritems())['logtest']
+        return Series(dict(m.iteritems()))
+    
+def get_cox_ph(clinical, hit_vec, covariates=[], time_var='days',
+               event_var='censored', return_val='p'):
+    '''
+    Fit a cox proportial hazzards model to the data.
+    Returns a p-value on the hit_vec coefficient. 
+    ---------------------------------------------------
+    clinical: DataFrame of clinical variables
+    hit_vec: vector of labels to test against
+    covariates: names of covariates in the cox model,
+                (must be columns in clinical DataFrame)
+    '''
+    if not all([cov in clinical for cov in covariates]):
+        missing = [cov for cov in covariates if cov not in clinical]
+        covariates = [cov for cov in covariates if cov in clinical]
+        #print ', '.join(missing) + ' not in clinical data... running anyway.'
+    hit_vec.name = 'pathway'
+    factors = ['pathway'] + covariates
+    df = clinical.join(hit_vec)
+    df = df[factors + [time_var, event_var]]
+    #df = df.ix[patients]
+    df[factors] = (df[factors] - df[factors].mean()) / df[factors].std()
+    df = com.convert_to_r_dataframe(df) #@UndefinedVariable
+    #fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ '+ '+'.join(factors)
+    interactions = '+'.join(['pathway*' + c for c in covariates])
+    if len(covariates) == 0:
+        interactions = 'pathway'
+    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ ' + interactions
+    fmla = robjects.Formula(fmla)
+    try:
+        s = survival.coxph(fmla, df)
+        results = com.convert_robj(dict(base.summary(s).iteritems())['coefficients'])
+    except robjects.rinterface.RRuntimeError:
+        return 1.23
+    if return_val == 'p':
+        return results.ix['pathway','Pr(>|z|)']
+    elif return_val == 'coef':
+        return results
+    elif return_val == 'model':
+        return s
+    elif return_val == 'logtest':
+        m = dict(base.summary(s).iteritems())['logtest']
+        return Series(dict(m.iteritems()))
     
 def get_tests(clinical, survival_tests, real_variables, binary_variables,
               var_type='boolean'):
@@ -152,6 +199,8 @@ def run_tests(tests, data_frame):
     tests: dictionary mapping test name to test functions
     data_frame: DataFrame of response variables to test against
     '''
+    if len(data_frame) == 0:
+        return DataFrame(), DataFrame()
     p_values = DataFrame()
     for test, f in tests.iteritems():
         p_vec = Series(dict((p, f(vec)) for p, vec in data_frame.iterrows()), 
@@ -174,14 +223,14 @@ def run_clinical_bool(cancer, clinical, data_path, gene_sets,
     
     single_matrix = lesion_matrix if data_type == 'amplification' else hit_matrix
     single_matrix = single_matrix.clip_upper(1.)
-    clinical['rate'] = log(single_matrix.sum(0))
+    clinical['rate'] = log(single_matrix.sum(0)).clip_lower(0)
     tests = get_tests(clinical, survival_tests, real_variables, binary_variables,
                       var_type='boolean')
     gene_counts = sort(single_matrix.sum(1))
     good_genes = gene_counts[gene_counts > MIN_NUM_HITS].index[-500:]
     p_genes, q_genes = run_tests(tests, single_matrix.ix[good_genes])
     
-    clinical['rate'] = log(hit_matrix.sum(0))
+    clinical['rate'] = log(hit_matrix.sum(0)).clip_lower(0)
     meta_matrix = build_meta_matrix(gene_sets, hit_matrix, 
                                     set_filter=lambda s: s.clip_upper(1))
     tests = get_tests(clinical, survival_tests, real_variables, binary_variables,
@@ -189,9 +238,10 @@ def run_clinical_bool(cancer, clinical, data_path, gene_sets,
     p_pathways, q_pathways = run_tests(tests, meta_matrix.clip_upper(1.))
     
     lengths = GENE_LENGTHS.ix[hit_matrix.index].dropna()
-    _res = run_rate_permutation(meta_matrix, hit_matrix, gene_sets, 
-                               lengths, tests['rate'])
-    q_pathways['rate']  = _res 
+    if 'rate' in tests:
+        _res = run_rate_permutation(meta_matrix, hit_matrix, gene_sets, 
+                                   lengths, tests['rate'])
+        q_pathways['rate']  = _res 
     return locals()
 
 def run_clinical_real(cancer, clinical, data_path, gene_sets,
@@ -228,8 +278,14 @@ class ClinicalObject(object):
                  binary_variables=[]):
         clinical = read_csv(data_path + '/'.join(['ucsd_processing', cancer, 
                                       'Clinical','compiled.csv']), index_col=0)
+        clinical['deceased_5y'] = (clinical.days < (365.25*5)) * clinical.deceased
+        clinical['days_5y'] = clinical.days.clip_upper(int(365.25*5))
+
         if hasattr(clinical, 'event'):
             clinical['event'] = clinical[['event','deceased']].sum(1).clip_upper(1.)
+            evs = clinical.event_free_survival
+            clinical['event_5y'] = (evs < (365.25*5)) * clinical.event
+            clinical['event_free_survival_5y'] = evs.clip_upper(int(365.25*5))
         try:
             meth_age, amar = get_age_signal(data_path , clinical)
             clinical['meth_age'] = meth_age
