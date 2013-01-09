@@ -24,13 +24,13 @@ BINARY_VARIABLES = ['gender', 'therapy', 'radiation', 'triple_neg', 'triple_pos'
                     'bonemarrowpromyelocyte', 'monocyte', 'venous_invasion',
                     'lymphatic_invasion', 'calcium_level', 'white_cell_count',
                     'tumor_focality']
-SURVIVAL_TESTS = {'survival' : {'event_var' : 'deceased', 'time_var' : 'days', 
-                                'covariates' : ['age', 'rate']},
-                  'event_free_survival' : {'event_var' : 'event', 
-                                           'time_var' : 'event_free_survival', 
-                                           'covariates' : ['age', 'rate']},
+SURVIVAL_TESTS = {'survival_3y' : {'event_var' : 'deceased_3y', 'time_var' : 'days_3y', 
+                                   'covariates' : ['age', 'rate']},
                   'survival_5y' : {'event_var' : 'deceased_5y', 'time_var' : 'days_5y', 
                                    'covariates' : ['age', 'rate']},
+                  'event_free_survival_3y' : {'event_var' : 'event_3y', 
+                                           'time_var' : 'event_free_survival_3y', 
+                                           'covariates' : ['age', 'rate']},
                   'event_free_survival_5y' : {'event_var' : 'event_5y', 
                                            'time_var' : 'event_free_survival_5y', 
                                            'covariates' : ['age', 'rate']}

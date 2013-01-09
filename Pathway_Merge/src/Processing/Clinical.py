@@ -3,10 +3,6 @@ Created on Oct 9, 2012
 
 @author: agross
 '''
-import rpy2.robjects as robjects
-import pandas.rpy.common as com 
-
-
 from numpy import nan, sort, log
 from scipy.stats import f_oneway, fisher_exact, pearsonr
 from pandas import Series, DataFrame, notnull, crosstab, read_csv
@@ -17,15 +13,10 @@ from Data.Firehose import get_mutation_matrix, get_cna_matrix
 from Data.Firehose import read_rnaSeq, read_methylation, read_mrna
 from Data.Pathways import build_meta_matrix
 from Data.AgingData import get_age_signal
+from Processing.Tests import get_cox_ph
 
 
-survival = robjects.packages.importr('survival')
-base = robjects.packages.importr('base')
 MIN_NUM_HITS = 8
-robjects.r.options(warn=-1);
-zz = robjects.r.file("all.Rout", open="wt")
-robjects.r.sink(zz, type='message')
-
 GENE_LENGTHS = read_csv('/cellar/users/agross/Data/GeneSets/coding_lengths.csv', 
                         index_col=0, squeeze=True)
 
@@ -70,89 +61,6 @@ def pearson_p(a,b):
     _,p = pearsonr(a,b)
     return p
 
-def get_cox_ph_o(clinical, hit_vec, covariates=[], time_var='days',
-               event_var='censored', return_val='p'):
-    '''
-    Fit a cox proportial hazzards model to the data.
-    Returns a p-value on the hit_vec coefficient. 
-    ---------------------------------------------------
-    clinical: DataFrame of clinical variables
-    hit_vec: vector of labels to test against
-    covariates: names of covariates in the cox model,
-                (must be columns in clinical DataFrame)
-    '''
-    if not all([cov in clinical for cov in covariates]):
-        missing = [cov for cov in covariates if cov not in clinical]
-        covariates = [cov for cov in covariates if cov in clinical]
-        #print ', '.join(missing) + ' not in clinical data... running anyway.'
-    hit_vec.name = 'pathway'
-    factors = ['pathway'] + covariates
-    df = clinical.join(hit_vec)
-    df = df[factors + [time_var, event_var]]
-    #df = df.ix[patients]
-    df[factors] = (df[factors] - df[factors].mean())
-    df = com.convert_to_r_dataframe(df) #@UndefinedVariable
-    #fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ '+ '+'.join(factors)
-    interactions = '+'.join(['pathway*' + c for c in covariates])
-    if len(covariates) == 0:
-        interactions = 'pathway'
-    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ ' + interactions
-    fmla = robjects.Formula(fmla)
-    try:
-        s = survival.coxph(fmla, df)
-        results = com.convert_robj(dict(base.summary(s).iteritems())['coefficients'])
-    except robjects.rinterface.RRuntimeError:
-        return 1.23
-    if return_val == 'p':
-        return results.ix['pathway','Pr(>|z|)']
-    elif return_val == 'coef':
-        return results
-    elif return_val == 'model':
-        m = dict(base.summary(s).iteritems())['logtest']
-        return Series(dict(m.iteritems()))
-    
-def get_cox_ph(clinical, hit_vec, covariates=[], time_var='days',
-               event_var='censored', return_val='p'):
-    '''
-    Fit a cox proportial hazzards model to the data.
-    Returns a p-value on the hit_vec coefficient. 
-    ---------------------------------------------------
-    clinical: DataFrame of clinical variables
-    hit_vec: vector of labels to test against
-    covariates: names of covariates in the cox model,
-                (must be columns in clinical DataFrame)
-    '''
-    if not all([cov in clinical for cov in covariates]):
-        missing = [cov for cov in covariates if cov not in clinical]
-        covariates = [cov for cov in covariates if cov in clinical]
-        #print ', '.join(missing) + ' not in clinical data... running anyway.'
-    hit_vec.name = 'pathway'
-    factors = ['pathway'] + covariates
-    df = clinical.join(hit_vec)
-    df = df[factors + [time_var, event_var]]
-    #df = df.ix[patients]
-    df[factors] = (df[factors] - df[factors].mean()) / df[factors].std()
-    df = com.convert_to_r_dataframe(df) #@UndefinedVariable
-    #fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ '+ '+'.join(factors)
-    interactions = '+'.join(['pathway*' + c for c in covariates])
-    if len(covariates) == 0:
-        interactions = 'pathway'
-    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ ' + interactions
-    fmla = robjects.Formula(fmla)
-    try:
-        s = survival.coxph(fmla, df)
-        results = com.convert_robj(dict(base.summary(s).iteritems())['coefficients'])
-    except robjects.rinterface.RRuntimeError:
-        return 1.23
-    if return_val == 'p':
-        return results.ix['pathway','Pr(>|z|)']
-    elif return_val == 'coef':
-        return results
-    elif return_val == 'model':
-        return s
-    elif return_val == 'logtest':
-        m = dict(base.summary(s).iteritems())['logtest']
-        return Series(dict(m.iteritems()))
     
 def get_tests(clinical, survival_tests, real_variables, binary_variables,
               var_type='boolean'):
@@ -280,12 +188,16 @@ class ClinicalObject(object):
                                       'Clinical','compiled.csv']), index_col=0)
         clinical['deceased_5y'] = (clinical.days < (365.25*5)) * clinical.deceased
         clinical['days_5y'] = clinical.days.clip_upper(int(365.25*5))
+        clinical['deceased_3y'] = (clinical.days < (365.25*3)) * clinical.deceased
+        clinical['days_3y'] = clinical.days.clip_upper(int(365.25*3))
 
         if hasattr(clinical, 'event'):
             clinical['event'] = clinical[['event','deceased']].sum(1).clip_upper(1.)
             evs = clinical.event_free_survival
             clinical['event_5y'] = (evs < (365.25*5)) * clinical.event
             clinical['event_free_survival_5y'] = evs.clip_upper(int(365.25*5))
+            clinical['event_3y'] = (evs < (365.25*3)) * clinical.event
+            clinical['event_free_survival_3y'] = evs.clip_upper(int(365.25*3))
         try:
             meth_age, amar = get_age_signal(data_path , clinical)
             clinical['meth_age'] = meth_age
