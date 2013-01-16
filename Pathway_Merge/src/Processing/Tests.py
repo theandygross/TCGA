@@ -61,7 +61,7 @@ def get_cox_ph_ms(clinical, hit_vec=None, covariates=[], time_var='days',
     covariates: names of covariates in the cox model,
                 (must be columns in clinical DataFrame)
     '''
-    df, factors = process_factors(clinical, hit_vec, ['age', 'rate'])
+    df, factors = process_factors(clinical, hit_vec, covariates)
     df = df[factors + [time_var, event_var]]
     df = df.dropna()
     df[factors] = (df[factors] - df[factors].mean()) / df[factors].std()
@@ -107,7 +107,7 @@ def get_cox_ph_ms(clinical, hit_vec=None, covariates=[], time_var='days',
     if return_val == 'LR':
         return {'LR': LR_p, 'pathway_p': coef_p, 'hazzard': hazzard, 'model': s}
     if return_val == 'LR_p':
-        return coef_p if LR_p < .1 else nan
+        return coef_p if LR_p < .05 else nan
     
 def get_cox_ph(clinical, hit_vec=None, covariates=[], time_var='days',
                event_var='censored'):

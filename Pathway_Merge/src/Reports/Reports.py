@@ -15,8 +15,8 @@ from Processing.Helpers import frame_svd
 nz = importr('Nozzle.R1')
 bool_ = {True: 'TRUE', False: 'FALSE'}
 FIG_EXT = 'clinical_figures/'
-SORT_ORDER = ['event_free_survival', 'survival', 'tumor_t1t2', 'lymphnode_n0n1',
-              'metastatic_recurrence', 'organ_subdivision', 'AMAR','age', 'rate', 
+SORT_ORDER = ['event_free_survival_5y', 'survival_5y', 'tumor_t1t2', 'lymphnode_n0n1',
+              'metastatic_recurrence', 'organ_subdivision', 'AMAR','age',
               'gender','radiation', 'therapy', 'rate_non']
 DATA_TYPE = {'mutation': 'bool', 'amplification': 'bool', 'deletion': 'bool',
              'methylation': 'real', 'expression': 'real', 
@@ -24,13 +24,14 @@ DATA_TYPE = {'mutation': 'bool', 'amplification': 'bool', 'deletion': 'bool',
 
 roll_df = lambda df, num: df.ix[:,roll(range(df.shape[1]),num)]
 
-def generic_header(report, cancer, prev_cancer, next_cancer):
+def generic_header(report, cancer, prev_cancer, next_cancer, 
+                   address='index.html'):
     report = nz.setMaintainerName(report, 'Andrew Gross')
     report = nz.setMaintainerEmail(report, "agross@ucsd.edu" );
     report = nz.setMaintainerAffiliation(report, 'UCSD- Bioinf. and '
                                                 + 'Systems Biology' ); 
     '''Little wonky due to relative paths but works'''
-    page_ext = cancer.report_folder.split('/')[2:-1] +  ['index.html']                                       
+    page_ext = cancer.report_folder.split('/')[2:-1] +  [address]                                       
     next_page = '../../../' + '/'.join([next_cancer] + page_ext)  
     prev_page = '../../../' + '/'.join([prev_cancer] + page_ext)                    
     report = nz.setPreviousReport(report, next_page, next_cancer)

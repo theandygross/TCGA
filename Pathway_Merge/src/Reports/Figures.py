@@ -4,7 +4,8 @@ Created on Oct 15, 2012
 @author: agross
 '''
 import matplotlib.pyplot as plt
-from numpy import nanmax, sort, linspace, arange, rank, bincount
+from matplotlib.patches import FancyBboxPatch
+from numpy import nanmax, sort, linspace, arange, rank, ndenumerate
 from scipy.stats import gaussian_kde
 
 from Processing.Helpers import match_series, split_a_by_b
@@ -284,4 +285,66 @@ def mut_module_raster(cluster_num, mut, ax=None):
     ax.set_xbound(0, len(x_order))
     fig.tight_layout()
     return fig
+
+def mut_box(x, y, width=.7, height=.9, small=False):
+    '''
+    Takes a coordinate and returns a mutation box rectangle.
+    Small makes it a little one. 
+    '''
+    if small:
+        height = height / 2
+        y = y - height / 2
+    width = width - .2
+    height = height - .2
+    rect = FancyBboxPatch([x - width / 2, y - height / 2], width, height,
+                          facecolor='green', edgecolor='black', alpha=.8,
+                          lw=2, mutation_scale=.33)
+    return rect
     
+def null_box(x, y, width=.7, height=.9):
+    '''
+    Grey null box for MeMO plots. 
+    '''
+    width = width - .2
+    height = height - .2
+    rect = FancyBboxPatch([x - width / 2, y - height / 2], width, height,
+                     facecolor='grey', edgecolor='black', alpha=.5,
+                     mutation_scale=.33)
+    return rect
+
+def memo_plot(df, ax=None):
+    '''
+    MeMO style plot from a DataFrame.
+    '''
+    if ax == None:
+        ax = plt.gca()
+    ax.patch.set_facecolor('white')
+    ax.set_aspect(3, 'box')
+    ax.set_xticks([])
+    ax.set_yticks(range(len(df)))
+    ax.set_yticklabels(df.index[::-1])
+    
+    W = df.as_matrix().T[:, ::-1]
+    for (x,y),w in ndenumerate(W):
+        if w == 0: 
+            rect = null_box(x, y)
+        else:     
+            rect = null_box(x, y)
+            ax.add_patch(rect)
+            rect = mut_box(x, y) 
+        ax.add_patch(rect)
+    ax.set_xbound(-.5, len(W)-.5)
+    ax.set_ybound(-.5, len(W[0])-.5)
+    
+def draw_pathway_overlaps(mat, bars, filename=None):  
+    fig, ax = plt.subplots(figsize=(25,5))   
+    memo_plot(mat, ax=ax)
+    ax.bar(arange(len(mat.columns)) - .3, bars, bottom = -2, width=.6, alpha=.5)
+    ax.hlines(-1, -.5, len(mat.columns))
+    ax.annotate('Days to Death', (-.5,-1.5), ha='right', va='center', size=15)
+    fig.tight_layout()
+    if filename is not None:
+        fig.savefig(filename)
+    return fig
+
+
