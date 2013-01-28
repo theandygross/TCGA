@@ -85,7 +85,7 @@ def read_rppa(data_path, cancer):
     rppa = rppa.ix[:,cancer.patients]
     return rppa
 
-def read_rnaSeq(cancer, data_path, patients=None):
+def read_rnaSeq(cancer, data_path, patients=None, average_on_genes=False):
     stddata_path = data_path + '/'.join(['stddata', cancer,''])
     data_types = filter(lambda f: f[:6] == 'rnaseq', os.listdir(stddata_path))
     data_type = sorted(data_types)[-1]
@@ -102,6 +102,8 @@ def read_rnaSeq(cancer, data_path, patients=None):
     if patients is not None:
         rnaSeq  = rnaSeq.ix[:, patients]
     rnaSeq = rnaSeq.dropna(thresh=100)
+    if average_on_genes:
+        rnaSeq = rnaSeq.groupby(by=lambda n: n.split('|')[0]).mean()
     #rnaSeq = np.log2(rnaSeq.astype(np.float))
     return rnaSeq
 
