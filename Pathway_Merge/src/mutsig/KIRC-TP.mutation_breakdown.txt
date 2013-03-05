@@ -1,0 +1,12 @@
+type	count
+Frame_Shift_Del	471
+Frame_Shift_Ins	107
+In_Frame_Del	48
+In_Frame_Ins	8
+Missense_Mutation	15492
+Nonsense_Mutation	1046
+Nonstop_Mutation	21
+Silent	5790
+Splice_Site	491
+Translation_Start_Site	37
+Total	23511

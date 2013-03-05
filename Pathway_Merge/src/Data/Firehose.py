@@ -11,7 +11,10 @@ Nothing in here should depend on any other modules.
 import numpy as np
 import os as os
 from pandas import DataFrame, Series, read_table, read_csv
+import pandas as pd
 
+from Processing.Tests import kruskal_p
+from Processing.Helpers import bhCorrection
 
 def read_clinical(data_path):
     clinical = read_table(data_path + 'From_Stddata/' + 
@@ -33,7 +36,7 @@ def read_clinical(data_path):
     clinical = clinical.replace('male',True).replace('female',False)
     return clinical
 
-def get_mutation_matrix(cancer, data_path, q_cutoff=.25, get_mutsig=False):
+def get_mutation_matrix_o(cancer, data_path, q_cutoff=.25, get_mutsig=False):
     f = data_path + '/'.join(['broad_analyses', cancer, 'MutSigRun2',''])
     if os.path.isdir(f):
         mutation_matrix = read_table(f + cancer + '.per_gene.mutation_counts.txt', 
@@ -56,6 +59,23 @@ def get_mutation_matrix(cancer, data_path, q_cutoff=.25, get_mutsig=False):
     else:
         sig_genes = np.array(mutation_matrix[mutation_matrix.sum(1) > 3].index)
         return mutation_matrix, sig_genes
+ 
+def get_mutation_matrix(data_path, cancer):
+    maf = read_table(data_path + '/'.join(['analyses', cancer, 'MutSigNozzleReport2', 
+                                             cancer + '-TP.final_analysis_set.maf']))
+    maf = maf.dropna(how='all', axis=[0,1])
+    maf.Tumor_Sample_Barcode = maf.Tumor_Sample_Barcode.map(lambda s: s[:12])
+    maf = maf.set_index(['Hugo_Symbol','Tumor_Sample_Barcode'])
+    non_silent = maf[maf.is_silent == 0]
+    non_silent['counter'] = 1
+    hit_matrix = non_silent.counter.groupby(level=[0,1]).sum().unstack()
+    return hit_matrix   
+    
+def get_gistic_gene_matrix(data_path, cancer):
+    gistic_ext = data_path + '/'.join(['analyses', cancer, 'CopyNumber_Gistic2', ''])
+    gistic = read_table(gistic_ext + 'all_thresholded.by_genes.txt', index_col=[2,1,0])
+    gistic = gistic.rename(columns=lambda s: s[:12]).astype(float)
+    return gistic
 
 def get_cna_matrix(cancer, data_path, cna_type='deletion'):
     gistic_ext = data_path + '/'.join(['broad_analyses', cancer, 'CopyNumber_Gistic2', ''])
@@ -77,42 +97,47 @@ def get_cna_matrix(cancer, data_path, cna_type='deletion'):
     return cnas, lesions
 
 def read_rppa(data_path, cancer):
-    data_type = 'RPPA_AnnotateWithGene'
-    rppa = read_table(data_path +  'stddata/RPPA_AnnotateWithGene/' + 
-                      cancer.cancer + '.rppa.txt', index_col=0)
-    rppa = rppa.rename(columns=lambda s: s[:12]) #short barcode format
-    rppa = np.log2(rppa.astype(np.float))
-    rppa = rppa.ix[:,cancer.patients]
+    ext = '/'.join(['stddata', cancer,  'RPPA_AnnotateWithGene', 
+                    cancer + '.rppa.txt'])
+    rppa = read_table(data_path +  ext, index_col=0)
+    rppa = rppa.select(lambda s: s.split('-')[3].startswith('01'), 1)
+    rppa = rppa.sort_index(axis=1).groupby(lambda s: s[:12], 1).first() #get rid of normals
+    rppa['protien'] = rppa.index.map(lambda s: s.split('|')[0])
+    rppa['antibody'] = rppa.index.map(lambda s: s.split('|')[1])
+    rppa = rppa.set_index(['protien','antibody'])
     return rppa
 
 def read_rnaSeq(cancer, data_path, patients=None, average_on_genes=False):
-    stddata_path = data_path + '/'.join(['stddata', cancer,''])
-    data_types = filter(lambda f: f[:6] == 'rnaseq', os.listdir(stddata_path))
-    data_type = sorted(data_types)[-1]
-    if data_type.split('__')[0] == 'rnaseqv2':
-        rnaSeq = read_table(stddata_path +  data_type + 
-                            '/RSEM_genes_normalized_data.txt',
-                            index_col=0, skiprows=[1])
+    stddata_path = data_path + 'stddata/' + cancer
+    data_types = filter(lambda f: f.startswith('rnaseq'), os.listdir(stddata_path))
+    if 'rnaseqv2' in data_types:
+        path = [f[0] for f in list(os.walk(stddata_path + '/rnaseqv2')) if 
+                'RSEM_genes_normalized/data' in f[0]][0]   
     else:
-        rnaSeq = read_table(stddata_path +  data_type + 
-                            '/gene_expression_data.txt', index_col=0)
-        rnaSeq = rnaSeq.ix[1:,rnaSeq.ix[0] == 'RPKM']
-    
+        path = [f[0] for f in list(os.walk(stddata_path + '/rnaseqv')) if 
+                'gene_expression/data' in f[0]][0] 
+    rnaSeq = read_table(path + '/data.txt',index_col=0, skiprows=[1])
+    rnaSeq = np.log2(rnaSeq).clip_lower(0)
+    rnaSeq = rnaSeq.sort_index(axis=1).groupby(lambda s: s[:12]).first() #get rid of normals
+    rnaSeq = rnaSeq.select(lambda s: s.split('-')[3].startswith('01'), 1)
     rnaSeq = rnaSeq.rename(columns=lambda s: s[:12])
     if patients is not None:
         rnaSeq  = rnaSeq.ix[:, patients]
     rnaSeq = rnaSeq.dropna(thresh=100)
     if average_on_genes:
         rnaSeq = rnaSeq.groupby(by=lambda n: n.split('|')[0]).mean()
-    #rnaSeq = np.log2(rnaSeq.astype(np.float))
     return rnaSeq
 
 def read_methylation(cancer, data_path, patients=None):
     processed_data_path = data_path + '/'.join(['ucsd_processing', cancer,''])
     data_types = filter(lambda f: f[:11] == 'methylation', os.listdir(processed_data_path))
     data_type = sorted([d for d in data_types if os.path.isfile(processed_data_path + d + 
-                                                      '/averaged_on_genes.csv')])[-1]
-    meth = read_csv(processed_data_path +  data_type + '/averaged_on_genes.csv', index_col=0)
+                                                      '/meta_probes.csv')])[-1]
+    meth = read_csv(processed_data_path +  data_type + '/meta_probes.csv', index_col=0)
+    meth = meth.sort_index(axis=1).groupby(lambda s: s[:12]).first() #get rid of normals
+    meth = meth.select(lambda s: s.split('-')[3].startswith('01'), 1)
+    meth = meth.rename(columns=lambda s: s[:12])
+    
     if patients is not None:
         meth  = meth.ix[:, patients]
     meth = meth.dropna(thresh=100)
@@ -152,7 +177,7 @@ def read_mirna(cancer, data_path):
     mirna = mirna.rename(columns=lambda s: s[:12])
     #mirna = mirna.ix[:, cancer.patients]
     mirna = np.log2(mirna.astype(np.float))
-    variable = np.sort(mirna.mad(axis=1)).tail(150).index
+    #variable = np.sort(mirna.mad(axis=1)).tail(150).index
     #mirna = mirna.ix[variable]
     return mirna
 
@@ -175,4 +200,60 @@ def get_all_nmf(cancer):
     variable_signals = reduce(DataFrame.append, variable_signals)
     variable_signals = variable_signals.ix[:,cancer.patients]
     return variable_signals
+
+def get_gistic_lesions(cancer_name, data_path):
+    gistic_ext = data_path + '/'.join(['analyses', cancer_name, 
+                                       'CopyNumber_Gistic2', ''])
+    gistic = read_table(gistic_ext + 'all_lesions.conf_99.txt', index_col=[0,1])
+    lesions = gistic.select(lambda s: 'TCGA' in s, axis=1) 
+    lesions = lesions.select(lambda s: 'values' not in s[0], axis=0) 
+    lesions = lesions.rename(columns=lambda s: s[:12])
+    from_tuples = pd.MultiIndex.from_tuples
+    lesions.index = from_tuples([(s[0].split(' ')[0], s[1].strip(), 'Lesion') 
+                                 for s in lesions.index])
+    lesions = lesions.groupby(level=[0,1,2]).first()
+    lesions.T['Deletion'] = (lesions.T['Deletion']*-1).replace(-0,0)
+    return lesions
+
+def get_gistic_genes(cancer_name, data_path, filter_with_rna=True, 
+                     collapse_on_bands=True, min_patients=5):
+    gistic_ext = data_path + '/'.join(['analyses', cancer_name, 
+                                       'CopyNumber_Gistic2', ''])
+    gistic = read_table(gistic_ext + 'all_thresholded.by_genes.txt', 
+                        index_col=[2,1,0])
+    gistic = gistic.rename(columns=lambda s: s[:12]).astype(float)
+
+    deletion = gistic[(gistic == -2).sum(1) > min_patients]
+    amp = gistic[(gistic == 2).sum(1) > min_patients]
+    ft = pd.MultiIndex.from_tuples #rediculously long pandas names
+    deletion.index = ft([('Deletion', s[0], s[2]) for s in deletion.index])
+    amp.index = ft([('Amplification', s[0], s[2]) for s in amp.index])
+    
+    if filter_with_rna:
+        rna = read_rnaSeq(cancer_name, data_path, average_on_genes=True)
+        def rna_filter(df, val):
+            p_vals = Series({g: kruskal_p(df.ix[g] == val, rna.ix[g[-1]]) 
+                             for g in df.index if g[-1] in rna.index})
+            q_vals = bhCorrection(p_vals)
+            return df.ix[q_vals[q_vals < .1].index]
+        deletion = rna_filter(deletion, -2)
+        amp = rna_filter(amp, 2)
+   
+    cna_genes = amp.append(deletion)
+    if collapse_on_bands == False:
+        return cna_genes
+    
+    cna_genes = DataFrame({(a[0], a[1], tuple(b.index.get_level_values(2))): 
+                           b.mean().round() for a,b in 
+                           cna_genes.groupby(level=[0,1])}).T
+    cna_genes.index = pd.MultiIndex.from_tuples(cna_genes.index)
+    return cna_genes
+
+def get_gistic(cancer_name, data_path, filter_with_rna=True, 
+               collapse_on_bands=True, min_patients=5):
+    lesions = get_gistic_lesions(cancer_name, data_path)
+    cna_genes = get_gistic_genes(cancer_name, data_path, filter_with_rna, 
+                                 collapse_on_bands, min_patients)
+    cna = cna_genes.append(lesions)
+    return cna
     

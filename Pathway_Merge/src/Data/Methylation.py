@@ -7,14 +7,8 @@ import os as os
 from subprocess import call, check_output
 from pandas import read_table
 
-METH_FOLDER = 'methylation__humanmethylation450__jhu_usc_edu__Level_3/'
+METH_FOLDER = 'methylation/humanmethylation450/jhu_usc_edu__Level_3/'
 METH_FILE = 'within_bioassay_data_set_function_data.txt'
-
-def _get_folder(firehose_path, cancer, date):
-    date_ = '_'.join([date[:4], date[4:6], date[6:8]])
-    stddata_path = firehose_path + 'stddata__' + '/'.join([date_, cancer, date])
-    folder = stddata_path + '/' + METH_FOLDER
-    return folder
 
 def pull_out_beta_values(folder, probes='All', outfile='beta_values.txt'):
     
@@ -65,9 +59,12 @@ def run_all_cancers(data_path, probeset='All', recalc=False):
             continue
         elif os.path.isdir(folder):
             print cancer
-            pull_out_beta_values(folder, probeset, outfile)
-            if probeset == 'All':
-                average_beta_values_on_genes(outpath)
+            try:
+                pull_out_beta_values(folder, probeset, outfile)
+                if probeset == 'All':
+                    average_beta_values_on_genes(outpath)
+            except:
+                print cancer + ' fail.'
         else:
             print 'No data for ' + cancer +'.'
             

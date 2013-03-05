@@ -4,63 +4,18 @@ Created on Oct 9, 2012
 @author: agross
 '''
 from numpy import nan, sort, log
-from scipy.stats import f_oneway, fisher_exact, pearsonr
-from pandas import Series, DataFrame, notnull, crosstab, read_csv
+from pandas import Series, DataFrame, notnull, read_csv
 
-from Helpers import bhCorrection, extract_pc, match_series, drop_first_norm_pc
-from Helpers import cluster_down, df_to_binary_vec, run_rate_permutation
 from Data.Firehose import get_mutation_matrix, get_cna_matrix
 from Data.Firehose import read_rnaSeq, read_methylation, read_mrna
 from Data.Pathways import build_meta_matrix
-from Data.AgingData import get_age_signal
-from Processing.Tests import get_cox_ph
-
+from Processing.Tests import get_cox_ph, anova, fisher_exact_test, pearson_p
+from Processing.Helpers import bhCorrection, extract_pc, drop_first_norm_pc
+from Processing.Helpers import cluster_down, df_to_binary_vec, run_rate_permutation
 
 MIN_NUM_HITS = 8
 GENE_LENGTHS = read_csv('/cellar/users/agross/Data/GeneSets/coding_lengths.csv', 
                         index_col=0, squeeze=True)
-
-def delambda(f):
-    def f_(a): return f(a)
-    return f_
-
-def anova(hit_vec, response_vec, min_size=5):
-    '''
-    Wrapper to do a one way anova on pandas Series
-    ------------------------------------------------
-    hit_vec: Series of labels
-    response_vec: Series of measurements
-    '''
-    if hit_vec.value_counts().min < min_size:
-        return nan
-    hit_vec, response_vec = match_series(hit_vec, response_vec)
-    return f_oneway(*[response_vec[hit_vec == num] for num in 
-                      hit_vec.unique()])[1]
-
-def fisher_exact_test(hit_vec, response_vec):
-    '''
-    Wrapper to do a fischer's exact test on pandas Series
-    ------------------------------------------------
-    hit_vec: Series of labels (boolean, or (0,1))
-    response_vec: Series of measurements (boolean, or (0,1))
-    '''
-    #assert ((len(hit_vec.unique()) <= 2) and 
-    #        (len(response_vec.unique()) <= 2)) 
-    cont_table = crosstab(hit_vec, response_vec)
-    if (cont_table.shape != (2,2)):
-        return 1
-    return fisher_exact(cont_table)[1]
-
-def pearson_p(a,b):
-    '''
-    Find pearson's correlation and return p-value.
-    ------------------------------------------------
-    a, b: Series with continuous measurements
-    '''
-    a,b = match_series(a.dropna(), b.dropna())
-    _,p = pearsonr(a,b)
-    return p
-
     
 def get_tests(clinical, survival_tests, real_variables, binary_variables,
               var_type='boolean'):
@@ -176,6 +131,24 @@ def run_clinical_real(cancer, clinical, data_path, gene_sets,
     p_pathways, q_pathways = run_tests(tests, pc)
     return locals()
 
+def create_secondary_clinical_features(clinical):
+    '''
+    Does a little bit of processing that does not belong in the clinical file.
+    Right now we artificially censor at 3 and 5 years.
+    '''
+    clinical['deceased_5y'] = (clinical.days < (365.25*5)) * clinical.deceased
+    clinical['days_5y'] = clinical.days.clip_upper(int(365.25*5))
+    clinical['deceased_3y'] = (clinical.days < (365.25*3)) * clinical.deceased
+    clinical['days_3y'] = clinical.days.clip_upper(int(365.25*3))
+
+    if hasattr(clinical, 'event'):
+        clinical['event'] = clinical[['event','deceased']].sum(1).clip_upper(1.)
+        evs = clinical.event_free_survival
+        clinical['event_5y'] = (evs < (365.25*5)) * clinical.event
+        clinical['event_free_survival_5y'] = evs.clip_upper(int(365.25*5))
+        clinical['event_3y'] = (evs < (365.25*3)) * clinical.event
+        clinical['event_free_survival_3y'] = evs.clip_upper(int(365.25*3))
+    return clinical
 
 class ClinicalObject(object):
     '''
@@ -186,24 +159,7 @@ class ClinicalObject(object):
                  binary_variables=[]):
         clinical = read_csv(data_path + '/'.join(['ucsd_processing', cancer, 
                                       'Clinical','compiled.csv']), index_col=0)
-        clinical['deceased_5y'] = (clinical.days < (365.25*5)) * clinical.deceased
-        clinical['days_5y'] = clinical.days.clip_upper(int(365.25*5))
-        clinical['deceased_3y'] = (clinical.days < (365.25*3)) * clinical.deceased
-        clinical['days_3y'] = clinical.days.clip_upper(int(365.25*3))
-
-        if hasattr(clinical, 'event'):
-            clinical['event'] = clinical[['event','deceased']].sum(1).clip_upper(1.)
-            evs = clinical.event_free_survival
-            clinical['event_5y'] = (evs < (365.25*5)) * clinical.event
-            clinical['event_free_survival_5y'] = evs.clip_upper(int(365.25*5))
-            clinical['event_3y'] = (evs < (365.25*3)) * clinical.event
-            clinical['event_free_survival_3y'] = evs.clip_upper(int(365.25*3))
-        try:
-            meth_age, amar = get_age_signal(data_path , clinical)
-            clinical['meth_age'] = meth_age
-            clinical['AMAR'] = amar
-        except:
-            pass  #Probably because there is not a 450k chip for the cancer
+        clinical = create_secondary_clinical_features(clinical)
     
         if data_type in ['mutation', 'amplification','deletion']:
             o_dict = run_clinical_bool(cancer, clinical, data_path, gene_sets, 

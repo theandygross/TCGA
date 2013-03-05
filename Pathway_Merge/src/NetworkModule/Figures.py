@@ -42,15 +42,20 @@ def getDisplayDict(mod, similarityMatrix, geneWeights):
 
     weights = [g[2]['weight'] for g in graph.edges(data=True)]
     if len(weights)>0:
-        weights = 2*(weights/max(weights))
+        weights = 4*(weights/max(weights))
     #sizes = np.nan_to_num(np.abs(alteredGenes).ix[graph.nodes()].sum(axis=1))
     sizes = geneWeights.ix[graph.nodes()]
+    if sum(sizes < 0) > 0:
+        color = sizes.map(lambda s: 1 if s > 0 else 0)
+        sizes = sizes.abs()
+    else:
+        color = sizes
     sizes = 2000*(sizes/(sum(sizes)+.1))
     cover = geneWeights.ix[list(mod)].sum()
     #cover = alteredGenes.ix[list(mod)].sum().sum()
  
     return dict(graph=graph, pos=goodPos, weights=weights, sizes=sizes,
-                cover=cover)
+                cover=cover, color=color)
     
     
 def drawMod(genes=None, similarityMatrix=None, geneWeights=None,
@@ -79,11 +84,11 @@ def drawMod(genes=None, similarityMatrix=None, geneWeights=None,
     ax.set_frame_on(False)
     ax.set_xticks([])
     ax.set_yticks([])
-    
+    #return dP
     nx.draw_networkx_nodes(dP.graph, adjPos, ax=ax, node_size=dP.sizes, 
-                           node_color=dP.sizes, alpha=.5, linewidths=1)
+                           node_color=dP.color, alpha=.5, linewidths=1)
     nx.draw_networkx_edges(dP.graph, adjPos, ax=ax, node_size=dP.sizes, 
-                           node_color='grey', alpha=.2, width=dP.weights);
+                           node_color='grey', alpha=.5, width=dP.weights);
     
     labelPos = dict([(key, adjPos[key]+(0,0)) for key in adjPos])
     nodesToLabel = list(dP.sizes[dP.sizes > 100].index)

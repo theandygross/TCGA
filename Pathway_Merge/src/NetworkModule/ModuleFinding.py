@@ -66,34 +66,35 @@ def pre_cluster(Gr):
     '''     
     g = nx_to_igraph(Gr)
     wt = igraph.walktrap_community(g, modularity=True)
-    labels = array(wt.rx('names'), dtype=int)[0]
-    membership = array(wt.rx('membership'), dtype=int)[0]
-    membership = Series(membership, index=labels)
+    membership = Series(wt.rx2('membership'), wt.rx2('names'))
     return membership
 
 def recluster_genes(geneset, Gr):
     g = nx_to_igraph(Gr.subgraph(geneset))
     wt = igraph.walktrap_community(g, modularity=True)
-    labels = array(wt.rx('names'), dtype=int)[0]
-    
     dend = r_stats.as_dendrogram(wt, use_modularity=True)
     hc = r_stats.as_hclust(dend)
     cut = dynamicTreecut.cutreeDynamicTree(hc, maxTreeHeight=1000, 
                                            minModuleSize=12)
-    membership = array(cut, dtype=int)
-    membership = Series(membership, index=labels)
+    membership = Series(cut, wt.rx2('names'))
     return membership
 
-def get_candidates(membership, Gr):   
+def get_candidates(membership, Gr=None):
+    if Gr != None:
+        get_candidates.Gr  = Gr   
     counts = membership.value_counts()
+    
     recluster = counts[counts > 30].index
     candidates = [membership[membership==i].index for i,count in 
                   counts.iteritems() if (count <= 30) and (count > 2)]
     for i in recluster:
         geneset = membership[membership==i].index
         try:
-            membership_sub = recluster_genes(geneset,Gr)
-            sub_candidates = get_candidates(membership_sub, Gr)
+            if len(geneset) < 2000:
+                membership_sub = recluster_genes(geneset, get_candidates.Gr)
+            else:
+                membership_sub = pre_cluster(get_candidates.Gr.subgraph(geneset))
+            sub_candidates = get_candidates(membership_sub)
             candidates.extend(sub_candidates)
         except RRuntimeError: 
             print 'R could not find a module'

@@ -3,6 +3,9 @@ Created on Jul 12, 2012
 
 @author: agross
 '''
+import os as os
+import pickle as pickle
+
 import matplotlib.pyplot as plt
 from pandas import Series, DataFrame, notnull
 from numpy.linalg import LinAlgError, svd
@@ -15,8 +18,10 @@ from rpy2.robjects import r, FloatVector
 
 transferIndex = lambda source,target: Series(list(target), index=source.index)
 
-def bhCorrection(s): 
-    return Series(r('p.adjust')(FloatVector(s), method='BH'),index=s.index, 
+def bhCorrection(s, n=None): 
+    if n == None:
+        n = len(s)
+    return Series(r('p.adjust')(FloatVector(s), n=n, method='BH'),index=s.index, 
                   name=s.name)
     
 def match_series(a,b):
@@ -45,13 +50,29 @@ def frame_svd(data_frame, impute='mean'):
     vH = DataFrame(vH, columns=data_frame.columns).T
     return U,S,vH
 
-def extract_pc(data_frame, pc_threshold=.2):
+def extract_pc_old(data_frame, pc_threshold=.2):
     try:
         U,S,vH = frame_svd(((data_frame.T - data_frame.mean(1)) / data_frame.std(1)).T)
     except LinAlgError:
         return None
     p = S**2/sum(S**2)
     return vH[0] if p[0] > pc_threshold else None
+
+def extract_pc(df, pc_threshold=.2):
+    try:
+        U,S,vH = frame_svd(((df.T - df.mean(1)) / df.std(1)).T)
+    except LinAlgError:
+        return None
+    p = S**2/sum(S**2)
+    pat_vec = vH[0]
+    gene_vec = U[0]
+    pct_var = p[0]
+    if sum(gene_vec) < 0:
+        gene_vec = -1*gene_vec
+        pat_vec = -1*pat_vec
+    #pat_vec = (pat_vec - pat_vec.mean()) / pat_vec.std()
+    ret = {'pat_vec': pat_vec, 'gene_vec': gene_vec, 'pct_var': pct_var}
+    return  ret if pct_var > pc_threshold else None
 
 def df_to_binary_vec(df):
     cutoff = sort(df.sum())[-int(df.sum(1).mean())]
@@ -126,3 +147,52 @@ def run_rate_permutation(df, hit_mat, gene_sets, lengths, f):
             iterations = iterations * 5
     res = sort(Series(res))
     return res
+
+def get_vec_type(vec):
+    if vec.count() < 10:
+        return
+    elif vec.dtype in [float, int]:
+        return 'real'
+    vc = vec.value_counts()
+    if len(vc) == 1 or vc.order()[-2] <= 5:
+        return 
+    elif len(vc) == 2:
+        return 'boolean'
+    elif vec.dtype == 'object':
+        return 'categorical'   
+    
+def make_path_dump(obj, file_path):
+    dir_path = '/'.join(file_path.split('/')[:-1])
+    if not os.path.isdir(dir_path):
+        os.makedirs(dir_path)
+    pickle.dump(obj, open(file_path, 'wb'))
+    
+def merge_redundant(df):
+    d = df.sort(axis=1).duplicated()
+    features = {n: [n] for n,b in d.iteritems() if b == False}
+    place=d.index[0]
+    for idx,b in d.iteritems():
+        if b == True:
+            features[place] = features[place] + [idx]
+        else:
+            place = idx
+    features = Series(features)
+    
+    df = df.ix[d==False]
+    df = df.rename(index=features.map(lambda s: '/'.join(s)))
+    return df
+
+def add_column_level(tab, arr, name):
+    tab = tab.T
+    tab[name] = arr
+    tab = tab.set_index(name, append=True)
+    tab.index = tab.index.swaplevel(0,1)
+    return tab.T
+
+def to_quants(vec, q=.25):
+    vec = (vec - vec.mean()) / vec.std()
+    if q == .5: 
+        return (vec > 0).astype(int)
+    vec = ((vec > vec.quantile(1-q)).astype(int) - 
+           (vec <= vec.quantile(q)).astype(int)).astype(float)
+    return vec
