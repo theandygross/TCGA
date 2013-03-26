@@ -88,6 +88,7 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='p',
     c_real = (c_real - c_real.mean()) / c_real.std()
     covariates[c_real.columns] = c_real
     clinical = covariates.join(surv.unstack()).dropna()
+    clinical['days'] = clinical['days'] / 365.
     clinical = clinical.groupby(level=0).first()
     
     df, factors = process_factors(clinical, feature, list(covariates.columns))
@@ -148,6 +149,34 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='p',
         return results
     if return_val == 'LR_p':
         return LR_p
+    
+def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
+                 formula=None):
+    if covariates is None:
+        covariates = DataFrame(index=feature.index)
+    c_real = covariates.ix[:,covariates.dtypes.isin([dtype(float), dtype(int)])]
+    c_real = (c_real - c_real.mean()) / c_real.std()
+    covariates[c_real.columns] = c_real
+    clinical = covariates.join(surv.unstack()).dropna()
+    clinical['days'] = clinical['days'] / 365.
+    clinical = clinical.groupby(level=0).first()
+    
+    df, factors = process_factors(clinical, feature, list(covariates.columns))
+    df = df[factors + ['days','event']]
+    df = df.dropna()
+    
+    df = convert_to_r_dataframe(df)
+    if formula is None:
+        fmla = get_formula(factors, interactions)
+        fmla = robjects.Formula(fmla)
+    else:
+        fmla = robjects.Formula(formula)
+    
+    s = survival.survfit(fmla, df)
+    res = convert_robj(base.summary(s).rx2('table'))
+    res = res.rename(index=lambda idx: idx.split('=')[1])
+    res = res[['records','events','median','0.95LCL','0.95UCL']]
+    return res
     
 def get_cox_ph(clinical, hit_vec=None, covariates=[], time_var='days',
                event_var='censored'):

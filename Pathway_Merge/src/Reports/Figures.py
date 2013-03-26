@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 from pylab import cm
 from numpy import nanmax, sort, linspace, arange, rank, ndenumerate, array
+import numpy as np
 from scipy.stats import gaussian_kde
 import base64
 from IPython.display import Image
@@ -100,27 +101,6 @@ def fischer_bar_chart(bin_vec, response_vec, ax=None, filename=None):
         fig.savefig(filename)
     return fig    
     
-def draw_survival_curves_KM_old(clinical, hit_vec, filename='tmp.png', show=False, 
-                         ax=None, title=True, labels=['No Mutation', 'Mutation']):
-    hit_vec.name = 'pathway'
-    df = clinical.join(hit_vec)
-    df = com.convert_to_r_dataframe(df) #@UndefinedVariable
-    fmla = robjects.Formula('Surv(days, censored) ~ ' + hit_vec.name)
-    fit = survival.survfit(fmla, df)
-    r('png')(filename=filename)
-    ls = r('2:' + str(len(set(hit_vec))+1)) #R line styles
-    r('plot')(fit, lty=ls, col=ls, xlab='Days to Death', ylab= 'Survival')
-    if title:
-        r('title')(hit_vec.name)
-    r('legend')(nanmax(clinical.days) * .7,.9, labels, lty=ls, col=ls)
-    r('dev.off()')
-    if ax or show:
-        img = plt.imread(filename)
-        if ax is None:
-            fig,ax = plt.subplots(1,1, figsize=(7,7), frameon=False)
-        ax.imshow(img)
-        ax.set_axis_off()
-        ax.get_figure().tight_layout()
         
 def draw_survival_curves_KM(clinical, hit_vec, time_var='days', event_var='deceased',
                             filename='tmp.png', show=False, ax=None, title=True, 
@@ -153,95 +133,72 @@ def draw_survival_curves_KM(clinical, hit_vec, time_var='days', event_var='decea
         r.text(0, labels=ann, pos=4)
     r('dev.off()')
         
-def draw_survival_curves_o(clinical, hit_vec, covariates=[], time_var='days',
-                         event_var='censored', filename='tmp.png',
-                         labels=['No Mutation', 'Mutation']):
-    if not all([cov in clinical for cov in covariates]):
-        missing = [cov for cov in covariates if cov not in clinical]
-        covariates = [cov for cov in covariates if cov in clinical]
     
-    hit_vec.name = 'pathway'
-    factors = ['pathway'] + covariates
-    df = clinical.join(hit_vec)
-    df[event_var]  = df[event_var].fillna(0)
-    df = df[factors + [time_var, event_var]]
-    df = df.dropna()
-    df[covariates] = (df[covariates] - df[covariates].mean())
-    df_r = com.convert_to_r_dataframe(df) #@UndefinedVariable
-    #fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ '+ '*'.join(factors)
-    interactions = '+'.join(['pathway*' + c for c in covariates])
-    if len(covariates) == 0:
-        interactions = 'pathway'
-    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ ' + interactions
-    fmla = robjects.Formula(fmla)
-    
-    s = survival.coxph(fmla, df_r)
-    results = com.convert_robj(dict(base.summary(s).iteritems())['coefficients'])
-    
-    df_2 = DataFrame({'pathway' : sorted(set(hit_vec))})
-    for cov in covariates:
-        df_2[cov] = [df[cov].median()]*len(df_2)
-    df_2 = com.convert_to_r_dataframe(df_2) #@UndefinedVariable
-    
-    f = survival.survfit(s, newdata=df_2)
-    ls = r('2:' + str(len(set(hit_vec))+1)) #R line styles
-    r.png(filename=filename, width=int(400*1.61), height=400)
-    r.par(mfrow=r.c(1,2))
-    r.plot(f, lty=1, col=ls, lwd=3, cex=1.5, xlab='Days to Event', 
-           ylab= 'Adj. Survival');
-    r.text(0, labels='p = ' + '%3.2e'%results.ix['pathway'].ix[-1], pos=4)
-    r.title('Cox PH Model')
-    
-    fmla = 'Surv(' + time_var + ', ' + event_var + ') ~ pathway'  
-    fmla = robjects.Formula(fmla) 
-    s = survival.survdiff(fmla, df_r)
-    p = str(s).split('\n\n')[-1].strip().split(', ')[-1]
-    r.plot(survival.survfit(fmla, df_r), lty=1, col=ls, lwd=3, cex=1.5, 
-                            xlab='Days to Event', ylab= 'Survival');
-    r.text(0, labels=p, pos=4)
-    r.title('Kaplan-Meyer')
-    r.legend(nanmax(df[time_var]) * .5, .95, labels, lty=1, col=ls)
-    r('dev.off()');  
-    
-def draw_survival_curves(feature, surv, filename='tmp.png', show=False, 
-                         title=True, labels=['No Mutation', 'Mutation'], 
-                         colors=['blue','red'], ann=None, show_legend=True):
-    name = feature.name
-    fmla = robjects.Formula('Surv(days, event) ~ feature')
-    m = get_cox_ph_ms(surv, feature, 
-                      return_val='model', formula=fmla)
-    if filename.endswith('.png'):
-        r.png(filename=filename, width=400, height=300, res=100, pointsize=8)
+def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', show=False, 
+                               title=True, labels=['No Mutation', 'Mutation'], 
+                               colors=['blue','red'], ann=None, show_legend=True, q=.25):
+    if assignment is None:
+        num_panels = 1
     else:
-        r.pdf(filename, width=4.5, height=3.75)
+        num_panels = len(assignment.unique())
+        
+    r.png(filename=filename, width=200*(num_panels+1), height=300, res=75)
+        
+    fmla = robjects.Formula('Surv(days, event) ~ feature')
+    r.par(mfrow=r.c(1, num_panels))
+    r.par(mar=r.c(4,5,4,1))
     
-    r_data = m.rx2('call')[2]
-    s = survival.survdiff(fmla, r_data)
-    p = str(s).split('\n\n')[-1].strip().split(', ')[-1]
+    if (get_vec_type(feature) == 'real') and (len(feature.unique()) > 5):
+        colors=['blue','orange','red']
+        if q == .5:
+            labels=['Bottom 50%', 'Top 50%']
+        else:
+            labels=['Bottom {}%'.format(int(q*100)), 'Normal', 'Top {}%'.format(int(q*100))]
+            
     ls = r.c(*colors)
-    r.plot(survival.survfit(fmla, r_data), lty=1, col=ls, lwd=3, cex=1.15, 
-                            xlab='Days to Event', ylab= 'Survival');
-    if title:
-        if type(title) == str:
-            r.title(title)
-        else:
-            r.title(name) 
     
-    if show_legend:
-        mean_s = surv.ix[:,'event'].mean()
-        if mean_s < .5:
-            r.legend(surv.ix[:,'days'].max() * .05, .4, labels, 
+    def plot_me(sub_f, label):
+        if (get_vec_type(sub_f) == 'real') and (len(sub_f.unique()) > 5):
+            sub_f = to_quants(sub_f, q=q)
+        m = get_cox_ph_ms(surv, sub_f, return_val='model', formula=fmla)
+        r_data = m.rx2('call')[2]
+        s = survival.survdiff(fmla, r_data)
+        p = str(s).split('\n\n')[-1].strip().split(', ')[-1]
+        ls = r.c(*colors)
+        
+        
+        r.plot(survival.survfit(fmla, r_data), lty=1, col=ls, lwd=4, cex=1.25, 
+                                xlab='Years to Event', ylab='Survival');
+        r.title(label, cex=3.)
+        if ann=='p':
+            r.text(0, labels='logrank ' + p, pos=4)
+        elif ann != None:
+            r.text(0, labels=ann, pos=4)
+     
+    if assignment is None:
+        assignment = np.ones_like(feature)
+        name = lambda v: feature.name
+    else:
+        name = lambda v: str(assignment.name) + ' = ' + str(v)
+    if show_legend == 'out':  
+        r.par(xpd=True, mar=r.c(4,5,5,8))
+    for value in sorted(assignment.ix[feature.index].dropna().unique()):
+        plot_me(feature.ix[assignment[assignment==value].index], name(value))
+
+    if show_legend == True:
+        mean_s = surv.ix[:,'event'].ix[assignment[assignment==value].index].mean()
+        if mean_s < .4:
+            r.legend(surv.ix[:,'days'].max() * .05, .45, labels, 
                      lty=1, col=ls, lwd=3, bty='o')
         else:
-            r.legend(surv.ix[:,'days'].max() * .5, .9, labels, 
+            r.legend(surv.ix[:,'days'].max() * .4, .9, labels, 
                      lty=1, col=ls, lwd=3, bty='o')
-
-    r.par(xpd=True)
-    if ann=='p':
-        r.text(0, labels='logrank ' + p, pos=4)
-    elif ann != None:
-        r.text(0, labels=ann, pos=4)
+    elif show_legend == 'out':
+        r.legend(surv.ix[:,'days'].max() * 1.1, .9, labels, 
+                     lty=1, col=ls, lwd=3, bty='o')
     r('dev.off()')
+    if show:
+        return Show(filename)
     
 def draw_survival_curves_model(feature, test, filename='tmp.png', show=False, 
                                title=True, labels=['No Mutation', 'Mutation'], 
@@ -283,9 +240,10 @@ def draw_survival_curves_model(feature, test, filename='tmp.png', show=False,
 class Show(object):
     def __init__(self, filename):
         self.filename = filename
+        self.image = Image(filename=self.filename)
     def _repr_html_(self):
-        i = Image(filename=self.filename)
-        return '''<img src='data:image/png;base64,''' + base64.standard_b64encode(i.data) + '\'>'
+        return ('''<img src='data:image/png;base64,''' + 
+                base64.standard_b64encode(self.image.data) + '\'>')
 
 def draw_survival_curves_split(feature, assignment, surv, filename='tmp.png', show=False, 
                                title=True, labels=['No Mutation', 'Mutation'], 
@@ -343,55 +301,7 @@ def draw_survival_curves_split(feature, assignment, surv, filename='tmp.png', sh
     r('dev.off()')
     if show:
         return Show(filename)
-        
-def draw_survival_curves_model2(feature, surv, covariates=None, 
-                                filename='tmp.png', show=False, 
-                               title=True, labels=['No Mutation', 'Mutation'], 
-                               colors=['blue','red'], ann=None):
-    name = feature.name
-    fmla = robjects.Formula('Surv(days, event) ~ feature')
-    m = get_cox_ph_ms(surv, feature, covariates, 
-                      return_val='model', formula=fmla)
-    ls = r('2:' + str(len(set(feature))+1)) #R line styles
-    if filename.endswith('.png'):
-        r.png(filename=filename, width=400, height=300, res=100, pointsize=8)
-    else:
-        r.pdf(filename, width=4.5, height=3.75)
-    
-    r_data = m.rx2('call')[2]
-    s = survival.survdiff(fmla, r_data)
-    p = str(s).split('\n\n')[-1].strip().split(', ')[-1]
-    ls = r.c(*colors)
-    r.plot(survival.survfit(fmla, r_data), lty=1, col=ls, lwd=3, cex=1.15, 
-                            xlab='Days to Event', ylab= 'Survival');
-    if title:
-        r.title(name)
-        
-    mean_s = surv.ix[:,'event'].mean()
-    if mean_s < .5:
-        r.legend(surv.ix[:,'days'].max() * .05, .4, labels, 
-                 lty=1, col=ls, lwd=3, bty='o')
-    else:
-        r.legend(surv.ix[:,'days'].max() * .05, .9, labels, 
-                 lty=1, col=ls, lwd=3, bty='o')
-    r.par(xpd=True)
-    if ann=='p':
-        r.text(0, labels='logrank ' + p, pos=4)
-    elif ann != None:
-        r.text(0, labels=ann, pos=4)
-    r('dev.off()')
 
-        
-def draw_pathway_count_bar_old(p, cancer, gene_sets, file_name='tmp.svg'):
-    fig, ax = plt.subplots(1,1, figsize=(3+len(gene_sets[p])/15.,2.5))
-    m = cancer.hit_matrix.ix[list(gene_sets[p]), cancer.patients] > 0
-    m = m[m.sum(1) > 0]
-    m.sum(1).plot(kind='bar', ax=ax, alpha=.4);
-    ax.set_xticklabels(m.index, ha='center', va='bottom', position=(0,.1), size=14)
-    ax.set_ylabel('# Patients')
-    
-    fig.tight_layout()
-    fig.savefig(file_name)
     
 def draw_pathway_count_bar(p, cancer, file_name='tmp.svg', colors='red'):
     fig, ax = plt.subplots(1,1, figsize=(3+len(cancer.gene_sets[p])/30.,2))
