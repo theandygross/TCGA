@@ -9,8 +9,6 @@ from pylab import cm
 from numpy import nanmax, sort, linspace, arange, rank, ndenumerate, array
 import numpy as np
 from scipy.stats import gaussian_kde
-import base64
-from IPython.display import Image
 
 from Processing.Helpers import match_series, split_a_by_b
 from Processing.Helpers import get_vec_type ,to_quants
@@ -22,6 +20,9 @@ from pandas import crosstab, Series, DataFrame
 import pandas.rpy.common as com 
 import scipy.cluster.hierarchy as sch
 import scipy.spatial.distance as dist
+
+import base64
+from IPython.display import Image
 
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
@@ -135,20 +136,29 @@ def draw_survival_curves_KM(clinical, hit_vec, time_var='days', event_var='decea
         
     
 def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', show=False, 
-                               title=True, labels=['No Mutation', 'Mutation'], 
-                               colors=['blue','red'], ann=None, show_legend=True, q=.25):
+                               title=True, labels=None, 
+                               colors=['blue','red'], ann=None, show_legend=True, q=.25, std=None):
     if assignment is None:
         num_panels = 1
+        assignment = np.ones_like(feature)
+        name = lambda v: str(feature.name) if feature.name != None else ''
     else:
         num_panels = len(assignment.unique())
+        name = lambda v: str(assignment.name) + ' = ' + str(v)
+    if (labels is None) and (feature.nunique() < 10):
+        labels = r.sort(r.c(*feature.unique()))  #R sorts bad
+        colors = ['blue','green','red','cyan','magenta','yellow','black']
+    if feature.dtype == 'bool':
+        feature = feature.map({True: 'True', False: 'False'})
         
     r.png(filename=filename, width=200*(num_panels+1), height=300, res=75)
         
     fmla = robjects.Formula('Surv(days, event) ~ feature')
     r.par(mfrow=r.c(1, num_panels))
     r.par(mar=r.c(4,5,4,1))
+    r.par(xpd=True)
     
-    if (get_vec_type(feature) == 'real') and (len(feature.unique()) > 5):
+    if (get_vec_type(feature) == 'real') and (len(feature.unique()) > 10):
         colors=['blue','orange','red']
         if q == .5:
             labels=['Bottom 50%', 'Top 50%']
@@ -158,28 +168,22 @@ def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', sho
     ls = r.c(*colors)
     
     def plot_me(sub_f, label):
-        if (get_vec_type(sub_f) == 'real') and (len(sub_f.unique()) > 5):
-            sub_f = to_quants(sub_f, q=q)
+        if (get_vec_type(sub_f) == 'real') and (len(sub_f.unique()) > 10):
+            sub_f = to_quants(sub_f, q=q, std=std)
         m = get_cox_ph_ms(surv, sub_f, return_val='model', formula=fmla)
         r_data = m.rx2('call')[2]
         s = survival.survdiff(fmla, r_data)
         p = str(s).split('\n\n')[-1].strip().split(', ')[-1]
         ls = r.c(*colors)
         
-        
         r.plot(survival.survfit(fmla, r_data), lty=1, col=ls, lwd=4, cex=1.25, 
                                 xlab='Years to Event', ylab='Survival');
         r.title(label, cex=3.)
         if ann=='p':
-            r.text(0, labels='logrank ' + p, pos=4)
+            r.text(3, 0, labels='logrank ' + p, pos=4)
         elif ann != None:
             r.text(0, labels=ann, pos=4)
-     
-    if assignment is None:
-        assignment = np.ones_like(feature)
-        name = lambda v: feature.name
-    else:
-        name = lambda v: str(assignment.name) + ' = ' + str(v)
+
     if show_legend == 'out':  
         r.par(xpd=True, mar=r.c(4,5,5,8))
     for value in sorted(assignment.ix[feature.index].dropna().unique()):
@@ -187,18 +191,26 @@ def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', sho
 
     if show_legend == True:
         mean_s = surv.ix[:,'event'].ix[assignment[assignment==value].index].mean()
-        if mean_s < .4:
-            r.legend(surv.ix[:,'days'].max() * .05, .45, labels, 
+        if mean_s < .5:
+            r.legend(surv.ix[:,'days'].max() * .05 / 365., .45, labels, 
                      lty=1, col=ls, lwd=3, bty='o')
         else:
-            r.legend(surv.ix[:,'days'].max() * .4, .9, labels, 
+            r.legend(surv.ix[:,'days'].max() * .4 / 365, .9, labels, 
                      lty=1, col=ls, lwd=3, bty='o')
     elif show_legend == 'out':
-        r.legend(surv.ix[:,'days'].max() * 1.1, .9, labels, 
+        r.legend(surv.ix[:,'days'].max() * 1.1  / 365, .9, labels, 
                      lty=1, col=ls, lwd=3, bty='o')
     r('dev.off()')
     if show:
         return Show(filename)
+    
+class Show(object):
+    def __init__(self, filename):
+        self.filename = filename
+        self.image = Image(filename=self.filename)
+    def _repr_html_(self):
+        return ('''<img src='data:image/png;base64,''' + 
+                base64.standard_b64encode(self.image.data) + '\'>')
     
 def draw_survival_curves_model(feature, test, filename='tmp.png', show=False, 
                                title=True, labels=['No Mutation', 'Mutation'], 
@@ -236,14 +248,6 @@ def draw_survival_curves_model(feature, test, filename='tmp.png', show=False,
         r.text(0, labels=ann, pos=4)
     r('dev.off()')
     
-
-class Show(object):
-    def __init__(self, filename):
-        self.filename = filename
-        self.image = Image(filename=self.filename)
-    def _repr_html_(self):
-        return ('''<img src='data:image/png;base64,''' + 
-                base64.standard_b64encode(self.image.data) + '\'>')
 
 def draw_survival_curves_split(feature, assignment, surv, filename='tmp.png', show=False, 
                                title=True, labels=['No Mutation', 'Mutation'], 
@@ -510,6 +514,12 @@ def fancy_raster(df, cluster=False, cmap=cm.get_cmap('Spectral'), norm=None):
         ax.set_frame_on(False)
     return img
 
+def count_plot(vec, name=None, ax=None):
+    if ax is None:
+        ax = plt.gca()
+    vec.value_counts().sort_index().plot(kind='bar', ax=ax)
+    ax.set_ylabel('# of Patients')
+    ax.set_xlabel(name if name is not None else vec.name)
 
     
 

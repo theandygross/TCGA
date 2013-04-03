@@ -13,6 +13,7 @@ from Processing.Tests import get_cox_ph, anova, fisher_exact_test, pearson_p
 from Processing.Helpers import bhCorrection, extract_pc, drop_first_norm_pc
 from Processing.Helpers import cluster_down, df_to_binary_vec, run_rate_permutation
 
+
 MIN_NUM_HITS = 8
 GENE_LENGTHS = read_csv('/cellar/users/agross/Data/GeneSets/coding_lengths.csv', 
                         index_col=0, squeeze=True)

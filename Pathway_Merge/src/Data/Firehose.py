@@ -107,7 +107,11 @@ def read_rppa(data_path, cancer):
     rppa = rppa.set_index(['protien','antibody'])
     return rppa
 
-def read_rnaSeq(cancer, data_path, patients=None, average_on_genes=False):
+def read_rnaSeq(cancer, data_path, patients=None, average_on_genes=False,
+                tissue_code='01'):
+    '''
+    tissue_code: ['01','11','All']  #if all returns MultiIndex
+    '''
     stddata_path = data_path + 'stddata/' + cancer
     data_types = filter(lambda f: f.startswith('rnaseq'), os.listdir(stddata_path))
     if 'rnaseqv2' in data_types:
@@ -117,32 +121,37 @@ def read_rnaSeq(cancer, data_path, patients=None, average_on_genes=False):
         path = [f[0] for f in list(os.walk(stddata_path + '/rnaseqv')) if 
                 'gene_expression/data' in f[0]][0] 
     rnaSeq = read_table(path + '/data.txt',index_col=0, skiprows=[1])
-    rnaSeq = np.log2(rnaSeq).clip_lower(0)
-    rnaSeq = rnaSeq.sort_index(axis=1).groupby(lambda s: s[:12]).first() #get rid of normals
-    rnaSeq = rnaSeq.select(lambda s: s.split('-')[3].startswith('01'), 1)
-    rnaSeq = rnaSeq.rename(columns=lambda s: s[:12])
+    rnaSeq = np.log2(rnaSeq).replace(-np.inf, -3.) #close enough to 0
+    if average_on_genes:
+        rnaSeq = rnaSeq.groupby(by=lambda n: n.split('|')[0]).mean()
+    rnaSeq.columns = pd.MultiIndex.from_tuples([(i[:12], i[13:15]) for i 
+                                                in rnaSeq.columns])
     if patients is not None:
         rnaSeq  = rnaSeq.ix[:, patients]
     rnaSeq = rnaSeq.dropna(thresh=100)
-    if average_on_genes:
-        rnaSeq = rnaSeq.groupby(by=lambda n: n.split('|')[0]).mean()
+    if tissue_code != 'All':
+        rnaSeq = rnaSeq.xs(tissue_code, axis=1, level=1)
     return rnaSeq
 
-def read_methylation(cancer, data_path, patients=None):
+def read_methylation(cancer, data_path, patients=None, tissue_code='01'):
+    '''
+    tissue_code: ['01','11','All']  #if all returns MultiIndex
+    '''
     processed_data_path = data_path + '/'.join(['ucsd_processing', cancer,''])
     data_types = filter(lambda f: f[:11] == 'methylation', os.listdir(processed_data_path))
     data_type = sorted([d for d in data_types if os.path.isfile(processed_data_path + d + 
                                                       '/meta_probes.csv')])[-1]
     meth = read_csv(processed_data_path +  data_type + '/meta_probes.csv', index_col=0)
-    meth = meth.sort_index(axis=1).groupby(lambda s: s[:12]).first() #get rid of normals
-    meth = meth.select(lambda s: s.split('-')[3].startswith('01'), 1)
-    meth = meth.rename(columns=lambda s: s[:12])
+    meth.columns = pd.MultiIndex.from_tuples([(i[:12], i[13:15]) for i in meth.columns])
     
     if patients is not None:
         meth  = meth.ix[:, patients]
     meth = meth.dropna(thresh=100)
     meth = meth.astype(np.float)
+    if tissue_code != 'All':
+        meth = meth.xs(tissue_code, axis=1, level=1)
     return meth
+
 
 def read_mrna(cancer, data_path, patients=None, num_genes='All'):
     stddata_path = data_path + '/'.join(['stddata', cancer,''])
@@ -256,4 +265,18 @@ def get_gistic(cancer_name, data_path, filter_with_rna=True,
                                  collapse_on_bands, min_patients)
     cna = cna_genes.append(lesions)
     return cna
+
+def get_submaf(data_path, cancer, genes):
+    maf = pd.read_table(data_path + '/'.join(['analyses', cancer, 'MutSigNozzleReport2',  cancer + '-TP.final_analysis_set.maf']))
+    maf = maf.dropna(how='all', axis=[0,1])
+    maf.Tumor_Sample_Barcode = maf.Tumor_Sample_Barcode.map(lambda s: s[:12])
+    maf = maf[maf.Hugo_Symbol.isin(genes)]
+    get_allele = lambda s: [a for a in [s['Tumor_Seq_Allele1'], s['Tumor_Seq_Allele2']]
+                        if a != s['Reference_Allele']][0]
+    maf['Alt_Allele'] = maf.apply(get_allele, 1)
+    maf = maf[['Hugo_Symbol', 'Chromosome', 'Start_position', 'End_position', 
+               'Strand', 'Reference_Allele', 'Alt_Allele', 'Tumor_Sample_Barcode']]
+    maf = maf.set_index('Hugo_Symbol', append=True)
+    maf.index = maf.index.swaplevel(0,1)
+    return maf   
     

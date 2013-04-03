@@ -81,6 +81,7 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='p',
     covariates: names of covariates in the cox model,
                 (must be columns in clinical DataFrame)
     '''
+    f_name = feature.name if feature is not None else ''
     if covariates is None:
         covariates = DataFrame(index=feature.index)
     #covariates = (covariates - covariates.mean()) / covariates.std()
@@ -107,6 +108,9 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='p',
     else:
         s = cox_model_selection(fmla, df)
     results = convert_robj(base.summary(s).rx2('coefficients'))
+    
+    if feature is not None:
+        feature.name = f_name
    
     if return_val == 'p':
         return results.ix['feature','Pr(>|z|)']
@@ -122,6 +126,12 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='p',
     
     elif return_val == 'model':
         return s
+    
+    elif return_val == 'model_desc':
+        desc = '\n\n'.join(str(s).split('\n\n')[-2:])
+        print desc
+        return desc
+    
     elif return_val in ['LR', 'LR_p']:
         if (((not hasattr(get_cox_ph_ms, 'null_model')) and (null_model == None))
             or (get_cox_ph_ms.params !=  surv.name, list(covariates.columns))):
@@ -176,6 +186,9 @@ def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
     res = convert_robj(base.summary(s).rx2('table'))
     res = res.rename(index=lambda idx: idx.split('=')[1])
     res = res[['records','events','median','0.95LCL','0.95UCL']]
+    res.columns = pd.MultiIndex.from_tuples([('','# Patients'), ('','# Events'), 
+                           ('', 'Median Time'), ('95% Confidence Int.', 'Lower'),
+                           ('95% Confidence Int.', 'Upper')])
     return res
     
 def get_cox_ph(clinical, hit_vec=None, covariates=[], time_var='days',

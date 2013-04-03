@@ -189,10 +189,14 @@ def add_column_level(tab, arr, name):
     tab.index = tab.index.swaplevel(0,1)
     return tab.T
 
-def to_quants(vec, q=.25):
+def to_quants(vec, q=.25, std=None):
     vec = (vec - vec.mean()) / vec.std()
     if q == .5: 
         return (vec > 0).astype(int)
-    vec = ((vec > vec.quantile(1-q)).astype(int) - 
-           (vec <= vec.quantile(q)).astype(int)).astype(float)
+    if std is None:
+        vec = ((vec > vec.quantile(1-q)).astype(int) - 
+               (vec <= vec.quantile(q)).astype(int)).astype(float)
+    else:
+        vec = (vec - vec.mean()) / vec.std()
+        vec = (1.*(vec > std) - 1.*(vec <= (-1*std))).astype(float)
     return vec
