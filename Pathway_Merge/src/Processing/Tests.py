@@ -217,8 +217,8 @@ def fisher_exact_test(hit_vec, response_vec):
     hit_vec: Series of labels (boolean, or (0,1))
     response_vec: Series of measurements (boolean, or (0,1))
     '''
-    #assert ((len(hit_vec.unique()) <= 2) and 
-    #        (len(response_vec.unique()) <= 2)) 
+    hit_vec.name = 'h' #crosstab can't handle multi_index
+    response_vec.name = 'd' #so we use dummy names
     cont_table = pd.crosstab(hit_vec, response_vec)
     if (cont_table.shape != (2,2)):
         return 1

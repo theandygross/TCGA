@@ -3,6 +3,7 @@ Created on Oct 15, 2012
 
 @author: agross
 '''
+
 import matplotlib.pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 from pylab import cm
@@ -75,10 +76,10 @@ def violin_plot_pandas(bin_vec, real_vec, ann='p', ax=None, filename=None):
     else:
         fig = plt.gcf()
     try:
-        categories = sorted(bin_vec.value_counts().index)
+        categories = bin_vec.value_counts().index
         violin_plot(ax, [real_vec[bin_vec==num] for num in categories], 
                     pos=categories, bp=True)
-        ax.set_xticklabels([str(c) +' (n=%i)'%sum(bin_vec==c) 
+        ax.set_xticklabels([str(c) +'\n(n=%i)'%sum(bin_vec==c) 
                             for c in categories])
     except:
         box_plot_pandas(bin_vec, real_vec, ax=ax)
@@ -88,6 +89,9 @@ def violin_plot_pandas(bin_vec, real_vec, ann='p', ax=None, filename=None):
         ax.set_title(str(bin_vec.name) +' x '+ str(real_vec.name))
     if ann == 'p':
         ax.annotate('p = {0:.2e}'.format(anova(bin_vec, real_vec)), (.95, .02),
+                    xycoords='axes fraction', ha='right',va='bottom', size=12)
+    elif ann != None:
+        ax.annotate(ann, (.95, .02),
                     xycoords='axes fraction', ha='right',va='bottom', size=12)
     if filename is not None:
         fig.savefig(filename)

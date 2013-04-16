@@ -113,13 +113,14 @@ def read_rnaSeq(cancer, data_path, patients=None, average_on_genes=False,
     tissue_code: ['01','11','All']  #if all returns MultiIndex
     '''
     stddata_path = data_path + 'stddata/' + cancer
+    if not os.path.isdir(stddata_path):
+        return
     data_types = filter(lambda f: f.startswith('rnaseq'), os.listdir(stddata_path))
     if 'rnaseqv2' in data_types:
         path = [f[0] for f in list(os.walk(stddata_path + '/rnaseqv2')) if 
                 'RSEM_genes_normalized/data' in f[0]][0]   
     else:
-        path = [f[0] for f in list(os.walk(stddata_path + '/rnaseqv')) if 
-                'gene_expression/data' in f[0]][0] 
+        return
     rnaSeq = read_table(path + '/data.txt',index_col=0, skiprows=[1])
     rnaSeq = np.log2(rnaSeq).replace(-np.inf, -3.) #close enough to 0
     if average_on_genes:
@@ -128,7 +129,7 @@ def read_rnaSeq(cancer, data_path, patients=None, average_on_genes=False,
                                                 in rnaSeq.columns])
     if patients is not None:
         rnaSeq  = rnaSeq.ix[:, patients]
-    rnaSeq = rnaSeq.dropna(thresh=100)
+    #rnaSeq = rnaSeq.dropna(thresh=100)
     if tissue_code != 'All':
         rnaSeq = rnaSeq.xs(tissue_code, axis=1, level=1)
     return rnaSeq

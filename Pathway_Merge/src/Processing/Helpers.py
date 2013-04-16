@@ -189,13 +189,18 @@ def add_column_level(tab, arr, name):
     tab.index = tab.index.swaplevel(0,1)
     return tab.T
 
-def to_quants(vec, q=.25, std=None):
+def to_quants(vec, q=.25, std=None, labels=False):
     vec = (vec - vec.mean()) / vec.std()
     if q == .5: 
-        return (vec > 0).astype(int)
-    if std is None:
+        vec = (vec > 0).astype(int)
+        if labels:
+            vec = vec.map({0:'Bottom 50%', 1:'Top 50%'})
+    elif std is None:
         vec = ((vec > vec.quantile(1-q)).astype(int) - 
                (vec <= vec.quantile(q)).astype(int)).astype(float)
+        if labels:
+            vec = vec.map({-1:'Bottom {}%'.format(int(q*100)), 0:'Normal', 
+                           1:'Top {}%'.format(int(q*100))})
     else:
         vec = (vec - vec.mean()) / vec.std()
         vec = (1.*(vec > std) - 1.*(vec <= (-1*std))).astype(float)
