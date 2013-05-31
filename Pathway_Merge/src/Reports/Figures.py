@@ -9,11 +9,13 @@ from matplotlib.patches import FancyBboxPatch
 from pylab import cm
 from numpy import nanmax, sort, linspace, arange, rank, ndenumerate, array
 import numpy as np
+import pandas as pd
 from scipy.stats import gaussian_kde
 
 from Processing.Helpers import match_series, split_a_by_b
 from Processing.Helpers import get_vec_type ,to_quants
 from Processing.Tests import get_cox_ph_ms, pearson_p, anova
+from matplotlib_venn import venn2
 
 import rpy2.robjects as robjects 
 from rpy2.robjects import r
@@ -88,14 +90,15 @@ def violin_plot_pandas(bin_vec, real_vec, ann='p', ax=None, filename=None):
     if type(bin_vec.name) == str:
         ax.set_title(str(bin_vec.name) +' x '+ str(real_vec.name))
     if ann == 'p':
-        ax.annotate('p = {0:.2e}'.format(anova(bin_vec, real_vec)), (.95, .02),
+        ax.annotate('p = {0:.0e}'.format(anova(bin_vec, real_vec).ix['p']), (.95, .02),
                     xycoords='axes fraction', ha='right',va='bottom', size=12)
     elif ann != None:
         ax.annotate(ann, (.95, .02),
                     xycoords='axes fraction', ha='right',va='bottom', size=12)
     if filename is not None:
         fig.savefig(filename)
-    return fig
+    return
+
     
 def fischer_bar_chart(bin_vec, response_vec, ax=None, filename=None):
     if ax is None:
@@ -140,8 +143,8 @@ def draw_survival_curves_KM(clinical, hit_vec, time_var='days', event_var='decea
         
     
 def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', show=False, 
-                               title=True, labels=None, 
-                               colors=['blue','red'], ann=None, show_legend=True, q=.25, std=None):
+                        title=True, labels=None, colors=['blue','red'], ann=None, 
+                        show_legend=True, q=.25, std=None):
     if assignment is None:
         num_panels = 1
         assignment = np.ones_like(feature)
@@ -191,7 +194,9 @@ def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', sho
     if show_legend == 'out':  
         r.par(xpd=True, mar=r.c(4,5,5,8))
     for value in sorted(assignment.ix[feature.index].dropna().unique()):
-        plot_me(feature.ix[assignment[assignment==value].index], name(value))
+        f = feature.ix[assignment[assignment==value].index]
+        if len(f.unique()) > 1:
+            plot_me(f, name(value))
 
     if show_legend == True:
         mean_s = surv.ix[:,'event'].ix[assignment[assignment==value].index].mean()
@@ -525,5 +530,15 @@ def count_plot(vec, name=None, ax=None):
     ax.set_ylabel('# of Patients')
     ax.set_xlabel(name if name is not None else vec.name)
 
+def venn_pandas(a,b):
+    colors = plt.rcParams['axes.color_cycle']
+    gc = pd.concat([a,b], axis=1).dropna().astype(int).astype(str).apply(lambda s: ''.join(s), axis=1)
+    v = venn2(gc.value_counts().sort_index()[1:], set_labels=[b.name, a.name], normalize_to=1.)
+    v.patches[0].set_facecolor(colors[0])
+    v.patches[1].set_facecolor(colors[2])
+    v.patches[2].set_facecolor(colors[4])
+    v.patches[0].set_alpha(.7)
+    v.patches[1].set_alpha(.7)
+    v.patches[2].set_alpha(.7)
     
 

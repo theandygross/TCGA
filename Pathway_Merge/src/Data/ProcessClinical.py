@@ -6,9 +6,10 @@ Created on Jan 23, 2013
 import os
 from pandas import Series, DataFrame
 from pandas import read_table, datetime
+import pandas as pd
 
 from numpy import nan, array
-
+NA_VALS = ['[Completed]', '[Not Available]', '[Not Applicable]']
 
 def to_date(s):
     try:
@@ -165,7 +166,7 @@ def process_specific_features(c):
         c['triple_neg'] = (c[['ER','PR','her2']] == 'negative').sum(1) == 3
     return c
 
-def get_clinical(cancer, data_path, patients, filtered_patients, **params):
+def get_clinical_o(cancer, data_path, patients, filtered_patients, **params):
     p = params
     path = (data_path + '/'.join(['stddata', cancer,'Clinical', cancer]) + 
             '.clin.merged.txt')
@@ -198,3 +199,38 @@ def get_clinical(cancer, data_path, patients, filtered_patients, **params):
         cl = cl.join(followup_vars)
         
     return cl, drugs, followup, timeline, survival
+
+def get_clinical(cancer, data_path, patients=None, filtered_patients=None, **params):
+    followup = pd.read_table('{}stddata/{}/Clinical/clinical_patient_{}.txt'.format(data_path, cancer, cancer.lower()), 
+                             index_col=0, na_values=NA_VALS)
+    for f in os.listdir(data_path):
+        if 'clinical_follow_up' in f:
+            fu =  pd.read_table(data_path + f, index_col=0, na_values=NA_VALS)
+            followup = followup.append(fu)
+    
+    followup = followup.sort(columns=['days_to_death', 'days_to_last_followup','days_to_last_known_alive'], 
+                             ascending=False)
+    followup = followup.groupby(lambda s: s[:12]).last()
+    deceased = followup.vital_status
+    
+    age = -1*followup.days_to_birth.dropna() / 365.
+    timeline = followup[['days_to_last_followup', 'days_to_death','days_to_last_known_alive']].dropna(how='all')
+    timeline['days'] = timeline.max(1)
+    deceased = followup.vital_status == 'DECEASED'
+    
+    new_event = followup.select(lambda s: 'days' in s, 1)
+    timeline = new_event.combine_first(timeline)
+    
+    survival = pd.concat([timeline.days, deceased], keys=['days','event'], axis=1)
+    survival = survival.dropna().stack().astype(float)
+    age = followup.days_to_birth / -365.25
+    stage = followup.clinical_stage.map(lambda s: s.replace('A','').replace('B','').replace('C',''), 
+                                        na_action='ignore')
+    year_of_diagnosis = followup.dropna(axis=1, thresh=100).year_of_initial_pathologic_diagnosis
+    
+    
+    survival = pd.concat([survival], keys=['survival'], axis=1)
+    followup['stage'] = stage
+    followup['age'] = age
+    followup['year_of_diagnosis'] = year_of_diagnosis
+    return followup, None, None, timeline, survival

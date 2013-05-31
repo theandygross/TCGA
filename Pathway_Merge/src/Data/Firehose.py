@@ -131,7 +131,7 @@ def read_rnaSeq(cancer, data_path, patients=None, average_on_genes=False,
         rnaSeq  = rnaSeq.ix[:, patients]
     #rnaSeq = rnaSeq.dropna(thresh=100)
     if tissue_code != 'All':
-        rnaSeq = rnaSeq.xs(tissue_code, axis=1, level=1)
+        rnaSeq = rnaSeq.T.xs(tissue_code, level=1).T #pandas bug
     return rnaSeq
 
 def read_methylation(cancer, data_path, patients=None, tissue_code='01'):
@@ -150,25 +150,31 @@ def read_methylation(cancer, data_path, patients=None, tissue_code='01'):
     meth = meth.dropna(thresh=100)
     meth = meth.astype(np.float)
     if tissue_code != 'All':
-        meth = meth.xs(tissue_code, axis=1, level=1)
+        meth = meth.T.xs(tissue_code, level=1).T #pandas bug
     return meth
 
 
-def read_mrna(cancer, data_path, patients=None, num_genes='All'):
-    stddata_path = data_path + '/'.join(['stddata', cancer,''])
-    chips = filter(lambda f: 'transcriptome__agilent' in f, os.listdir(stddata_path))
-    data_type = sorted(chips)[-1]
-    mrna = read_table(stddata_path +  data_type + 
-                      '/unc_lowess_normalization_gene_level_data.txt',
-                      index_col=0, skiprows=[1], na_values=['null'])
-    mrna = mrna.rename(columns=lambda s: s[:12])
+def read_mrna(cancer, data_path, patients=None, num_genes='All', tissue_code='01'):
+    stddata_path = data_path + 'stddata/' + cancer
+    data_types = filter(lambda f: f.startswith('transcriptome'), os.listdir(stddata_path))
+    if 'transcriptome' in data_types:
+        path = [f[0] for f in list(os.walk(stddata_path + '/transcriptome')) if 
+                'unc_lowess_normalization_gene_level/data' in f[0]][0]   
+    else:
+       return
+    mrna = read_table(path + '/data.txt',index_col=0, skiprows=[1], na_values=['null'])
+    #chips = filter(lambda f: 'transcriptome__agilent' in f, os.listdir(stddata_path))
+    #data_type = sorted(chips)[-1]
+   
+    mrna.columns = pd.MultiIndex.from_tuples([(i[:12], i[13:15]) for i 
+                                               in mrna.columns])
     if patients is not None:
         mrna  = mrna.ix[:, patients]
-    mrna = mrna.astype(np.float)
-    if num_genes is not 'All':
-        variable = np.sort(mrna.mad(axis=1)).tail(num_genes).index
-        mrna = mrna.ix[variable]
+    #rnaSeq = rnaSeq.dropna(thresh=100)
+    if tissue_code != 'All':
+        mrna = mrna.T.xs(tissue_code, level=1).T #pandas bug
     return mrna
+
 
 def read_mirna(cancer, data_path):
     stddata_path = data_path + '/'.join(['stddata', cancer,''])
@@ -267,7 +273,7 @@ def get_gistic(cancer_name, data_path, filter_with_rna=True,
     cna = cna_genes.append(lesions)
     return cna
 
-def get_submaf(data_path, cancer, genes):
+def get_submaf(data_path, cancer, genes, fields='basic'):
     maf = pd.read_table(data_path + '/'.join(['analyses', cancer, 'MutSigNozzleReport2',  cancer + '-TP.final_analysis_set.maf']))
     maf = maf.dropna(how='all', axis=[0,1])
     maf.Tumor_Sample_Barcode = maf.Tumor_Sample_Barcode.map(lambda s: s[:12])
@@ -275,8 +281,10 @@ def get_submaf(data_path, cancer, genes):
     get_allele = lambda s: [a for a in [s['Tumor_Seq_Allele1'], s['Tumor_Seq_Allele2']]
                         if a != s['Reference_Allele']][0]
     maf['Alt_Allele'] = maf.apply(get_allele, 1)
-    maf = maf[['Hugo_Symbol', 'Chromosome', 'Start_position', 'End_position', 
-               'Strand', 'Reference_Allele', 'Alt_Allele', 'Tumor_Sample_Barcode']]
+    if fields == 'basic':
+        maf = maf[['Hugo_Symbol', 'Chromosome', 'Start_position', 'End_position', 
+                   'Strand', 'Reference_Allele', 'Alt_Allele', 
+                   'Tumor_Sample_Barcode']]
     maf = maf.set_index('Hugo_Symbol', append=True)
     maf.index = maf.index.swaplevel(0,1)
     return maf   

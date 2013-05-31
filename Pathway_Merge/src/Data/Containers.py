@@ -19,6 +19,9 @@ from Processing.Helpers import make_path_dump
 def tree(): return defaultdict(tree)
 
 class Run(object):
+    '''
+    Object for storing meta-data and functions for dealing with Firehose runs.
+    '''
     def __init__(self, date, version, data_path, result_path, parameters, description=''):
         self.date = date
         self.data_path = data_path

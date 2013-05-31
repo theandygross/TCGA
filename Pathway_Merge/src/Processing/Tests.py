@@ -7,6 +7,7 @@ import pickle as pickle
 import pandas as pd
 import rpy2.robjects as robjects
 
+from scipy import stats
 from scipy.stats import f_oneway, fisher_exact, pearsonr, chi2, kruskal
 from numpy import nan, dtype
 
@@ -25,7 +26,11 @@ robjects.r.sink(zz, type='message')
 
 def cox_model_selection(fmla, df):
     s = survival.coxph(fmla, df)
-    reduced = robjects.r.step(s, direction='both', trace=0);
+    #null_model = robjects.r.formula('Surv(days, event) ~ 1')
+    #null_model = robjects.r.formula('Surv(days, event) ~ feature + days_to_birth + rate_non')
+    #s = survival.coxph(null_model, df)
+    #scope = robjects.ListVector({'lower': null_model, 'upper': fmla})
+    reduced = robjects.r.step(s, direction='both', trace=0)
     fmla_reduced = reduced.rx2('formula')
     s_reduced = survival.coxph(fmla_reduced, df)
     return s_reduced
@@ -57,18 +62,27 @@ def process_factors(clinical, hit_vec=None, covariates=[]):
 
 def get_formula(factors, get_interactions=True):
     if len(factors) > 1:
+        interactions = ' + '.join(factors)
         if get_interactions:
-            interactions = ' + '.join(('*'.join([a,b]) for a in factors 
+            interactions += ' + '
+            interactions += ' + '.join((':'.join([a,b]) for a in factors 
                                       for b in factors if a<b))
-        else:
-            interactions = ' + '.join(factors)
     elif len(factors) == 1: 
         interactions = factors[0]
     else:
         interactions = '1'
     fmla = 'Surv(days, event) ~ {}'.format(interactions)
     return fmla
-                        
+                   
+def log_rank(feature, surv):
+    fmla = robjects.Formula('Surv(days, event) ~ feature')
+    m = get_cox_ph_ms(surv, feature, return_val='model', formula=fmla)
+    r_data = m.rx2('call')[2]
+    s = survival.survdiff(fmla, r_data)
+    p = stats.chi2.sf(s.rx2('chisq')[0], 1)
+    return pd.Series({'chi2': s.rx2('chisq')[0], 'p': p})
+
+     
 def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='p', 
                   null_model=None, formula=None, get_model=False,
                   interactions=True):
@@ -183,12 +197,24 @@ def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
         fmla = robjects.Formula(formula)
     
     s = survival.survfit(fmla, df)
-    res = convert_robj(base.summary(s).rx2('table'))
+    summary = base.summary(s, times=robjects.r.c(5))
+    #return summary
+    res =  convert_robj(summary.rx2('table'))
     res = res.rename(index=lambda idx: idx.split('=')[1])
     res = res[['records','events','median','0.95LCL','0.95UCL']]
-    res.columns = pd.MultiIndex.from_tuples([('','# Patients'), ('','# Events'), 
-                           ('', 'Median Time'), ('95% Confidence Int.', 'Lower'),
-                           ('95% Confidence Int.', 'Upper')])
+    res.columns = pd.MultiIndex.from_tuples([('Stats','# Patients'), 
+                                             ('Stats','# Events'), 
+                                             ('Median Survival', 'Median'), 
+                                             ('Median Survival', 'Lower'),
+                                             ('Median Survival', 'Upper')])
+    idx = map(lambda s: s.replace('feature=',''), 
+              summary.rx2('strata').iter_labels())
+    df = pd.DataFrame({d: list(summary.rx2(d)) for d in 
+                       ['strata','surv','lower','upper']},
+                      index=idx)
+    res[('5y Survival', 'Lower')] = df['lower']
+    res[('5y Survival', 'Surv')] = df['surv']
+    res[('5y Survival', 'Upper')] = df['upper']
     return res
     
 def get_cox_ph(clinical, hit_vec=None, covariates=[], time_var='days',
@@ -207,8 +233,9 @@ def anova(hit_vec, response_vec, min_size=5):
     if hit_vec.value_counts().min < min_size:
         return nan
     hit_vec, response_vec = match_series(hit_vec, response_vec)
-    return f_oneway(*[response_vec[hit_vec == num] for num in 
-                      hit_vec.unique()])[1]
+    res = f_oneway(*[response_vec[hit_vec == num] for num in 
+                     hit_vec.unique()])
+    return pd.Series(res, index=['F','p'])
 
 def fisher_exact_test(hit_vec, response_vec):
     '''
@@ -222,7 +249,7 @@ def fisher_exact_test(hit_vec, response_vec):
     cont_table = pd.crosstab(hit_vec, response_vec)
     if (cont_table.shape != (2,2)):
         return 1
-    return fisher_exact(cont_table)[1]
+    return pd.Series(fisher_exact(cont_table), index=['odds_ratio','p'])
 
 def kruskal_p(hit_vec, response_vec, min_size=5):
     '''
@@ -237,6 +264,21 @@ def kruskal_p(hit_vec, response_vec, min_size=5):
                           hit_vec.unique()])[1]
     except:
         return nan
+    
+def kruskal_pandas(hit_vec, response_vec, min_size=5):
+    '''
+    Wrapper to do a one way anova on pandas Series
+    ------------------------------------------------
+    hit_vec: Series of labels
+    response_vec: Series of measurements
+    '''
+    try:
+        hit_vec, response_vec = match_series(hit_vec, response_vec)
+        res = kruskal(*[response_vec[hit_vec == num] for num in 
+                          hit_vec.unique()])
+        return pd.Series(res, index=['H','p'])
+    except:
+        return pd.Series(index=['H','p'])
                       
 def pearson_p(a,b):
     '''
@@ -247,6 +289,40 @@ def pearson_p(a,b):
     a,b = match_series(a.dropna(), b.dropna())
     _,p = pearsonr(a,b)
     return p
+
+def screen_feature(vec, test, df):
+    s = pd.DataFrame({f: test(vec, feature) for f,feature in df.iterrows()}).T
+    s['q'] = bhCorrection(s.p)
+    s = s.sort(columns='p')
+    return s
+
+def spearman_pandas(a, b, min_size=5):
+    '''
+    Wrapper to do a one way anova on pandas Series
+    ------------------------------------------------
+    hit_vec: Series of labels
+    response_vec: Series of measurements
+    '''
+    try:
+        a, b = match_series(a, b)
+        res = stats.spearmanr(a,b)
+        return pd.Series(res, index=['rho','p'])
+    except:
+        return pd.Series(index=['rho','p'])
+    
+def pearson_pandas(a, b, min_size=5):
+    '''
+    Wrapper to do a one way anova on pandas Series
+    ------------------------------------------------
+    hit_vec: Series of labels
+    response_vec: Series of measurements
+    '''
+    try:
+        a, b = match_series(a, b)
+        res = stats.pearsonr(a,b)
+        return pd.Series(res, index=['rho','p'])
+    except:
+        return pd.Series(index=['rho','p'])
 
 class SurvivalTest(object):
     def __init__(self, surv, covariates):

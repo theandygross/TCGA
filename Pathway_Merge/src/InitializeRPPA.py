@@ -4,7 +4,7 @@ import os as os
 import sys as sys
 import pickle as pickle
 
-from pandas import DataFrame, concat
+import pandas as pd
 from matplotlib.pylab import subplots
 from numpy import diag
 
@@ -13,13 +13,13 @@ from Processing.Helpers import frame_svd, extract_pc
 
 def initialize_rppa(run, cancer):
     '''Load in run and data'''
-    data = Dataset(cancer, run, data_type)
+    data = Dataset(cancer, run, 'RPPA')
     
     pc = data.df.groupby(level=0).apply(extract_pc)
-    pc = DataFrame(pc.dropna().to_dict()).T
+    pc = pd.DataFrame(pc.dropna().to_dict()).T
     pc = pc[data.df.groupby(level=0).size() > 1]
     data.phos_loadings = pc.gene_vec
-    data.phos = DataFrame(pc.pat_vec.to_dict()).T
+    data.phos = pd.DataFrame(pc.pat_vec.to_dict()).T
     
     '''Normalize data and calculate principal components'''
     df = data.df
@@ -31,18 +31,20 @@ def initialize_rppa(run, cancer):
     '''Reconstruct data without first pc'''
     S_n = S.copy()
     S_n[0] = 0
-    rest = U.dot(DataFrame(diag(S_n)).dot(vH.T))
+    rest = U.dot(pd.DataFrame(diag(S_n)).dot(vH.T))
     
     '''Extract PCs for all gene sets'''
     pc = {p: extract_pc(rest.ix[g]) for p,g, in run.gene_sets.iteritems() 
           if len(set(rest.ix[g].index.get_level_values(0))) > 4}
-    pc = DataFrame({p: s for p,s in pc.iteritems() if s}).T
+    pc = pd.DataFrame({p: s for p,s in pc.iteritems() if s}).T
     
     data.pc_genes = pc.gene_vec
     data.pct_var = pc.pct_var
-    data.pathways = DataFrame(pc.pat_vec.to_dict()).T
-    
-    data.features = concat([data.df, data.phos, data.pathways], 
+    data.pathways = pd.DataFrame(pc.pat_vec.to_dict()).T
+    df = data.df.copy()
+    df.index = pd.Index(map(tuple, df.index))
+
+    data.features = pd.concat([df, data.phos, data.pathways], 
                             keys=['protiens','phos_pc','pathways'])
     
     '''Create figures for pathway gene sets'''

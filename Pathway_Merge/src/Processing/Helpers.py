@@ -203,5 +203,30 @@ def to_quants(vec, q=.25, std=None, labels=False):
                            1:'Top {}%'.format(int(q*100))})
     else:
         vec = (vec - vec.mean()) / vec.std()
-        vec = (1.*(vec > std) - 1.*(vec <= (-1*std))).astype(float)
+        vec = (1.*(vec > std) - 1.*(vec <= (-1*std)))
+        if labels:
+            vec =  vec.map({-1: 'low', 0: 'normal', 1:'high'})
     return vec
+
+def combine(a,b):
+    '''
+    Combine two categorical features.
+    '''
+    combo = (a*1.).add(b*2.)
+    combo = combo.dropna()
+    if not a.name:
+        a.name = 'first'
+    if not b.name:
+        b.name = 'second'
+    if a.name != b.name:
+        combo = combo.map({0: 'neither', 1: a.name, 2: b.name, 3:'both'})
+    else:
+        combo = combo.map({0: 'neither', 1: 'first', 2: 'second', 3:'both'})
+    return combo
+
+
+def true_index(s):
+    '''Return indicies for which the variable is true'''
+    return s[s].index
+
+ti = true_index
