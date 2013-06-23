@@ -42,16 +42,17 @@ class Run(object):
         return s
                  
     def get_meta(self):
-        count_file  = [f for f in os.listdir(self.data_path + 'samples_report') if 
-                       f.startswith('sample_counts')][0]
-        self.sample_matrix = read_table(self.data_path + 'samples_report/' + count_file, 
+        #count_file  = [f for f in os.listdir(self.data_path + 'samples_report') if 
+        #               f.startswith('sample_counts')][0]
+        self.sample_matrix = read_table(self.data_path + 'meta_data/sample_counts.tsv', 
                                       index_col=0)
         self.data_types = array(self.sample_matrix.columns)
         self.cancers = array(self.sample_matrix.index[:-1])
         
-        self.sample_data = read_csv(self.data_path + 'meta_data/samples.csv', index_col=0)
+        #self.sample_data = read_csv(self.data_path + 'meta_data/samples.csv', index_col=0)
         self.cancer_codes = read_table(self.data_path + 'meta_data/diseaseStudy.txt', 
                                        index_col=0, squeeze=True)
+        self.cancers = list(self.cancer_codes.index)
         
     def load_cancer(self, cancer):
         path = '/'.join([self.report_path, cancer, 'CancerObject.p'])
@@ -70,8 +71,8 @@ class Cancer(object):
         self.samples = counts[counts > 0]
         self.data_types = array(self.samples.index)
         
-        sample_data = run.sample_data[run.sample_data.Disease == name]
-        self.patients = array(sample_data['Participant Number'].drop_duplicates())
+        #sample_data = run.sample_data[run.sample_data.Disease == name]
+        #self.patients = array(sample_data['Participant Number'].drop_duplicates())
     
     def load_clinical(self):
         assert hasattr(self, 'path')
@@ -152,6 +153,17 @@ class Dataset(object):
             self.compressed = True
         elif data_type == 'RPPA':
             self.df = FH.read_rppa(run.data_path, cancer.name)
+            self.compressed = True
+        elif data_type == 'miRNASeq':
+            df = FH.read_miRNASeq(cancer.name, run.data_path)
+            binary = (df[(df < -1).sum(1) > (df.shape[1]/2)] >= -1)*1.
+            binary = binary[binary.sum(1).isin(range(20, df.shape[1]/2))]
+            real = df[((df.max(1) - df.min(1)) > 2)]
+            real = real.ix[(real == -3).sum(1) < real.shape[1]/2.]
+            self.features = pd.concat([real, binary], keys=['real','binary'])
+            self.df = df
+            self.binary = binary
+            self.real = real
             self.compressed = True
         else:
             return

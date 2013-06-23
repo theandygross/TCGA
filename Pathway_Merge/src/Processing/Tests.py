@@ -9,6 +9,7 @@ import rpy2.robjects as robjects
 
 from scipy import stats
 from scipy.stats import f_oneway, fisher_exact, pearsonr, chi2, kruskal
+from scipy.stats import bartlett
 from numpy import nan, dtype
 
 from pandas import Series, DataFrame
@@ -323,6 +324,20 @@ def pearson_pandas(a, b, min_size=5):
         return pd.Series(res, index=['rho','p'])
     except:
         return pd.Series(index=['rho','p'])
+    
+def bartlett_pandas(group_vec, response_vec, min_size=5):
+    '''
+    Wrapper to do a one way anova on pandas Series
+    ------------------------------------------------
+    group_vec: Series of labels
+    response_vec: Series of measurements
+    '''
+    if group_vec.value_counts().min() < min_size:
+        return nan
+    group_vec, response_vec = match_series(group_vec, response_vec)
+    res = bartlett(*[response_vec[group_vec == num] for num in 
+                     group_vec.unique()])
+    return pd.Series(res, index=['T','p'])
 
 class SurvivalTest(object):
     def __init__(self, surv, covariates):

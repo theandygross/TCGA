@@ -7,7 +7,7 @@ import os as os
 from subprocess import call, check_output
 from pandas import read_table
 
-METH_FOLDER = 'methylation/humanmethylation450/jhu_usc_edu__Level_3/'
+METH_FOLDER = 'methylation/humanmethylation450'
 METH_FILE = 'within_bioassay_data_set_function_data.txt'
 
 def pull_out_beta_values(folder, probes='All', outfile='beta_values.txt'):

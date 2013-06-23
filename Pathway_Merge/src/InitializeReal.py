@@ -29,9 +29,13 @@ U,S,vH = frame_svd(norm)
 data.pc1, data.pc2 = vH[0], vH[1]
 data.loading1, data.loading2 = U[0], U[1]
 
+if data_type == 'miRNASeq':
+    data.save()
+    sys.exit()
+
 '''Reconstruct data without first pc'''
 S_n = S.copy()
-S_n[0] = 0
+#S_n[0] = 0
 rest = U.dot(DataFrame(diag(S_n)).dot(vH.T))
 
 '''Extract PCs for all gene sets'''

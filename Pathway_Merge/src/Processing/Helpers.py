@@ -27,8 +27,8 @@ def bhCorrection(s, n=None):
 def match_series(a,b):
     a, b = a.align(b, join='inner', copy=False)
     valid = notnull(a) & notnull(b)
-    a = a[valid]
-    b = b[valid]
+    a = a[valid].groupby(lambda s: s).first() #some sort of duplicate index bug
+    b = b[valid].groupby(lambda s: s).first()
     return a,b
 
 def split_a_by_b(a,b):

@@ -72,12 +72,13 @@ def initialize(run, data_types, cancers='All', patients=None,
         filtered_patients = list(filtered_patients)
     
     path = run.report_path
-    queue = []
+    
     if init_cancer:
-        queue += [(initialize_cancer, (path, c, patients, filtered_patients))
+        queue = [(initialize_cancer, (path, c, patients, filtered_patients))
                   for c in cancers]
-        
-    queue += [(initialize_data, (path, c, data_type)) for c in cancers
+        parallel_run(queue)
+    
+    queue = [(initialize_data, (path, c, data_type)) for c in cancers
               for data_type in data_types]
     if dry_run:
         return queue

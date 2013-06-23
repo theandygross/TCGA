@@ -10,14 +10,14 @@ Nothing in here should depend on any other modules.
 '''
 import numpy as np
 import os as os
-from pandas import DataFrame, Series, read_table, read_csv
+from pandas import DataFrame, Series
 import pandas as pd
 
 from Processing.Tests import kruskal_p
 from Processing.Helpers import bhCorrection
 
 def read_clinical(data_path):
-    clinical = read_table(data_path + 'From_Stddata/' + 
+    clinical = pd.read_table(data_path + 'From_Stddata/' + 
                                  'clin.merged.picked.txt', index_col=0, 
                                  header=0, skiprows=[1])
     clinical = clinical.rename(columns=str.upper).T
@@ -36,32 +36,9 @@ def read_clinical(data_path):
     clinical = clinical.replace('male',True).replace('female',False)
     return clinical
 
-def get_mutation_matrix_o(cancer, data_path, q_cutoff=.25, get_mutsig=False):
-    f = data_path + '/'.join(['broad_analyses', cancer, 'MutSigRun2',''])
-    if os.path.isdir(f):
-        mutation_matrix = read_table(f + cancer + '.per_gene.mutation_counts.txt', 
-                                     index_col=0)
-        mutation_matrix = mutation_matrix.select(lambda s: s.count('_') >= 2, axis=1)
-        adjust_barcodes = lambda s: '-'.join(['TCGA'] + s.split('_')[1:3])
-        mutation_matrix = mutation_matrix.rename(columns=adjust_barcodes)
-    else:
-        mutation_matrix = data_path + '/'.join(['ucsd_processing', 'mutation', 
-                                                'mutation_matrix.csv'])
-        mutation_matrix = read_csv(mutation_matrix, index_col=0)
-        mutation_matrix = mutation_matrix.apply(np.nan_to_num)
-        sig_genes = np.array(mutation_matrix[mutation_matrix.sum(1) > 3].index)
-    if get_mutsig:
-        mutsig = read_table(f + cancer +  '.sig_genes.txt', index_col=1)
-        if mutsig.q.dtype != type(.1):
-            mutsig.q = mutsig.q.map(lambda s: float(s.replace('<','')))
-        sig_genes = np.array(mutsig[mutsig.q < .25].index)
-        return mutation_matrix, mutsig
-    else:
-        sig_genes = np.array(mutation_matrix[mutation_matrix.sum(1) > 3].index)
-        return mutation_matrix, sig_genes
  
 def get_mutation_matrix(data_path, cancer):
-    maf = read_table(data_path + '/'.join(['analyses', cancer, 'MutSigNozzleReport2', 
+    maf = pd.read_table(data_path + '/'.join(['analyses', cancer, 'MutSigNozzleReport2', 
                                              cancer + '-TP.final_analysis_set.maf']))
     maf = maf.dropna(how='all', axis=[0,1])
     maf.Tumor_Sample_Barcode = maf.Tumor_Sample_Barcode.map(lambda s: s[:12])
@@ -73,20 +50,20 @@ def get_mutation_matrix(data_path, cancer):
     
 def get_gistic_gene_matrix(data_path, cancer):
     gistic_ext = data_path + '/'.join(['analyses', cancer, 'CopyNumber_Gistic2', ''])
-    gistic = read_table(gistic_ext + 'all_thresholded.by_genes.txt', index_col=[2,1,0])
+    gistic = pd.read_table(gistic_ext + 'all_thresholded.by_genes.txt', index_col=[2,1,0])
     gistic = gistic.rename(columns=lambda s: s[:12]).astype(float)
     return gistic
 
 def get_cna_matrix(cancer, data_path, cna_type='deletion'):
     gistic_ext = data_path + '/'.join(['broad_analyses', cancer, 'CopyNumber_Gistic2', ''])
-    gistic = read_table(gistic_ext + 'all_thresholded.by_genes.txt', index_col=0)
+    gistic = pd.read_table(gistic_ext + 'all_thresholded.by_genes.txt', index_col=0)
     gistic = gistic.rename(columns=lambda s: s[:12])
     gistic = gistic.ix[:,2:]
     cna_val = {'deletion': -2, 'amplification': 2}[cna_type]
     cnas = (gistic == cna_val).astype(int)
     cnas = cnas[cnas.sum(1) > 0]
     
-    gistic_lesions = read_table(gistic_ext + 'all_lesions.conf_99.txt', 
+    gistic_lesions = pd.read_table(gistic_ext + 'all_lesions.conf_99.txt', 
                                 index_col=1)
     gistic_lesions = gistic_lesions.rename(columns=lambda s: s[:12])
     call_label = {'amplification': 'Amp', 'deletion': 'Del'}[cna_type]
@@ -99,7 +76,7 @@ def get_cna_matrix(cancer, data_path, cna_type='deletion'):
 def read_rppa(data_path, cancer):
     ext = '/'.join(['stddata', cancer,  'RPPA_AnnotateWithGene', 
                     cancer + '.rppa.txt'])
-    rppa = read_table(data_path +  ext, index_col=0)
+    rppa = pd.read_table(data_path +  ext, index_col=0)
     rppa = rppa.select(lambda s: s.split('-')[3].startswith('01'), 1)
     rppa = rppa.sort_index(axis=1).groupby(lambda s: s[:12], 1).first() #get rid of normals
     rppa['protien'] = rppa.index.map(lambda s: s.split('|')[0])
@@ -121,7 +98,8 @@ def read_rnaSeq(cancer, data_path, patients=None, average_on_genes=False,
                 'RSEM_genes_normalized/data' in f[0]][0]   
     else:
         return
-    rnaSeq = read_table(path + '/data.txt',index_col=0, skiprows=[1])
+    f = [f for f in os.listdir(path) if 'data' in f][0]
+    rnaSeq = pd.read_table(path + '/'+ f,index_col=0, skiprows=[1])
     rnaSeq = np.log2(rnaSeq).replace(-np.inf, -3.) #close enough to 0
     if average_on_genes:
         rnaSeq = rnaSeq.groupby(by=lambda n: n.split('|')[0]).mean()
@@ -134,25 +112,6 @@ def read_rnaSeq(cancer, data_path, patients=None, average_on_genes=False,
         rnaSeq = rnaSeq.T.xs(tissue_code, level=1).T #pandas bug
     return rnaSeq
 
-def read_methylation(cancer, data_path, patients=None, tissue_code='01'):
-    '''
-    tissue_code: ['01','11','All']  #if all returns MultiIndex
-    '''
-    processed_data_path = data_path + '/'.join(['ucsd_processing', cancer,''])
-    data_types = filter(lambda f: f[:11] == 'methylation', os.listdir(processed_data_path))
-    data_type = sorted([d for d in data_types if os.path.isfile(processed_data_path + d + 
-                                                      '/meta_probes.csv')])[-1]
-    meth = read_csv(processed_data_path +  data_type + '/meta_probes.csv', index_col=0)
-    meth.columns = pd.MultiIndex.from_tuples([(i[:12], i[13:15]) for i in meth.columns])
-    
-    if patients is not None:
-        meth  = meth.ix[:, patients]
-    meth = meth.dropna(thresh=100)
-    meth = meth.astype(np.float)
-    if tissue_code != 'All':
-        meth = meth.T.xs(tissue_code, level=1).T #pandas bug
-    return meth
-
 
 def read_mrna(cancer, data_path, patients=None, num_genes='All', tissue_code='01'):
     stddata_path = data_path + 'stddata/' + cancer
@@ -162,7 +121,7 @@ def read_mrna(cancer, data_path, patients=None, num_genes='All', tissue_code='01
                 'unc_lowess_normalization_gene_level/data' in f[0]][0]   
     else:
        return
-    mrna = read_table(path + '/data.txt',index_col=0, skiprows=[1], na_values=['null'])
+    mrna = pd.read_table(path + '/data.txt',index_col=0, skiprows=[1], na_values=['null'])
     #chips = filter(lambda f: 'transcriptome__agilent' in f, os.listdir(stddata_path))
     #data_type = sorted(chips)[-1]
    
@@ -178,12 +137,12 @@ def read_mrna(cancer, data_path, patients=None, num_genes='All', tissue_code='01
 
 def read_mirna(cancer, data_path):
     stddata_path = data_path + '/'.join(['stddata', cancer,''])
-    data_type = 'mirnaseq__illuminahiseq_mirnaseq__bcgsc_ca__Level_3'
-    mirna_ga = read_table(stddata_path +  data_type.replace('hiseq', 'ga') + 
+    data_type = 'mirnaseq/illuminahiseq_mirnaseq'
+    mirna_ga = pd.read_table(stddata_path +  data_type.replace('hiseq', 'ga') + 
                           '/miR_gene_expression_data.txt', 
                           index_col=0, na_values=['null'])
     try: 
-        mirna_hiseq = read_table(stddata_path +  data_type + 
+        mirna_hiseq = pd.read_table(stddata_path +  data_type + 
                                  '/miR_gene_expression_data.txt',
                                  index_col=0, na_values=['null'])
         mirna = mirna_hiseq.join(mirna_ga)
@@ -197,6 +156,29 @@ def read_mirna(cancer, data_path):
     #mirna = mirna.ix[variable]
     return mirna
 
+def read_miRNASeq(cancer, data_path, patients=None, tissue_code='01'):
+    stddata_path = data_path + 'stddata/' + cancer
+    paths = [f[0] for f in list(os.walk(stddata_path + '/mirnaseq')) if 
+                    'miR_gene_expression/data' in f[0]]
+    data = []
+    for path in paths:
+        f = [f for f in os.listdir(path) if 'data' in f][0]
+        mirna = pd.read_table(path + '/' + f, index_col=0, header=None)
+        data.append(mirna)
+    mirna = pd.concat(data, axis=1)
+    mirna = mirna.T.set_index(['miRNA_ID', 'Hybridization REF'])
+    mirna = mirna.sortlevel(level=0).ix['reads_per_million_miRNA_mapped']
+    mirna = np.log2(mirna.astype(float)).replace(-np.inf, -3.) #close enough to 0
+    mirna = mirna.T
+    mirna = mirna.groupby(level=0, axis=1).last() #Lets use the HiSeq over the GA2
+    mirna.columns = pd.MultiIndex.from_tuples([(i[:12], i[13:15]) for i 
+                                               in mirna.columns])
+    if patients is not None:
+        mirna  = mirna.ix[:, patients]
+    if tissue_code != 'All':
+        mirna = mirna.T.xs(tissue_code, level=1).T #pandas bug
+    return mirna
+
 def read_cnmf(cancer, file_name, data_path):
     nmf_file = data_path + '/'.join(['broad_analyses', cancer, file_name, 
                                      'cnmf.normalized.gct'])
@@ -204,7 +186,7 @@ def read_cnmf(cancer, file_name, data_path):
         print 'Missing ' + file_name + ' file.'
         return None
     data_type = file_name.split('_')[0]
-    data = read_table(nmf_file, index_col=0, skiprows=[0,1], sep='\t')
+    data = pd.read_table(nmf_file, index_col=0, skiprows=[0,1], sep='\t')
     data = data.rename(index=lambda s: data_type + '_' + s, 
                        columns=lambda s: s.replace('.','-')[:12])
     data = data.select(lambda s: 'TCGA' in s, axis=1)
@@ -220,7 +202,7 @@ def get_all_nmf(cancer):
 def get_gistic_lesions(cancer_name, data_path):
     gistic_ext = data_path + '/'.join(['analyses', cancer_name, 
                                        'CopyNumber_Gistic2', ''])
-    gistic = read_table(gistic_ext + 'all_lesions.conf_99.txt', index_col=[0,1])
+    gistic = pd.read_table(gistic_ext + 'all_lesions.conf_99.txt', index_col=[0,1])
     lesions = gistic.select(lambda s: 'TCGA' in s, axis=1) 
     lesions = lesions.select(lambda s: 'values' not in s[0], axis=0) 
     lesions = lesions.rename(columns=lambda s: s[:12])
@@ -235,7 +217,7 @@ def get_gistic_genes(cancer_name, data_path, filter_with_rna=True,
                      collapse_on_bands=True, min_patients=5):
     gistic_ext = data_path + '/'.join(['analyses', cancer_name, 
                                        'CopyNumber_Gistic2', ''])
-    gistic = read_table(gistic_ext + 'all_thresholded.by_genes.txt', 
+    gistic = pd.read_table(gistic_ext + 'all_thresholded.by_genes.txt', 
                         index_col=[2,1,0])
     gistic = gistic.rename(columns=lambda s: s[:12]).astype(float)
 
@@ -289,3 +271,39 @@ def get_submaf(data_path, cancer, genes, fields='basic'):
     maf.index = maf.index.swaplevel(0,1)
     return maf   
     
+def fix_barcode_columns(df, patients=None, tissue_code='All'):
+    df.columns = pd.MultiIndex.from_tuples([(i[:12], i[13:15]) for i 
+                                            in df.columns])
+    if patients is not None:
+        df  = df.ix[:, patients]
+    if tissue_code != 'All':
+        df = df.T.xs(tissue_code, level=1).T #pandas bug
+    return df
+
+def get_beta_values(data_path, cancer, patients=None, tissue_code='All'):
+    t = pd.read_table('{}/ucsd_processing/{}/methylation450/beta_values.txt'.format(data_path, cancer), 
+                      skiprows=[1], index_col=[0])
+    t = t.rename(columns=lambda s: s if s!=t.columns[0] else 'symbol')
+    t = t.set_index('symbol', append=True)
+    t = t.swaplevel(0,1)
+    t = fix_barcode_columns(t, patients, tissue_code)
+    return t
+
+def read_methylation(cancer, data_path, patients=None, tissue_code='01'):
+    '''
+    tissue_code: ['01','11','All']  #if all returns MultiIndex
+    '''
+    processed_data_path = data_path + '/'.join(['ucsd_processing', cancer,''])
+    data_types = filter(lambda f: f[:11] == 'methylation', os.listdir(processed_data_path))
+    data_type = sorted([d for d in data_types if os.path.isfile(processed_data_path + d + 
+                                                      '/meta_probes.csv')])[-1]
+    meth = pd.read_csv(processed_data_path +  data_type + '/meta_probes.csv', index_col=0)
+    meth.columns = pd.MultiIndex.from_tuples(map(lambda s: eval(s,{},{}), meth.columns))
+    
+    if patients is not None:
+        meth  = meth.ix[:, patients]
+    meth = meth.dropna(thresh=100)
+    meth = meth.astype(np.float)
+    if tissue_code != 'All':
+        meth = meth.T.xs(tissue_code, level=1).T #pandas bug
+    return meth
