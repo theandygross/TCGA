@@ -1,8 +1,0 @@
-Error in function (formula, data, weights, subset, na.action, init, control,  : 
-  No (non-missing) observations
-Error in function (formula, data, weights, subset, na.action, init, control,  : 
-  No (non-missing) observations
-Error in survdiff.fit(y, groups, strata.keep, rho) : 
-  There is only 1 group
-Error in survdiff.fit(y, groups, strata.keep, rho) : 
-  There is only 1 group

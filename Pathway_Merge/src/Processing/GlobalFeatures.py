@@ -5,8 +5,8 @@ Created on Dec 17, 2012
 '''
 
 from pandas import DataFrame, read_table, concat
-from Data.Firehose import read_rnaSeq, read_methylation
-from Data.AgingData import get_age_signal
+#from Data.Firehose import read_rnaSeq, read_methylation
+#from Data.AgingData import get_age_signal
 from Processing.Helpers import frame_svd
 from Processing.Clinical import run_clinical_bool, run_clinical_real
 

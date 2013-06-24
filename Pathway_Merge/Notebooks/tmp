@@ -1,0 +1,36 @@
+Pathway     Molecule        Entrez Gene ID  Uniprot ID      CAS ID  Uses in Complexes       Family
+wnt_signaling_pathway fzd8               WNT3A/FZD8/LRP6    
+wnt_signaling_pathway wnt1   7471  P04628          WNT1/LRP6/FZD1,WNT1/FZD1/LRP5,WNT1/FZD8/Ryk,WNT1/FZD1/LRP6,WNT1/FZD8/LRP6    
+wnt_signaling_pathway wnt3a-wnt5a               WNT3A-WNT5A/FZD5-FZD6/ROR2(dimer)/CTHRC1(trimer),WNT3A-WNT5A/FZD5-FZD6/ROR2(dimer)/CTHRC1(trimer)    
+wnt_signaling_pathway rspo1   284654  Q2MKA7              
+wnt_signaling_pathway kremen 1   83999  Q96MU8               kremen 1-kremen 2 kremen 1-kremen 2
+wnt_signaling_pathway wnt inhibitory factor 1   11197  Q9Y5W5              
+wnt_signaling_pathway fzd9   8326  O00144          WNT2/FZD9/LRP6    
+wnt_signaling_pathway wnt2   7472  P09544          WNT2/FZD9/LRP6,WNT2/FZD1/LRP6    
+wnt_signaling_pathway ror2   4920  Q01974          WNT3A-WNT5A/FZD5-FZD6/ROR2(dimer)/CTHRC1(trimer),WNT5A/ROR2,WNT5A/FZD2/ROR2 (dimer),WNT3A-WNT5A/FZD5-FZD6/ROR2(dimer)/CTHRC1(trimer),WNT5A/FZD2/ROR2 (dimer)    
+wnt_signaling_pathway ryk   6259  P34925          WNT1/FZD8/Ryk    
+wnt_signaling_pathway fzd5-fzd6               WNT3A-WNT5A/FZD5-FZD6/ROR2(dimer)/CTHRC1(trimer),WNT3A-WNT5A/FZD5-FZD6/ROR2(dimer)/CTHRC1(trimer)    Family
+wnt_signaling_pathway wnt3a   89780  P56704          WNT3A/FZD8/LRP6,WNT3A/FZD8/LRP6/PRR,WNT3A/FZD1/LRP6,WNT3A/FZD1,WNT3A/FZD2/LRP6,WNT3A/FZD8/LRP6,WNT3A/LRP6/FZD5,WNT3A/WNT inhibitory factor 1,WNT3A/FZD5/LRP6    
+wnt_signaling_pathway dkk1   22943  O94907          DKK1/LRP6,LRP6/DKK1,LRP5/DKK1,DKK1/LRP6/Kremen 1-Kremen 2    
+wnt_signaling_pathway wnt5a   7474  P41221          WNT5A/FZD2,WNT5A/FZD2,WNT5A/FZD4/LRP5,WNT5A/ROR2,WNT5A/FZD2/ROR2 (dimer),WNT5A/FZD2/ROR2 (dimer),WNT5A/FZD7    
+wnt_signaling_pathway wnt inhibitory fator 1   11197  Q9Y5W5          WNT3A/WNT inhibitory factor 1    
+wnt_signaling_pathway lrp6   4040  O75581          WNT3A/FZD8/LRP6,WNT1/LRP6/FZD1,WNT3A/FZD8/LRP6/PRR,WNT7A/FZD5/LRP6,DKK1/LRP6,LRP6/DKK1,WNT3A/FZD1/LRP6,WNT2/FZD9/LRP6,WNT2/FZD1/LRP6,WNT3A/FZD2/LRP6,WNT3A/FZD8/LRP6,WNT3/FZD1/LRP6,WNT3A/LRP6/FZD5,FZD8/LRP6/IGFBP4,WNT3A/FZD5/LRP6,WNT1/FZD1/LRP6,WNT1/FZD8/LRP6,DKK1/LRP6/Kremen 1-Kremen 2,LRP6/FZD8/SOST    
+wnt_signaling_pathway fzd10   11211  Q9ULW2          WNT7B/FZD10/LRP5    
+wnt_signaling_pathway prr   10159  O75787          WNT3A/FZD8/LRP6/PRR    
+wnt_signaling_pathway lrp5   4041  O75197          WNT1/FZD1/LRP5,WNT5A/FZD4/LRP5,WNT7B/FZD1/LRP5,WNT7B/FZD10/LRP5,LRP5/DKK1    
+wnt_signaling_pathway kremen 1-kremen 2               DKK1/LRP6/Kremen 1-Kremen 2    Family
+wnt_signaling_pathway fzd2   2535  Q14332          WNT5A/FZD2,WNT5A/FZD2,WNT3A/FZD2/LRP6,WNT5A/FZD2/ROR2 (dimer),WNT5A/FZD2/ROR2 (dimer)    
+wnt_signaling_pathway wnt7a   7476  O00755          WNT7A/FZD5/LRP6    
+wnt_signaling_pathway fzd1   8321  Q9UP38          WNT1/LRP6/FZD1,WNT1/FZD1/LRP5,WNT3A/FZD1/LRP6,WNT2/FZD1/LRP6,WNT3A/FZD1,WNT7B/FZD1/LRP5,WNT3/FZD1/LRP6,WNT1/FZD1/LRP6    
+wnt_signaling_pathway igfbp4   3487  P22692          FZD8/LRP6/IGFBP4    
+wnt_signaling_pathway wnt3   7473  P56703          WNT3/FZD1/LRP6    
+wnt_signaling_pathway fzd8   8325  Q9H461          WNT3A/FZD8/LRP6/PRR,WNT3A/FZD8/LRP6,FZD8/LRP6/IGFBP4,WNT1/FZD8/Ryk,WNT1/FZD8/LRP6,LRP6/FZD8/SOST    
+wnt_signaling_pathway sost               LRP6/FZD8/SOST    
+wnt_signaling_pathway fzd5   7855  Q13467          WNT7A/FZD5/LRP6,WNT3A/LRP6/FZD5,WNT3A/FZD5/LRP6     fzd5-fzd6 fzd5-fzd6
+wnt_signaling_pathway fzd4   8322  Q9ULV1          WNT5A/FZD4/LRP5    
+wnt_signaling_pathway wnt7b   7477  P56706          WNT7B/FZD1/LRP5,WNT7B/FZD10/LRP5    
+wnt_signaling_pathway fzd7   8324  O75084          WNT5A/FZD7    
+wnt_signaling_pathway cthrc1   115908  Q96CG8          WNT3A-WNT5A/FZD5-FZD6/ROR2(dimer)/CTHRC1(trimer),CTHRC1(trimer),WNT3A-WNT5A/FZD5-FZD6/ROR2(dimer)/CTHRC1(trimer)    
+wnt_signaling_pathway vacuolar proton-transporting v-type atpase complex                   
+wnt_signaling_pathway kremen 2   79412  Q8NCW0               kremen 1-kremen 2 kremen 1-kremen 2
+wnt_signaling_pathway fzd6   8323  O60353               fzd5-fzd6 fzd5-fzd6

@@ -6,6 +6,8 @@ Created on Jul 12, 2012
 import os as os
 import pickle as pickle
 
+import numpy as np
+
 import matplotlib.pyplot as plt
 from pandas import Series, DataFrame, notnull
 from numpy.linalg import LinAlgError, svd
@@ -58,10 +60,12 @@ def extract_pc_old(data_frame, pc_threshold=.2):
     p = S**2/sum(S**2)
     return vH[0] if p[0] > pc_threshold else None
 
-def extract_pc(df, pc_threshold=.2):
+def extract_pc(df, pc_threshold=.2, standardize=True):
+    if standardize:
+        df = ((df.T - df.mean(1)) / df.std(1)).T
     try:
         U,S,vH = frame_svd(((df.T - df.mean(1)) / df.std(1)).T)
-    except LinAlgError:
+    except np.linalg.LinAlgError:
         return None
     p = S**2/sum(S**2)
     pat_vec = vH[0]

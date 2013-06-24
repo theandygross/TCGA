@@ -19,8 +19,6 @@ data_type = sys.argv[3]
 run = pickle.load(open(report_path + '/RunObject.p', 'rb'))
 cancer = run.load_cancer(cancer_type)
 data = Dataset(cancer, run, data_type)
-if data_type == 'mRNASeq':
-    data.df = data.df.groupby(by=lambda n: n.split('|')[0]).mean()
 
 '''Normalize data and calculate principal components'''
 df = data.df
@@ -35,7 +33,7 @@ if data_type == 'miRNASeq':
 
 '''Reconstruct data without first pc'''
 S_n = S.copy()
-#S_n[0] = 0
+S_n[0] = 0
 rest = U.dot(DataFrame(diag(S_n)).dot(vH.T))
 
 '''Extract PCs for all gene sets'''

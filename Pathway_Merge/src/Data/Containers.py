@@ -14,6 +14,7 @@ from numpy import array, nan
 
 from Data.ProcessClinical import get_clinical
 import Data.Firehose as FH
+import Data.Intermediate as IM
 from Processing.Helpers import make_path_dump
 
 def tree(): return defaultdict(tree)
@@ -136,7 +137,7 @@ class Dataset(object):
             self.df = FH.get_gistic_gene_matrix(run.data_path, cancer.name)
             self.compressed = False
         elif data_type == 'CN_broad':
-            self.df = FH.get_gistic(cancer.name, run.data_path,
+            self.df = FH.get_gistic(run.data_path, cancer.name, 
                                     min_patients=run.parameters['min_patients'])
             self.features = self.df #should probably move
             self.features = patient_filter(self.features, cancer)
@@ -145,11 +146,11 @@ class Dataset(object):
             self.df = FH.read_mrna(cancer.name, run.data_path)
             self.compressed = True
         elif data_type == 'mRNASeq':
-            self.df = FH.read_rnaSeq(cancer.name, run.data_path, 
-                                     average_on_genes=True)
+            self.df = FH.read_rnaSeq(run.data_path, cancer.name, 
+                                     average_on_genes=True, tissue_code='All')
             self.compressed = True
         elif data_type == 'Methylation':
-            self.df = FH.read_methylation(cancer.name, run.data_path)
+            self.df = IM.read_methylation(cancer.name, run.data_path)
             self.compressed = True
         elif data_type == 'RPPA':
             self.df = FH.read_rppa(run.data_path, cancer.name)
@@ -168,8 +169,8 @@ class Dataset(object):
         else:
             return
  
-        self.df = patient_filter(self.df, cancer)
-        self.patients = array(self.df.columns)
+        #self.df = patient_filter(self.df, cancer)
+        #self.patients = array(self.df.columns)
         
     def compress(self):
         assert len(self.df.shape) == 2
