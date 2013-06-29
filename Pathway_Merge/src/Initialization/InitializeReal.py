@@ -10,7 +10,27 @@ from numpy import diag
 
 from Data.Containers import Dataset
 from Processing.Helpers import frame_svd, extract_pc
+from Processing.Tests import anova
+from Processing.Helpers import true_index
 
+import pandas as pd
+
+def exp_change(s):
+    return anova(pd.Series(s.index.get_level_values(1), s.index), s)
+
+def extract_pc_fancy(df, pc_threshold=.2):
+    '''
+    First pre-filters for patients with no tumor/normal change.
+    Then normalizes by normals. 
+    '''
+    tt = df.xs('11', axis=1, level=1)
+    rr = df.apply(exp_change, 1).sort('p')
+    m, s = tt.mean(1), tt.std(1)
+    df_n = df.xs('01', axis=1, level=1)
+    df_n = ((df_n.T - m) / s).T
+    df_n = df_n.ix[true_index(rr.p < .05)]
+    pc = extract_pc(df_n, pc_threshold, standardize=False)
+    return pc
 
 def extract_geneset_pcs(df, gene_sets):
     '''Extract PCs for all gene sets.'''
@@ -37,7 +57,8 @@ def creat_pathway_figures(data):
         fig.savefig(pathway_plot_folder + feature)
 
 def initialize_real(cancer_type, report_path, data_type, patient_filter=None, 
-                    drop_pc1=False, create_meta_features=True, draw_figures=False):
+                    drop_pc1=False, create_meta_features=True, 
+                    draw_figures=False, save=True):
     '''
     Initialize real-valued data for down-stream analysis.
     '''
@@ -71,6 +92,7 @@ def initialize_real(cancer_type, report_path, data_type, patient_filter=None,
     
     if draw_figures is True:
         creat_pathway_figures(data)
-    
-    data.save()
+        
+    if save is True:
+        data.save()
     return data

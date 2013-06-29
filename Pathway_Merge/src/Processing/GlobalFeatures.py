@@ -5,10 +5,9 @@ Created on Dec 17, 2012
 '''
 
 from pandas import DataFrame, read_table, concat
-#from Data.Firehose import read_rnaSeq, read_methylation
-#from Data.AgingData import get_age_signal
 from Processing.Helpers import frame_svd
-from Processing.Clinical import run_clinical_bool, run_clinical_real
+import Data.Firehose as FH
+import Data.Intermediate as IM
 
 
 def get_rates(data_path, cancer):
@@ -94,7 +93,7 @@ def get_global_vars(cancer, data_path, patients=None, filtered_patients=None):
         else:
             return df
     try:
-        data_matrix = read_rnaSeq(cancer, data_path, average_on_genes=True)
+        data_matrix = FH.read_rnaSeq(cancer, data_path, average_on_genes=True)
         data_matrix = patient_filter(data_matrix)
         U, S, vH = frame_svd(data_matrix)
         exp_pc = DataFrame({'pc1': vH[0], 'pc2': vH[1]})
@@ -102,7 +101,7 @@ def get_global_vars(cancer, data_path, patients=None, filtered_patients=None):
         exp_pc = DataFrame()
         
     try:
-        data_matrix = read_methylation(cancer, data_path)
+        data_matrix = IM.read_methylation(cancer, data_path)
         data_matrix = patient_filter(data_matrix)
         U, S, vH = frame_svd(data_matrix)
         meth_pc = DataFrame({'pc1': vH[0], 'pc2': vH[1]})
@@ -110,7 +109,8 @@ def get_global_vars(cancer, data_path, patients=None, filtered_patients=None):
         meth_pc = DataFrame()
         
     try:
-        meth_age, amar = get_age_signal(data_path, cancer) 
+        meth_age, amar = 'FAIL','FAIL'
+        #meth_age, amar = get_age_signal(data_path, cancer) 
         meth_pc = meth_pc.join(meth_age).join(amar)
         print 'Should probably check this out'
     except:
@@ -125,17 +125,3 @@ def get_global_vars(cancer, data_path, patients=None, filtered_patients=None):
                  keys=['mRNASeq','methylation', 'cna', 'mutation'], axis=1)
     gv = gv.dropna(how='all', axis=1)
     return gv
-
-class RateObject(object):
-    '''
-    Wrapper to store the data in a nice object rather than have to unpack it. 
-    '''
-    def __init__(self, cancer, data_path, gene_sets, data_type='mutation'):
-        global_vars = get_global_vars(cancer, data_path)
-        if data_type in ['mutation', 'amplification','deletion']:
-            o_dict = run_clinical_bool(cancer, global_vars, data_path, gene_sets, 
-                                       {}, global_vars.columns, [], data_type)
-        else:
-            o_dict = run_clinical_real(cancer, global_vars, data_path, gene_sets,
-                                       {}, global_vars.columns, [], data_type, True)
-        self.__dict__ = o_dict

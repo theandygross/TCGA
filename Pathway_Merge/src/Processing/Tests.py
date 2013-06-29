@@ -53,9 +53,8 @@ def process_factors(clinical, hit_vec=None, covariates=[]):
     if not all([cov in clinical for cov in covariates]):
         covariates = [cov for cov in covariates if cov in clinical]
     if type(hit_vec) != type(None):
-        hit_vec.name = 'feature'
         factors = ['feature'] + covariates
-        df = clinical.join(hit_vec)
+        df = clinical.join(pd.Series(hit_vec, name='feature'))
     else:
         factors = covariates
         df = clinical

@@ -64,7 +64,7 @@ def extract_pc(df, pc_threshold=.2, standardize=True):
     if standardize:
         df = ((df.T - df.mean(1)) / df.std(1)).T
     try:
-        U,S,vH = frame_svd(((df.T - df.mean(1)) / df.std(1)).T)
+        U,S,vH = frame_svd(df)
     except np.linalg.LinAlgError:
         return None
     p = S**2/sum(S**2)
@@ -74,7 +74,6 @@ def extract_pc(df, pc_threshold=.2, standardize=True):
     if sum(gene_vec) < 0:
         gene_vec = -1*gene_vec
         pat_vec = -1*pat_vec
-    #pat_vec = (pat_vec - pat_vec.mean()) / pat_vec.std()
     ret = {'pat_vec': pat_vec, 'gene_vec': gene_vec, 'pct_var': pct_var}
     return  ret if pct_var > pc_threshold else None
 

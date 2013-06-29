@@ -6,7 +6,7 @@ Created on Oct 9, 2012
 from numpy import nan, sort, log
 from pandas import Series, DataFrame, notnull, read_csv
 
-from Data.Firehose import get_mutation_matrix, get_cna_matrix
+from Data.Firehose import get_mutation_matrix
 from Data.Firehose import read_rnaSeq, read_methylation, read_mrna
 from Data.Pathways import build_meta_matrix
 from Processing.Tests import get_cox_ph, anova, fisher_exact_test, pearson_p

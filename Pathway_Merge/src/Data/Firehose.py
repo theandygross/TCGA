@@ -22,7 +22,7 @@ import os as os
 import numpy as np
 import pandas as pd
 
-def fix_barcode_columns(df, patients=None, tissue_code='All'):
+def fix_barcode_columns(df, patients=None, tissue_code='All', get_batch=False):
     '''
     Takes TCGA barcode and reformats it into a MultiIndex if all tissue_codes 
     are desired, or just pulls the correct tissue codes and filteres the 
@@ -33,8 +33,12 @@ def fix_barcode_columns(df, patients=None, tissue_code='All'):
     tissue_code: ['01','11','All']  #if all returns MultiIndex
 
     '''
-    df.columns = pd.MultiIndex.from_tuples([(i[:12], i[13:15]) for i 
-                                            in df.columns])
+    if get_batch is False:
+        df.columns = pd.MultiIndex.from_tuples([(i[:12], i[13:15]) for i 
+                                                in df.columns])
+    else:
+        df.columns = pd.MultiIndex.from_tuples([(i[:12], i[13:15], i[21:24]) for i 
+                                                in df.columns])
     if patients is not None:
         df  = df.ix[:, patients]
     if tissue_code != 'All':
@@ -159,7 +163,7 @@ def read_rppa(data_path, cancer, tissue_code='01'):
     return rppa
 
 def read_rnaSeq(data_path, cancer, patients=None, average_on_genes=True,
-                tissue_code='01'):
+                tissue_code='01', get_batch=False):
     '''
     Reads in gene by patient rnaSeq mRNA expression matrix. 
     Data is log-transformed and a lower bound of -3 (1/8 read per million) 
@@ -173,7 +177,7 @@ def read_rnaSeq(data_path, cancer, patients=None, average_on_genes=True,
     rnaSeq = np.log2(rnaSeq).replace(-np.inf, -3.) #close enough to 0
     if average_on_genes:  #Pretty much all duplicates are unknown ('?')
         rnaSeq = rnaSeq.groupby(by=lambda n: n.split('|')[0]).mean()
-    rnaSeq = fix_barcode_columns(rnaSeq, patients, tissue_code)
+    rnaSeq = fix_barcode_columns(rnaSeq, patients, tissue_code, get_batch)
     return rnaSeq
 
 def read_rnaSeq_splice_junctions(data_path, cancer, patients=None, 
