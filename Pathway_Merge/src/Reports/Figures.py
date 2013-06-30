@@ -33,6 +33,7 @@ base = robjects.packages.importr('base')
 
 def violin_plot(ax,data,pos=[], bp=False):
     '''
+    http://pyinsci.blogspot.com/2009/09/violin-plot-with-matplotlib.html
     create violin plots on an axis
     '''
     from scipy.stats import gaussian_kde

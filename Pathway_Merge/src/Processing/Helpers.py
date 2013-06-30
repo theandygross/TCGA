@@ -7,28 +7,33 @@ import os as os
 import pickle as pickle
 
 import numpy as np
+import pandas as pd
 
 import matplotlib.pyplot as plt
-from pandas import Series, DataFrame, notnull
 from numpy.linalg import LinAlgError, svd
 from numpy import array, diag, sort
 from numpy.random import random_integers
 
 from scipy.cluster import hierarchy
 from scipy.spatial import distance
-from rpy2.robjects import r, FloatVector
 
-transferIndex = lambda source,target: Series(list(target), index=source.index)
+from statsmodels.sandbox.stats import multicomp
 
-def bhCorrection(s, n=None): 
-    if n == None:
-        n = len(s)
-    return Series(r('p.adjust')(FloatVector(s), n=n, method='BH'),index=s.index, 
-                  name=s.name)
+transferIndex = lambda source,target: pd.Series(list(target), 
+                                                index=source.index)
+
+def bhCorrection(s, n=None):
+    if n > len(s):
+        p_vals = list(s) + [1]*(n-len(s))
+    else:
+        p_vals = list(s)
+    q = multicomp.multipletests(p_vals, method='fdr_bh')[1][:len(s)]
+    q = pd.Series(q[:len(s)], s.index, name='p_adj')
+    return q
     
 def match_series(a,b):
     a, b = a.align(b, join='inner', copy=False)
-    valid = notnull(a) & notnull(b)
+    valid = pd.notnull(a) & pd.notnull(b)
     a = a[valid].groupby(lambda s: s).first() #some sort of duplicate index bug
     b = b[valid].groupby(lambda s: s).first()
     return a,b
@@ -37,6 +42,12 @@ def split_a_by_b(a,b):
     a, b = match_series(a, b)
     groups = [a[b==num] for num in set(b)]
     return groups
+
+def screen_feature(vec, test, df):
+    s = pd.DataFrame({f: test(vec, feature) for f,feature in df.iterrows()}).T
+    s['q'] = bhCorrection(s.p)
+    s = s.sort(columns='p')
+    return s
 
 def frame_svd(data_frame, impute='mean'):
     '''
@@ -48,8 +59,8 @@ def frame_svd(data_frame, impute='mean'):
         data_frame = data_frame.fillna(data_frame.mean())
     
     U,S,vH = svd(data_frame.as_matrix(), full_matrices=False)
-    U = DataFrame(U, index=data_frame.index)
-    vH = DataFrame(vH, columns=data_frame.columns).T
+    U = pd.DataFrame(U, index=data_frame.index)
+    vH = pd.DataFrame(vH, columns=data_frame.columns).T
     return U,S,vH
 
 def extract_pc_old(data_frame, pc_threshold=.2):
@@ -92,7 +103,7 @@ def drop_first_norm_pc(data_frame):
     norm = ((data_frame.T - data_frame.mean(1)) / data_frame.std(1)).T
     U,S,vH = frame_svd(norm)
     S[0] = 0   #zero out first pc
-    rest = U.dot(DataFrame(diag(S)).dot(vH.T))
+    rest = U.dot(pd.DataFrame(diag(S)).dot(vH.T))
     return rest
 
 def cluster_down(df, agg_function, dist_metric='euclidean', num_clusters=50,
@@ -106,7 +117,7 @@ def cluster_down(df, agg_function, dist_metric='euclidean', num_clusters=50,
     D = distance.squareform(d)
     Y = hierarchy.linkage(D, method='complete') 
     c = hierarchy.fcluster(Y, num_clusters, criterion='maxclust')
-    c = Series(c, index=df.index, name='cluster')
+    c = pd.Series(c, index=df.index, name='cluster')
     clustered = df.join(c).groupby('cluster').aggregate(agg_function)
     if draw_dendrogram:
         fig, ax = plt.subplots(1,1, figsize=(14,2))
@@ -148,7 +159,7 @@ def run_rate_permutation(df, hit_mat, gene_sets, lengths, f):
         while (res[p] <= (10./iterations)) and (iterations <= 2500):
             res[p] = do_perm(f, df.ix[p], hit_mat, bp, lengths, iterations)
             iterations = iterations * 5
-    res = sort(Series(res))
+    res = sort(pd.Series(res))
     return res
 
 def get_vec_type(vec):
@@ -179,7 +190,7 @@ def merge_redundant(df):
             features[place] = features[place] + [idx]
         else:
             place = idx
-    features = Series(features)
+    features = pd.Series(features)
     
     df = df.ix[d==False]
     df = df.rename(index=features.map(lambda s: '/'.join(s)))
