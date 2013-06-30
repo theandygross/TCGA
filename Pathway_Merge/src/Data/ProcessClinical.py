@@ -7,12 +7,20 @@ import pandas as pd
 import numpy as np
 
 def to_date(s):
+    '''
+    Pulls year, month, and day columns from clinical files and formats into 
+    proper date-time field.
+    '''
     try:
-        return pd.datetime(int(s['yearofformcompletion']), int(s['monthofformcompletion']), 
-                         int(s['dayofformcompletion']))
+        return pd.datetime(int(s['yearofformcompletion']), 
+                           int(s['monthofformcompletion']), 
+                           int(s['dayofformcompletion']))
     except:
         return np.nan
 def fix_date(df):
+    '''
+    Translate date to date-time, get rid of old columns.
+    '''
     df['form_completion'] = df.apply(to_date, 1)
     del df['yearofformcompletion']
     del df['monthofformcompletion']

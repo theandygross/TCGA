@@ -117,3 +117,28 @@ def get_gistic(data_path, cancer, filter_with_rna=True,
                                  collapse_on_bands, min_patients)
     cna = cna_genes.append(lesions)
     return cna
+
+def build_meta_matrix(gene_sets, gene_matrix, min_size=4, set_filter=None):
+    '''
+    Builds meta-gene matrix from gene-set definitions and single gene matrix.
+    
+    Input
+        gene_sets: dict {name: genes} or list of gene-set definitions
+        gene_matrix: DataFrame of single gene profiles.
+        min_size: minumum number of patient alterations for meta-feature 
+                  (default 4)
+        set_filter: filter to run on meta-features after they are constructed
+        
+    Returns
+        meta_matrix
+    '''
+    if not isinstance(gene_sets, dict):
+        gene_sets = dict(list(enumerate(gene_sets)))
+    meta_matrix = pd.DataFrame({group: gene_matrix.ix[genes].sum(0) 
+                                for group,genes in gene_sets.items()})
+    if set_filter is not None: 
+        meta_matrix = meta_matrix.apply(set_filter, axis=0)
+    keepers = meta_matrix.sum().isin(range(min_size, 
+                                           len(meta_matrix) - min_size))
+    meta_matrix = meta_matrix.ix[:,keepers].T
+    return meta_matrix
