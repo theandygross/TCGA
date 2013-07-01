@@ -4,7 +4,7 @@ Created on Jan 28, 2013
 @author: agross
 '''
 
-import os as os
+#import os as os
 import pickle as pickle
 
 from collections import defaultdict
@@ -31,7 +31,7 @@ class Run(object):
         self.parameters = parameters
         self.dependency_tree = tree()
         self.description = description
-        self.get_meta()
+        #self.get_meta()
         
         
     def __repr__(self):

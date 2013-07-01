@@ -19,8 +19,9 @@ from scipy.spatial import distance
 
 from statsmodels.sandbox.stats import multicomp
 
-transferIndex = lambda source,target: pd.Series(list(target), 
-                                                index=source.index)
+
+def transferIndex(source,target):
+    return pd.Series(list(target), index=source.index)
 
 def bhCorrection(s, n=None):
     if n > len(s):

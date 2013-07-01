@@ -20,6 +20,7 @@ def initialize_cancer(report_path, cancer_type, patients=None,
     
     clinical = Clinical(cancer, run, patients, filtered_patients)
     clinical.artificially_censor(5)
+    
     make_path_dump(clinical, cancer.path + '/Clinical/ClinicalObject.p')
     if type(clinical.drugs) != type(None):
         clinical.drugs.to_csv(cancer.path + '/Clinical/drugs.csv')

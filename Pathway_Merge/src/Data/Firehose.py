@@ -127,6 +127,15 @@ def get_gistic_gene_matrix(data_path, cancer, tissue_code='01'):
     gistic = fix_barcode_columns(gistic, tissue_code=tissue_code)
     return gistic
 
+def get_gistic_arm_values(data_path, cancer, tissue_code='01'):
+    '''
+    Reads in arm by patient copy-number alteration matrix.  
+    '''
+    path = '{}/analyses/{}/CopyNumber_Gistic2/'.format(data_path, cancer)
+    gistic = pd.read_table(path + 'broad_values_by_arm.txt', index_col=0) 
+    gistic = fix_barcode_columns(gistic, tissue_code=tissue_code)
+    return gistic
+
 def get_gistic_lesions(data_path, cancer, patients=None, tissue_code='01'):
     '''
     Reads in lesion by patient CNA matrix.
