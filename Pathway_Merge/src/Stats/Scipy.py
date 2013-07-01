@@ -111,3 +111,13 @@ def bartlett_pandas(group_vec, response_vec, min_size=5):
     res = stats.bartlett(*[response_vec[group_vec == num] for num in 
                      group_vec.unique()])
     return pd.Series(res, index=['T','p'])
+
+def ttest_rel(a,b):
+    '''
+    Wrapper to do a one way t-test on pandas matched samples
+    ------------------------------------------------
+    a,b: matched measurements
+    '''
+    a,b = _match_series(a,b)
+    z, p = stats.ttest_rel(a, b)
+    return pd.Series({'t': z, 'p': p})

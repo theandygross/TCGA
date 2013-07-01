@@ -3,20 +3,119 @@ Created on Apr 24, 2013
 
 @author: agross
 '''
-from scipy import stats
 import numpy as np
 import pandas as pd
 import matplotlib.pylab as plt
-from Processing.Tests import anova
 
+import Stats.Scipy as Stats
+from Figures.Helpers import latex_float, init_ax
 from Processing.Helpers import match_series
+        
+def _violin_plot(ax, data,pos=[], bp=False):
+    '''
+    http://pyinsci.blogspot.com/2009/09/violin-plot-with-matplotlib.html
+    
+    Create violin plots on an axis.  Internal to module as it does not 
+    use Pandas data-structures.  This is split off due to it's being a 
+    reuse of the code from the blog-post linked above, and I wanted to keep
+    the original code untouched. 
+    '''
+    from scipy.stats import gaussian_kde
+    from numpy import arange
+    
+    #dist = max(pos)-min(pos)
+    dist = len(pos)
+    w = min(0.25*max(dist,1.0),0.5)
+    for p,d in enumerate(data):
+        try:
+            k = gaussian_kde(d) #calculates the kernel density
+            m = k.dataset.min() #lower bound of violin
+            M = k.dataset.max() #upper bound of violin
+            x = arange(m,M,(M-m)/100.) # support for violin
+            v = k.evaluate(x) #violin profile (density curve)
+            v = v/v.max()*w #scaling the violin to the available space
+            ax.fill_betweenx(x,p,v+p,facecolor='y',alpha=0.1)
+            ax.fill_betweenx(x,p,-v+p,facecolor='y',alpha=0.1)
+        except:
+            pass
+    if bp:
+        boxPlot = ax.boxplot(data,notch=1,positions=range(len(pos)),vert=1, 
+                             widths=.25)
+        return boxPlot
+    
+def box_plot_pandas(bin_vec, real_vec, ax='None'):
+    '''
+    Wrapper around matplotlib's boxplot function.
+    
+    Inputs
+        bin_vec: Series of labels
+        real_vec: Series of measurements to be grouped according to bin_vec
+    '''
+    _, ax = init_ax(ax)
+    categories = bin_vec.value_counts().index
+    ax.boxplot([real_vec[bin_vec==num] for num in categories], 
+               positions=categories);
+    ax.set_ylabel('Sub-Cohort Gene Expression')
+    ax.set_xlabel('Number of Mutations')
+    if type(bin_vec.name) == str:
+        ax.set_title(bin_vec.name +' x '+ real_vec.name)
+        
+def violin_plot_pandas(bin_vec, real_vec, ann='p', ax=None, filename=None):
+    '''
+    http://pyinsci.blogspot.com/2009/09/violin-plot-with-matplotlib.html
+    Wrapper around matplotlib's boxplot function to add violin profile.
+    
+    Inputs
+        bin_vec: Series of labels
+        real_vec: Series of measurements to be grouped according to bin_vec
+    '''   
+    fig, ax = init_ax(ax)
+    bin_vec, real_vec = match_series(bin_vec, real_vec)
+    try:
+        categories = bin_vec.value_counts().index
+        _violin_plot(ax, [real_vec[bin_vec==num] for num in categories], 
+                     pos=categories, bp=True)
+        ax.set_xticklabels([str(c) +'\n(n=%i)'%sum(bin_vec==c) 
+                            for c in categories])
+    except:
+        box_plot_pandas(bin_vec, real_vec, ax=ax)
+    ax.set_ylabel(real_vec.name)
+    ax.set_xlabel(bin_vec.name)
+    if type(bin_vec.name) == str:
+        ax.set_title(str(bin_vec.name) +' x '+ str(real_vec.name))
+        
+    p_value = Stats.kruskal_pandas(bin_vec, real_vec)['p']
+    if ann == 'p_fancy':
+        ax.annotate('$p = {}$'.format(latex_float(p_value)), (.95, -.02),
+                    xycoords='axes fraction', ha='right', va='bottom', size=14)
+    if ann == 'p':
+        ax.annotate('p = {0:.1e}'.format(p_value), (.95, .02),
+                    xycoords='axes fraction', ha='right', va='bottom', size=12)
+    elif ann != None:
+        ax.annotate(ann, (.95, .02), xycoords='axes fraction', ha='right', 
+                    va='bottom', size=12)
+    if filename is not None:
+        fig.savefig(filename)
+    return
 
-def ttest_rel(a,b):
-    a,b = match_series(a,b)
-    z, p = stats.ttest_rel(a, b)
-    return pd.Series({'t': z, 'p': p})
+def violin_plot_series(s, **kw_args):
+    '''
+    Wrapper for drawing a violin plot on a series with a multi-index.
+    The second level of the index is used as the binning variable. 
+    '''
+    assert s.index.levshape[1] == 2
+    violin_plot_pandas(pd.Series(s.index.get_level_values(1), s.index), s,
+                        **kw_args)
+
 
 def paired_boxplot(boxes):
+    '''
+    Wrapper around plt.boxplot to draw paired boxplots
+    for a set of boxes. 
+    
+    Input is the same as plt.boxplot:
+        Array or a sequence of vectors.
+    '''
     fig = plt.figure(figsize=(len(boxes)/2.5,4))
     ax1 = fig.add_subplot(111)
     plt.subplots_adjust(left=0.075, right=0.95, top=0.9, bottom=0.25)
@@ -37,17 +136,23 @@ def paired_boxplot(boxes):
     ax1.set_xticks(3.5*np.arange(len(boxes)/2) + .5);
     return ax1, bp
 
-def paired_boxplot2(b):
-    n = b.groupby(level=0).size()==2
-    b = b.ix[n[n].index]
-    o = b.xs('11', level=1).median().order().index
-    b = b[o[::-1]]
-    l1, l2 = list(b.xs('01', level=1).as_matrix().T), list(b.xs('11', level=1).as_matrix().T)
+def paired_boxplot_tumor_normal(df):
+    '''
+    Draws a paired boxplot given a DataFrame with both tumor and normal
+    samples on the index. '01' and '11' are hard-coded as the ids for
+    tumor/normal. 
+    '''
+    n = df.groupby(level=0).size()==2
+    df = df.ix[n[n].index]
+    o = df.xs('11', level=1).median().order().index
+    df = df[o[::-1]]
+    l1 = list(df.xs('01', level=1).as_matrix().T)
+    l2 = list(df.xs('11', level=1).as_matrix().T)
     boxes = [x for t in zip(l1, l2) for x in t]
     ax1, bp = paired_boxplot(boxes)
     
-    test = lambda v: ttest_rel(v.unstack()['01'], v.unstack()['11'])
-    res = b.apply(test).T
+    test = lambda v: Stats.ttest_rel(v.unstack()['01'], v.unstack()['11'])
+    res = df.apply(test).T
     p = res.p
     
     pts = [(i*3.5 +.5,18) for i,n in enumerate(p) if n < .00001]
@@ -55,41 +160,51 @@ def paired_boxplot2(b):
         s1 = ax1.scatter(*zip(*pts), marker='$**$', label='$p<10^{-5}$', s=200)
     else:
         s1 = None
-    pts = [(i*3.5 +.5,18) for i,n in enumerate(p) if (n < .01) and (n > .00001)]
+    pts = [(i*3.5 +.5,18) for i,n in enumerate(p) 
+                          if (n < .01) and (n > .00001)]
     if len(pts) > 0:
         s2 = ax1.scatter(*zip(*pts), marker='$*$', label='$p<10^{-2}$', s=30)
     else:
         s2 = None
-    ax1.set_xticklabels(b.columns);
-    ax1.legend(bp['boxes'][:2] + [s2,s1], ('Tumor','Normal', '$p<10^{-2}$', '$p<10^{-5}$'), loc='best',
-               scatterpoints=1);
+    ax1.set_xticklabels(df.columns);
+    ax1.legend(bp['boxes'][:2] + [s2,s1], 
+               ('Tumor','Normal', '$p<10^{-2}$', '$p<10^{-5}$'), 
+               loc='best', scatterpoints=1);
     
-def boxplot_pannel(hit_vec, response_vec):
-    
-    b = response_vec.copy()
+def boxplot_pannel(hit_vec, response_df):
+    '''
+    Draws a series of paired boxplots with the rows of the response_df
+    split according to hit_vec.  
+    '''
+    b = response_df.copy()
     b.columns = pd.MultiIndex.from_arrays([b.columns, hit_vec.ix[b.columns]])
     b = b.T
-    
     v1, v2 = hit_vec.unique()
-    test = lambda v: anova(v.reset_index(level=1)[v.index.names[1]], v.reset_index(level=1)[v.name])
+    test = lambda v: Stats.anova(v.reset_index(level=1)[v.index.names[1]], 
+                                 v.reset_index(level=1)[v.name])
     res = b.apply(test).T
     p = res.p.order()
     b = b.ix[:,p.index]
     
-    l1, l2 = list(b.xs(v1, level=1).as_matrix().T), list(b.xs(v2, level=1).as_matrix().T)
+    l1 = list(b.xs(v1, level=1).as_matrix().T)
+    l2 = list(b.xs(v2, level=1).as_matrix().T)
+
     boxes = [x for t in zip(l1, l2) for x in t]
     ax1, bp = paired_boxplot(boxes)
-        
-    pts = [(i*3.5 +.5,18) for i,n in enumerate(p) if n < .00001]
+    
+    y_lim = (response_df.T.quantile(.9).max()) * 1.2
+    pts = [(i*3.5 +.5, y_lim) for i,n in enumerate(p) if n < .00001]
     if len(pts) > 0:
         s1 = ax1.scatter(*zip(*pts), marker='$**$', label='$p<10^{-5}$', s=200)
     else:
         s1 = None
-    pts = [(i*3.5 +.5,18) for i,n in enumerate(p) if (n < .01) and (n > .00001)]
+    pts = [(i*3.5 +.5, y_lim) for i,n in enumerate(p) 
+                              if (n < .01) and (n > .00001)]
     if len(pts) > 0:
         s2 = ax1.scatter(*zip(*pts), marker='$*$', label='$p<10^{-2}$', s=30)
     else:
         s2 = None
     ax1.set_xticklabels(b.columns);
-    ax1.legend(bp['boxes'][:2] + [s2,s1], (v1, v2, '$p<10^{-2}$', '$p<10^{-5}$'), loc='best',
-                   scatterpoints=1);
+    ax1.legend(bp['boxes'][:2] + [s2,s1], 
+               (v1, v2, '$p<10^{-2}$', '$p<10^{-5}$'), 
+               loc='best', scatterpoints=1);

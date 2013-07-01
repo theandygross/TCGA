@@ -100,6 +100,9 @@ def draw_survival_curves(feature, surv, assignment=None):
                             title='{} = {}'.format(assignment.name,l))
         
 def survival_stat_plot(t, axs=None):
+    '''
+    t is the DataFrame returned from a get_surv_fit call.
+    '''
     if axs is None:
         fig = plt.figure(figsize=(6,1.5))
         ax = plt.subplot2grid((1,3), (0,0), colspan=2)
@@ -132,73 +135,4 @@ def survival_stat_plot(t, axs=None):
     ax2.set_xticks([0, .5, 1.])
     ax2.set_yticks([])
     fig.tight_layout()
-    
-def plot_5y(t, ax):
-    tt = t['5y Survival']
-    b = ax.bar(range(len(tt)), tt['Surv'],
-         color=plt.rcParams['axes.color_cycle'],
-         yerr=[tt.Surv-tt.Lower, tt.Upper-tt.Surv], ecolor='black')
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks_position('bottom')
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_position(('data', 0))
-    #adjust_spines(ax,['left','bottom'])
-    ax.spines['left'].set_position(('data', 0))
-    
-    ax.set_xticks(np.arange(len(tt))+.4)
-    ax.set_xticklabels(['n={}'.format(int(t.ix[idx]['Stats']['# Patients']))
-                        for idx in t.index], rotation=0)
-    
-    ax.set_ylabel('5Y Survival', position=(0.5,.66))
-    ax.set_yticks([0, .5, 1.])
-    #ax.yaxis.set_data_interval(0,1)
-    ax.spines['left'].set_bounds(0, 1)
-    ax.spines['bottom'].set_bounds(0, len(tt))
-    
-    for i,idx in enumerate(t.index):
-        ax.annotate(idx[1], (i + .4, -.2), ha='center')
-    
-    ax.hlines(-.25, 0, 1.9)  
-    ax.annotate(t.index.names[0], (1, -.35), ha='center')
-    ax.annotate(t.index.names[1], (0, -.2), ha='right')
-    ax.set_ylim(-.5,1)
-    ax.set_xlim(-1,len(tt))
-    ax.set_xlim(-2.,len(tt))
-    
-def plot_5y2(t, ax):
-    tt = t['5y Survival']
-    b = ax.bar(range(len(tt)), tt['Surv'],
-         color=plt.rcParams['axes.color_cycle'][1],
-         yerr=[tt.Surv-tt.Lower, tt.Upper-tt.Surv], ecolor='black')
-    ax.yaxis.set_ticks_position('left')
-    ax.xaxis.set_ticks_position('bottom')
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['bottom'].set_position(('data', 0))
-    #adjust_spines(ax,['left','bottom'])
-    ax.spines['left'].set_position(('data', 0))
-    
-    ax.set_xticks(np.arange(len(tt))+.4)
-    ax.set_xticklabels([])
-    #ax.set_xticklabels(['{}'.format(int(t.ix[idx]['Stats']['# Patients']))
-    #                    for idx in t.index], rotation=0)
-    
-    ax.set_ylabel('5Y Survival', position=(0.5,.66))
-    ax.set_yticks([0, .5, 1.])
-    #ax.yaxis.set_data_interval(0,1)
-    ax.spines['left'].set_bounds(0, 1)
-    ax.spines['bottom'].set_bounds(0, len(tt))
-    
-    for i,idx in enumerate(t.index):
-        ax.annotate(str(int(t.ix[idx]['Stats']['# Patients'])), (i + .4, -.45), 
-                    ha='center')
-        ax.annotate({'Mut': 'X', 'WT': ''}[idx[1]], (i + .4, -.15), ha='center')
-        ax.annotate({1: 'X', 0: ''}[idx[0]], (i + .4, -.3), ha='center')
-    
-    #ax.hlines(-.3, 0, 1.9)  
-    ax.annotate('n= ', (0, -.45), ha='right')
-    ax.annotate(t.index.names[0], (0, -.3), ha='right')
-    ax.annotate(t.index.names[1], (0, -.15), ha='right')
-    ax.set_ylim(-.5,1)
-    ax.set_xlim(-2.5,len(tt))
+

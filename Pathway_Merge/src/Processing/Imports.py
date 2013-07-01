@@ -9,7 +9,7 @@ import pandas as pd
 
 from Reports.NotebookTools import *
 from Processing.Tests import *
-from Reports.Figures import *
+#from Reports.Figures import *
 from Processing.Helpers import *
 from Figures.Survival import draw_survival_curve
 
