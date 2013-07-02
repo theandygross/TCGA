@@ -4,17 +4,17 @@ Created on Jan 28, 2013
 @author: agross
 '''
 
-#import os as os
+import os as os
 import pickle as pickle
 
 from collections import defaultdict
-from pandas import read_table, read_csv
 import pandas as pd
-from numpy import array, nan
+import numpy as np
 
 from Data.ProcessClinical import get_clinical
 import Data.Firehose as FH
 import Data.Intermediate as IM
+import Data.Annotations as AN
 from Processing.Helpers import make_path_dump
 
 def tree(): return defaultdict(tree)
@@ -22,8 +22,11 @@ def tree(): return defaultdict(tree)
 class Run(object):
     '''
     Object for storing meta-data and functions for dealing with Firehose runs.
+    Entry level for loading data from pre-processed dumps in the ucsd_analyses
+    file tree.
     '''
-    def __init__(self, date, version, data_path, result_path, parameters, description=''):
+    def __init__(self, date, version, data_path, result_path, parameters, 
+                 cancer_codes, sample_matrix, description=''):
         self.date = date
         self.data_path = data_path
         self.version = version
@@ -31,9 +34,17 @@ class Run(object):
         self.parameters = parameters
         self.dependency_tree = tree()
         self.description = description
-        #self.get_meta()
+        self.cancer_codes = cancer_codes
+        self.sample_matrix = sample_matrix
+        self.cancers = np.array(self.sample_matrix.index[:-1])
+        self.data_types = np.array(self.sample_matrix.columns)
+        if 'pathway_file' in parameters:
+            self._init_gene_sets(parameters['pathway_file'])
         
-        
+    def _init_gene_sets(self, gene_set_file):
+        self.gene_sets, self.gene_lookup = AN.read_in_pathways(gene_set_file)
+        self.genes = np.array(self.gene_lookup.keys())
+              
     def __repr__(self):
         s = 'Run object for TCGA Analysis\n'
         s += 'Firehose run date: ' + self.date + '\n'
@@ -42,23 +53,25 @@ class Run(object):
             s += 'Comment: ' + self.description + '\n'
         return s
                  
-    def get_meta(self):
-        #count_file  = [f for f in os.listdir(self.data_path + 'samples_report') if 
-        #               f.startswith('sample_counts')][0]
-        self.sample_matrix = read_table(self.data_path + 'meta_data/sample_counts.tsv', 
-                                      index_col=0)
-        self.data_types = array(self.sample_matrix.columns)
-        self.cancers = array(self.sample_matrix.index[:-1])
-        
-        #self.sample_data = read_csv(self.data_path + 'meta_data/samples.csv', index_col=0)
-        self.cancer_codes = read_table(self.data_path + 'meta_data/diseaseStudy.txt', 
-                                       index_col=0, squeeze=True)
-        self.cancers = list(self.cancer_codes.index)
-        
     def load_cancer(self, cancer):
         path = '/'.join([self.report_path, cancer, 'CancerObject.p'])
         obj = pickle.load(open(path, 'rb'))
         return obj
+    
+    def save(self):
+        self.report_path = (self.result_path + 'Run_' + 
+                            self.version.replace('.','_'))
+        make_path_dump(self, self.report_path + '/RunObject.p')
+        
+def get_run(firehose_dir, version='Latest'):
+    '''
+    Helper to get a run from the file-system. 
+    '''
+    path = '{}/ucsd_analyses'.format(firehose_dir)
+    if version is 'Latest':
+        version = sorted(os.listdir(path))[-1]
+    run = pickle.load(open('{}/{}/RunObject.p'.format(path, version), 'rb'))
+    return run
         
 
 class Cancer(object):
@@ -70,10 +83,8 @@ class Cancer(object):
             self.full_name = name
         counts = run.sample_matrix.ix[name]
         self.samples = counts[counts > 0]
-        self.data_types = array(self.samples.index)
-        
-        #sample_data = run.sample_data[run.sample_data.Disease == name]
-        #self.patients = array(sample_data['Participant Number'].drop_duplicates())
+        self.data_types = np.array(self.samples.index)
+        self.run_path = run.report_path
     
     def load_clinical(self):
         assert hasattr(self, 'path')
@@ -84,8 +95,9 @@ class Cancer(object):
     def load_global_vars(self):
         assert hasattr(self, 'path')
         path = '/'.join([self.path, 'Global_Vars.csv'])
-        df = read_csv(path, index_col=0)
-        df.columns = pd.MultiIndex.from_tuples(map(eval, df.columns))
+        df = pd.read_csv(path, index_col=0)
+        ft = pd.MultiIndex.from_tuples
+        df.columns = ft(map(lambda s: eval(s,{},{}), df.columns))
         return df
     
     def load_data(self, data_type):
@@ -97,14 +109,34 @@ class Cancer(object):
     def __repr__(self):
         return self.full_name + '(\'' + self.name + '\') cancer object'
     
+    def initialize_data(self, run, save=False, get_vars=False):
+        clinical = Clinical(self, run)
+        clinical.artificially_censor(5)
+        global_vars = IM.get_global_vars(run.data_path, self.name)
+        global_vars = global_vars.groupby(level=0).first()
+        
+        if save is True:
+            self.save()
+            clinical.save()
+            global_vars.to_csv(self.path + '/Global_Vars.csv') 
+        
+        if get_vars is True:
+            return clinical, global_vars        
+    
+    def save(self):
+        self.path = '{}/{}'.format(self.run_path, self.name)
+        make_path_dump(self, self.path + '/CancerObject.p')        
+    
     
 class Clinical(object):
-    def __init__(self, cancer, run, patients, filtered_patients):
+    def __init__(self, cancer, run, patients=None):
         self.cancer = cancer.name
-        tup = get_clinical(cancer.name, run.data_path, patients, 
-                           filtered_patients, **run.clinical_parameters)
-        self.clinical, self.drugs, self.followup, self.timeline, self.survival = tup
-    
+        self.run_path = run.report_path
+        
+        tup = get_clinical(cancer.name, run.data_path, patients)
+        (self.clinical, self.drugs, self.followup, 
+         self.timeline, self.survival) = tup
+        
     def __repr__(self):
         return 'Clinical Object for ' + self.cancer
         
@@ -116,6 +148,16 @@ class Clinical(object):
             df['event'] = df.event * (df.days < int(365.25*years))
             df['days'] = df.days.clip_upper(int((365.25*years)))
             self.survival[n + '_' + str(years) + 'y'] = df.stack()
+            
+    def save(self):
+        self.path = '{}/{}'.format(self.run_path, self.cancer)
+        make_path_dump(self, self.path + '/Clinical/ClinicalObject.p')
+        if type(self.drugs) != type(None):
+            self.drugs.to_csv(self.path + '/Clinical/drugs.csv')
+        if type(self.survival) != type(None):
+            self.survival.to_csv(self.path + '/Clinical/survival.csv')
+        self.timeline.to_csv(self.path + '/Clinical/timeline.csv')
+        self.clinical.to_csv(self.path + '/Clinical/clinical.csv')
 
 def patient_filter(df, can):
     if can.patients is not None:
@@ -126,10 +168,12 @@ def patient_filter(df, can):
         return df           
     
 class Dataset(object):
-    def __init__(self, cancer, run, data_type):
+    def __init__(self, cancer_path, data_type, compressed=True):
         self.data_type = data_type  
-        self.path = '/'.join([cancer.path, data_type])
-   
+        self.path = '{}/{}'.format(cancer_path, data_type)
+        self.compressed = compressed
+        return
+        '''
         if data_type == 'MAF':
             self.df = FH.get_mutation_matrix(run.data_path, cancer.name)
             self.compressed = False
@@ -147,7 +191,7 @@ class Dataset(object):
             self.compressed = True
         elif data_type == 'mRNASeq':
             self.df = FH.read_rnaSeq(run.data_path, cancer.name, 
-                                     average_on_genes=True, tissue_code='All')
+                                     tissue_code='All')
             self.compressed = True
         elif data_type == 'Methylation':
             self.df = IM.read_methylation(cancer.name, run.data_path)
@@ -168,15 +212,13 @@ class Dataset(object):
             self.compressed = True
         else:
             return
- 
-        #self.df = patient_filter(self.df, cancer)
-        #self.patients = array(self.df.columns)
+        '''
         
     def compress(self):
         assert len(self.df.shape) == 2
-        self.df = self.df.replace(0, nan).stack()
+        self.df = self.df.replace(0, np.nan).stack()
         if hasattr(self, 'features'):
-            self.features = self.features.replace(0, nan).stack()
+            self.features = self.features.replace(0, np.nan).stack()
         self.compressed = True
         
     def uncompress(self):

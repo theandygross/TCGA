@@ -243,3 +243,11 @@ def get_global_vars(data_path, cancer, patients=None):
                     keys=['mRNASeq','methylation', 'cna', 'mutation'], axis=1)
     gv = gv.dropna(how='all', axis=1)
     return gv
+
+def read_data(data_path, cancer, data_type, patients=None, tissue_code='01'):
+    fx = {'miRNASeq': FH.read_miRNASeq,
+          'mRNASeq': FH.read_rnaSeq,
+          'RPPA': FH.read_rppa,
+          'Methylation': read_methylation}
+    f = fx[data_type]
+    return f(data_path, cancer, patients=patients, tissue_code=tissue_code)

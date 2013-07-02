@@ -22,6 +22,7 @@ import os as os
 import numpy as np
 import pandas as pd
 
+ 
 def fix_barcode_columns(df, patients=None, tissue_code='All', get_batch=False):
     '''
     Takes TCGA barcode and reformats it into a MultiIndex if all tissue_codes 
@@ -158,7 +159,7 @@ def get_gistic(cancer_name, data_path, filter_with_rna=True,
     lesions = get_gistic_lesions(cancer_name, data_path)
     return lesions
 
-def read_rppa(data_path, cancer, tissue_code='01'):
+def read_rppa(data_path, cancer, patients=None, tissue_code='01'):
     '''
     Reads in antibody by patient reverse-phase protein array matrix. 
     Index is MultiIndex with ['protien','antibody'] on the levels. 
@@ -189,8 +190,8 @@ def read_rnaSeq(data_path, cancer, patients=None, average_on_genes=True,
     rnaSeq = fix_barcode_columns(rnaSeq, patients, tissue_code, get_batch)
     return rnaSeq
 
-def read_rnaSeq_splice_junctions(data_path, cancer, patients=None, 
-                                 average_on_genes=True, tissue_code='01'):
+def read_rnaSeq_splice_junctions(data_path, cancer, patients=None,
+                                 tissue_code='01'):
     '''
     Reads in gene by patient rnaSeq mRNA splice junction matrix. 
     Values are raw counts. 

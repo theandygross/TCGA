@@ -114,7 +114,7 @@ def format_clinical_var(br):
     clinical = clinical.T.dropna(axis=1, how='all')
     
     clinical['age'] = clinical.ageatinitialpathologicdiagnosis.astype(float)
-    del clinical.ageatinitialpathologicdiagnosis    
+    del clinical['ageatinitialpathologicdiagnosis']    
     return clinical
 
 def format_survival(clin, followup):
@@ -170,8 +170,7 @@ def format_survival(clin, followup):
                          axis=1)
     return survival,timeline
 
-def get_clinical(cancer, data_path, patients=None, filtered_patients=None, 
-                 **params):
+def get_clinical(cancer, data_path, patients=None, **params):
     '''
     Reads in and formats clinical data for a given tumor type.  
     

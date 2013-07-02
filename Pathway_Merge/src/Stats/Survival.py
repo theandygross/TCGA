@@ -244,3 +244,13 @@ def run_feature_matrix(df, test, fp_cutoff=.5):
     res = res.join(pd.Series(bhCorrection(res[('Univariate', 'p')], n=len(fp)), 
                           name=('Univariate','q')))
     return res.sort_index(axis=1).sort(columns=[('Full', 'LR')])
+
+def stratified_cox(surv, feature, strata):
+    fmla = 'Surv(days, event) ~ feature + strata({})'.format(strata.name)
+    chi2 = get_cox_ph_ms(surv, feature, covariates=pd.concat([strata], axis=1),  
+                         return_val='model', formula=fmla)[3][0]
+    return chi2
+def cox(surv, feature):
+    fmla = 'Surv(days, event) ~ feature'
+    chi2 = get_cox_ph_ms(surv, feature, return_val='model', formula=fmla)[3][0]
+    return chi2
