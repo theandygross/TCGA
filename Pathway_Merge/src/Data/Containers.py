@@ -12,7 +12,6 @@ import pandas as pd
 import numpy as np
 
 from Data.ProcessClinical import get_clinical
-import Data.Firehose as FH
 import Data.Intermediate as IM
 import Data.Annotations as AN
 from Processing.Helpers import make_path_dump

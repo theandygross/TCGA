@@ -4,7 +4,7 @@ Created on Apr 7, 2013
 @author: agross
 '''
 from Processing.Helpers import get_vec_type, to_quants
-from Processing.Tests import get_cox_ph_ms
+from Stats.Survival import get_cox_ph_ms
 
 import pandas as pd
 import matplotlib.pylab as plt

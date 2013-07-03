@@ -3,7 +3,7 @@ Created on Jun 12, 2013
 
 @author: agross
 '''
-import Processing.Tests as Tests
+import Stats.Scipy as Tests
 from Processing.Helpers import match_series, split_a_by_b
 from Figures.Helpers import init_ax, latex_float
 import matplotlib.pyplot as plt

@@ -13,7 +13,7 @@ import pandas as pd
 
 import Data.Firehose as FH
 
-from Processing.Tests import kruskal_pandas
+from Stats.Scipy import kruskal_pandas
 from Processing.Helpers import true_index, bhCorrection
 from Processing.Helpers import frame_svd
 

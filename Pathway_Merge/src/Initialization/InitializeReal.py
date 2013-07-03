@@ -22,12 +22,12 @@ def exp_change(s):
     return Tests.anova(pd.Series(s.index.get_level_values(1), s.index), s)
 
 
-def extract_pc_filtered(df, pc_threshold=.2):
+def extract_pc_filtered(df, pc_threshold=.2, filter_down=True):
     '''
     First pre-filters for patients with no tumor/normal change.
     Then normalizes by normals. 
     '''
-    if '11' in df.columns.levels[1]:
+    if ('11' in df.columns.levels[1]) and filter_down:
         tt = df.xs('11', axis=1, level=1)
         rr = df.apply(exp_change, 1).sort('p')
         m, s = tt.mean(1), tt.std(1)
@@ -42,7 +42,7 @@ def extract_pc_filtered(df, pc_threshold=.2):
 
 def extract_geneset_pcs(df, gene_sets, filter_down=True):
     '''Extract PCs for all gene sets.'''
-    pc = {p: extract_pc_filtered(df.ix[g].dropna()) for p,g, 
+    pc = {p: extract_pc_filtered(df.ix[g].dropna(), .2, filter_down) for p,g, 
           in gene_sets.iteritems()}
     pc = pd.DataFrame({p: s for p,s in pc.iteritems() if s}).T
     pat_vec = pd.DataFrame(pc.pat_vec.to_dict()).T
@@ -62,17 +62,20 @@ class RealDataset(Dataset):
     data.
     '''
     def __init__(self, run, cancer, data_type, patients=None, drop_pc1=False,
-                 create_meta_features=True, draw_figures=False):
+                 create_meta_features=True, filter_down=True, 
+                 draw_figures=False):
         '''
         '''
         Dataset.__init__(self, cancer.path, data_type, compressed=True)
         self.df = IM.read_data(run.data_path, cancer.name, data_type, 
                                tissue_code='All')
+        if patients is not None:
+            self.df = self.df.ix[:, patients].dropna(1)
         
-        self._calc_global_pcs(patients, drop_pc1)
+        self._calc_global_pcs(drop_pc1)
         
         if create_meta_features is True:
-            gs = extract_geneset_pcs(self.df, run.gene_sets)
+            gs = extract_geneset_pcs(self.df, run.gene_sets, filter_down)
             self.loadings, self.pct_var, self.features = gs
             
         if data_type == 'miRNASeq':
@@ -82,15 +85,13 @@ class RealDataset(Dataset):
         if draw_figures is True:
             self._creat_pathway_figures()
     
-    def _calc_global_pcs(self, patients=None, drop_pc1=False):
+    def _calc_global_pcs(self, drop_pc1=False):
         '''
         Normalize data and calculate principal components. If drop_pc1 is
         set to True, also reconstructs the normalized data without the
         first PC. 
         '''
         df = self.df.xs('01', axis=1, level=1)
-        if patients is not None:
-            df = df.ix[patients]
         norm = ((df.T - df.mean(1)) / df.std(1)).T
         U,S,vH = frame_svd(norm)
         self.pc1, self.pc2 = vH[0], vH[1]
@@ -125,7 +126,7 @@ class RealDataset(Dataset):
         
 def initialize_real(cancer_type, report_path, data_type, patients=None, 
                     drop_pc1=False, create_meta_features=True, 
-                    draw_figures=False, save=True):
+                    filter_down=False, draw_figures=False, save=True):
     '''
     Initialize real-valued data for down-stream analysis.
     '''
@@ -137,7 +138,7 @@ def initialize_real(cancer_type, report_path, data_type, patients=None,
         draw_figures=False
     
     data = RealDataset(run, cancer, data_type, patients, drop_pc1, 
-                       create_meta_features, draw_figures)
+                       create_meta_features, filter_down, draw_figures)
 
     if save is True:
         data.save()
