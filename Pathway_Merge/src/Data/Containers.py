@@ -173,49 +173,10 @@ class Dataset(object):
         self.path = '{}/{}'.format(cancer_path, data_type)
         self.compressed = compressed
         return
-        '''
-        if data_type == 'MAF':
-            self.df = FH.get_mutation_matrix(run.data_path, cancer.name)
-            self.compressed = False
-        elif data_type == 'CN':
-            self.df = FH.get_gistic_gene_matrix(run.data_path, cancer.name)
-            self.compressed = False
-        elif data_type == 'CN_broad':
-            self.df = FH.get_gistic(run.data_path, cancer.name, 
-                                    min_patients=run.parameters['min_patients'])
-            self.features = self.df #should probably move
-            self.features = patient_filter(self.features, cancer)
-            self.compressed = False
-        elif data_type == 'mRNA':
-            self.df = FH.read_mrna(cancer.name, run.data_path)
-            self.compressed = True
-        elif data_type == 'mRNASeq':
-            self.df = FH.read_rnaSeq(run.data_path, cancer.name, 
-                                     tissue_code='All')
-            self.compressed = True
-        elif data_type == 'Methylation':
-            self.df = IM.read_methylation(cancer.name, run.data_path)
-            self.compressed = True
-        elif data_type == 'RPPA':
-            self.df = FH.read_rppa(run.data_path, cancer.name)
-            self.compressed = True
-        elif data_type == 'miRNASeq':
-            df = FH.read_miRNASeq(cancer.name, run.data_path)
-            binary = (df[(df < -1).sum(1) > (df.shape[1]/2)] >= -1)*1.
-            binary = binary[binary.sum(1).isin(range(20, df.shape[1]/2))]
-            real = df[((df.max(1) - df.min(1)) > 2)]
-            real = real.ix[(real == -3).sum(1) < real.shape[1]/2.]
-            self.features = pd.concat([real, binary], keys=['real','binary'])
-            self.df = df
-            self.binary = binary
-            self.real = real
-            self.compressed = True
-        else:
-            return
-        '''
         
     def compress(self):
         assert len(self.df.shape) == 2
+        self.patients = self.df.columns
         self.df = self.df.replace(0, np.nan).stack()
         if hasattr(self, 'features'):
             self.features = self.features.replace(0, np.nan).stack()

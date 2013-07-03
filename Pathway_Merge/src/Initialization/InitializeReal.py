@@ -48,6 +48,13 @@ def extract_geneset_pcs(df, gene_sets, filter_down=True):
     pat_vec = pd.DataFrame(pc.pat_vec.to_dict()).T
     return pc.gene_vec, pc.pct_var, pat_vec
 
+def get_mirna_features(df):
+    binary = (df[(df < -1).sum(1) > (df.shape[1]/2)] >= -1)*1.
+    binary = binary[binary.sum(1).isin(range(20, df.shape[1]/2))]
+    real = df[((df.max(1) - df.min(1)) > 2)]
+    real = real.ix[(real == -3).sum(1) < real.shape[1]/2.]
+    features = pd.concat([real, binary], keys=['real','binary'])
+    return features
         
 class RealDataset(Dataset):
     '''
@@ -67,6 +74,10 @@ class RealDataset(Dataset):
         if create_meta_features is True:
             gs = extract_geneset_pcs(self.df, run.gene_sets)
             self.loadings, self.pct_var, self.features = gs
+            
+        if data_type == 'miRNASeq':
+            self.features = get_mirna_features(self.df.xs('01', axis=1, 
+                                                          level=1))
             
         if draw_figures is True:
             self._creat_pathway_figures()
@@ -127,7 +138,7 @@ def initialize_real(cancer_type, report_path, data_type, patients=None,
     
     data = RealDataset(run, cancer, data_type, patients, drop_pc1, 
                        create_meta_features, draw_figures)
-        
+
     if save is True:
         data.save()
     return data
