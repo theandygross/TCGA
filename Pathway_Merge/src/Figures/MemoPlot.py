@@ -75,11 +75,12 @@ def pathway_plot(df, ax=None):
     else:
         fig = ax.get_figure()
     memo_plot(df, ax=ax)
-    ax.bar(np.arange(len(df.columns)) - .3, df.sum() / df.sum().max(), 
+    ax.bar(np.arange(len(df.columns)) - .3, 1.*df.sum() / df.sum().max(), 
            bottom=-1.5, width=.6, alpha=.5)
     counts = df.sum(1)[::-1]
     width = df.shape[1]
-    ax.barh(np.arange(len(counts)) - .3, (counts / counts.max())*width*.25, 
+    
+    ax.barh(np.arange(len(counts)) - .3, (1.*counts / counts.max())*width*.25, 
             left=width - .2, height=.6, alpha=.5)
     ax.set_frame_on(False)
     ax.tick_params(right='off')

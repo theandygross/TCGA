@@ -20,7 +20,7 @@ def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', sho
     else:
         num_panels = len(assignment.unique())
         name = lambda v: str(assignment.name) + ' = ' + str(v)
-    if (labels is None) and (feature.nunique() < 10):
+    if (labels is None) and ((len(feature) / feature.nunique()) > 10):
         labels = r.sort(r.c(*feature.unique()))  #R sorts bad
         colors = ['blue','green','red','cyan','magenta','yellow','black']
     if feature.dtype == 'bool':

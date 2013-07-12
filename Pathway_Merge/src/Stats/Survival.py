@@ -45,8 +45,24 @@ def LR_test(full, reduced):
     df = max(full_df - reduced_df, 1)
     return stats.chi2.sf(2*full_ll[1] - 2*reduced_ll[1], df)
 
+def sanitize_lr(feature):
+    if len(feature.unique()) == 1:
+        return None
+    if feature.dtype is np.dtype('bool'):
+        feature = 1.*feature
+    if len(feature.value_counts()) > 5:
+        return None
+    return feature
+
 def log_rank(feature, surv):
+    '''
+    Perform log-rank test using r.survival.survdiff function.
+    '''
+    feature = sanitize_lr(feature)
+    if type(feature) is type(None):
+        return pd.Series(index=['chi2', 'p'])
     fmla = robjects.Formula('Surv(days, event) ~ feature')
+    #use cox function to extract model
     m = get_cox_ph_ms(surv, feature, return_val='model', formula=fmla)
     r_data = m.rx2('call')[2]
     s = survival.survdiff(fmla, r_data)
@@ -78,17 +94,25 @@ def process_factors(clinical, hit_vec=None, covariates=[]):
         df = clinical
     return df, factors
 
-def process_covariates(surv, feature=None, covariates=None):
-    if covariates is None:
-        covariates = pd.DataFrame(index=feature.index)
-    c_real = covariates.ix[:,covariates.dtypes.isin([np.dtype(float), 
-                                                     np.dtype(int)])]
+def process_covariates(surv, feature=None, cov=None):
+    '''
+    Coerce covariates and feature into format suitable for R's
+    survival functions. 
+    '''
+    if type(cov) is type(None):
+        cov = pd.DataFrame(index=feature.index)
+    if type(cov) == pd.Series:
+        cov = pd.concat([cov], axis=1)
+    elif type(cov) == list:
+        assert map(type, cov) == ([pd.Series] * len(cov))
+        cov = pd.concat(cov, axis=1)
+    c_real = cov.ix[:,cov.dtypes.isin([np.dtype(float), np.dtype(int)])]
     c_real = (c_real - c_real.mean()) / c_real.std()
-    covariates[c_real.columns] = c_real
-    df = covariates.join(surv.unstack()).dropna()
+    cov[c_real.columns] = c_real
+    df = cov.join(surv.unstack()).dropna()
     df['days'] = df['days'] / 365.
     df = df.groupby(level=0).first()
-    df, factors = process_factors(df, feature, list(covariates.columns))
+    df, factors = process_factors(df, feature, list(cov.columns))
     df = df[factors + ['days','event']]
     df = df.dropna()
     df = convert_to_r_dataframe(df)
@@ -156,7 +180,7 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='p',
                              'fmla': f})
         if get_model:
             results['model'] = s
-        return results
+        return results    
     
 def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
                  formula=None):
@@ -245,12 +269,32 @@ def run_feature_matrix(df, test, fp_cutoff=.5):
                           name=('Univariate','q')))
     return res.sort_index(axis=1).sort(columns=[('Full', 'LR')])
 
-def stratified_cox(surv, feature, strata):
+def stratified_cox(feature, surv, strata):
     fmla = 'Surv(days, event) ~ feature + strata({})'.format(strata.name)
-    chi2 = get_cox_ph_ms(surv, feature, covariates=pd.concat([strata], axis=1),  
-                         return_val='model', formula=fmla)[3][0]
-    return chi2
-def cox(surv, feature):
+    model = get_cox_ph_ms(surv, feature, covariates=strata, return_val='model',
+                          formula=fmla)
+    lr = model[3][0]
+    p = stats.chi2.sf(lr, 1)
+    return pd.Series({'LR': lr, 'p': p})
+
+def cox(feature, surv):
+    '''
+    Perform univariate Cox regression.
+    '''
     fmla = 'Surv(days, event) ~ feature'
-    chi2 = get_cox_ph_ms(surv, feature, return_val='model', formula=fmla)[3][0]
-    return chi2
+    model = get_cox_ph_ms(surv, feature, return_val='model', formula=fmla)
+    lr = model[3][0]
+    p = stats.chi2.sf(lr, 1)
+    return pd.Series({'LR': lr, 'p': p})
+
+def cox_screen(df, surv):
+    rr = df.apply(cox, args=(surv,), axis=1)
+    rr['q'] = bhCorrection(rr.p)
+    rr = rr.sort('p')
+    return rr
+
+def lr_screen(df, surv):
+    rr = df.astype(float).apply(log_rank, args=(surv,), axis=1)
+    rr['q'] = bhCorrection(rr.p)
+    rr = rr.sort('p')
+    return rr

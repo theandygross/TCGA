@@ -44,6 +44,9 @@ def fix_barcode_columns(df, patients=None, tissue_code='All', get_batch=False):
         df  = df.ix[:, patients]
     if tissue_code != 'All':
         df = df.T.xs(tissue_code, level=1).T #pandas bug
+        df = df.groupby(axis=1, level=0).first()
+    else:
+        df = df.groupby(axis=1, level=[0,1]).first()
     return df
 
 def get_dataset_path(data_path, cancer, data_type, ext):

@@ -10,11 +10,14 @@ import pandas as pd
 import matplotlib.pylab as plt
 import pandas.rpy.common as com
 import rpy2.robjects as robjects 
+from Stats.Survival import get_surv_fit
 
 import numpy as np
 
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
+
+colors = plt.rcParams['axes.color_cycle']
 
 def get_markers(censoring, survival):
     '''
@@ -41,15 +44,13 @@ def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None):
                        index=s.rx2('time'))
     call = com.convert_robj(fit.rx2('call')[2])
     
-    #groups = sorted(call.feature.unique(), key=lambda s: sum(call.feature==s))
-    groups = call.feature.value_counts().index
     groups = robjects.r.sort(robjects.r.c(*call.feature.unique()))
-    groups = np.roll(groups, len(tab.strata.unique()))
-    
-    if len(tab.strata.unique()) == 1: #TODO: fix for more than one curve
-        groups = call.feature.value_counts().index
+
     if len(tab.strata.unique()) != len(groups):
-        tab.strata = tab.strata - (len(tab.strata.unique()) - len(groups))
+        gg = list(call[call.event > 0].feature.unique())
+        gg = [g for g in groups if g in gg]
+        bg = [g for g in groups if g not in gg]
+        groups = gg + bg
            
     for i,group in enumerate(groups):
         censoring = call[(call.event==0) * (call.feature==group)].days
@@ -61,7 +62,11 @@ def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None):
         censoring_pos = get_markers(censoring, surv)
         ax.step(surv.index, surv, lw=3, where='post', alpha=.7, label=group)
         if colors is not None:
-            ax.lines[-1].set_color(colors[i])
+            try:
+                color = colors[group]
+            except:
+                color = colors[i]
+            ax.lines[-1].set_color(color)
         if len(censoring_pos) > 0:
             ax.scatter(*zip(*censoring_pos), marker='|', s=80, 
                        color=ax.lines[-1].get_color())
@@ -99,7 +104,7 @@ def draw_survival_curves(feature, surv, assignment=None):
         draw_survival_curve(s, surv, ax=axs[i], 
                             title='{} = {}'.format(assignment.name,l))
         
-def survival_stat_plot(t, axs=None):
+def survival_stat_plot(t, upper_lim=5, axs=None):
     '''
     t is the DataFrame returned from a get_surv_fit call.
     '''
@@ -114,8 +119,8 @@ def survival_stat_plot(t, axs=None):
         conf_int = v['Median Survival']
         median_surv = v[('Median Survival','Median')]
         if (v['Stats']['# Events']  / v['Stats']['# Patients']) < .5:
-            median_surv = np.nanmin([median_surv, 6])
-            conf_int['Upper'] = np.nanmin([conf_int['Upper'], 6])
+            median_surv = np.nanmin([median_surv, 20])
+            conf_int['Upper'] = np.nanmin([conf_int['Upper'], 20])
         l = ax.plot(*zip(*[[conf_int['Lower'],i], [median_surv,i], [conf_int['Upper'],i]]), lw=3, ls='--', 
                     marker='o', dash_joinstyle='bevel')
         ax.scatter(median_surv,i, marker='s', s=100, color=l[0].get_color(), edgecolors=['black'], zorder=10,
@@ -124,7 +129,7 @@ def survival_stat_plot(t, axs=None):
     ax.set_yticklabels(['{} ({})'.format(idx, int(t.ix[idx]['Stats']['# Patients'])) 
                         for idx in t.index])
     ax.set_ylim(-.5, i+.5)
-    ax.set_xlim(0,5)
+    ax.set_xlim(0,upper_lim)
     ax.set_xlabel('Median Survival (Years)')
     
     tt = t['5y Survival']
@@ -134,5 +139,33 @@ def survival_stat_plot(t, axs=None):
     ax2.set_xlabel('5Y Survival')
     ax2.set_xticks([0, .5, 1.])
     ax2.set_yticks([])
+    fig.tight_layout()
+    
+def survival_and_stats(feature, surv, upper_lim=5, axs=None, figsize=(7,5), title=None, order=None):
+    if axs is None:
+        fig = plt.figure(figsize=figsize)
+        ax1 = plt.subplot2grid((3,3), (0,0), colspan=3, rowspan=2)
+        ax2 = plt.subplot2grid((3,3), (2,0), colspan=2)
+        ax3 = plt.subplot2grid((3,3), (2,2))
+    else:
+        ax1, ax2, ax3 = axs
+        fig = plt.gcf()
+    if feature.dtype != str:
+        feature = feature.astype(str)
+    
+    t = get_surv_fit(surv, feature)
+    if order is None:
+        t = t.sort([('5y Survival','Surv')], ascending=True)
+    else:
+        t = t.ix[order]
+    survival_stat_plot(t, axs=[ax2, ax3], upper_lim=upper_lim)
+    r = pd.Series({s:i for i,s in enumerate(t.index)})
+    color_lookup = {c: colors[i % len(colors)] for i,c in enumerate(t.index)}
+    
+    draw_survival_curve(feature, surv, ax=ax1, colors=color_lookup)
+    ax1.legend().set_visible(False)
+    if title:
+        ax1.set_title(title)
+    
     fig.tight_layout()
 

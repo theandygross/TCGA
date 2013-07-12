@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 
 from subprocess import call, check_output
-from Processing.Helpers import extract_pc
+from Processing.Helpers import extract_pc, true_index
 from Data.Firehose import fix_barcode_columns
 
 def extract_betas(folder, meth_file, probes='All', outfile='beta_values.txt'):
@@ -50,7 +50,7 @@ def get_beta_values(data_path, cancer, patients=None, tissue_code='01'):
     t = t.swaplevel(0,1)
     t = fix_barcode_columns(t, patients, tissue_code)
     return t
-    
+
 def peel_pc(df):
     '''
     Wrapper around extract_pc.
@@ -59,7 +59,7 @@ def peel_pc(df):
     beta values.
     '''
     try:
-        r = extract_pc(df-.5, standardize=False)
+        r = extract_pc(df-.5)
         l,r,p = r['gene_vec'], r['pat_vec'], r['pct_var']
         mean = df.mean(1)
         if l.corr(mean) < 0:
@@ -100,7 +100,8 @@ def process_meth(data_path, cancer, probeset='All'):
     pct_var = {}
     for g in table.index.levels[0]:
         loadings[g], meta_probes[g], pct_var[g] = peel_pc(table.ix[g])
-
+    
+    loadings = {k:v for k,v in loadings.iteritems() if type(v) == pd.Series}
     loadings = pd.concat(loadings.values(), keys=loadings.keys())
     meta_probes = pd.DataFrame(meta_probes).T
     pct_var = pd.Series(pct_var)

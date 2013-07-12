@@ -21,10 +21,13 @@ def fix_date(df):
     '''
     Translate date to date-time, get rid of old columns.
     '''
-    df['form_completion'] = df.apply(to_date, 1)
-    del df['yearofformcompletion']
-    del df['monthofformcompletion']
-    del df['dayofformcompletion']
+    try:
+        df['form_completion'] = df.apply(to_date, 1)
+        del df['yearofformcompletion']
+        del df['monthofformcompletion']
+        del df['dayofformcompletion']
+    except:
+        pass
     return df
     
 def format_drugs(br):
@@ -140,8 +143,10 @@ def format_survival(clin, followup):
     clin2 = clin.copy()
     ft = pd.MultiIndex.from_tuples
     clin2.index = ft([(i,'surgery',0) for i in clin2.index])
-    
-    f = followup.append(clin2)
+    if type(followup) == pd.DataFrame:
+        f = followup.append(clin2)
+    else:
+        f = clin2
     time_vars = ['daystodeath', 'daystolastfollowup','daystolastknownalive']
     time_cols = list(f.columns.intersection(time_vars))
     f = f.sort(columns=time_cols, ascending=False)
@@ -158,10 +163,13 @@ def format_survival(clin, followup):
                          axis=1)
     survival = survival.dropna().stack().astype(float)
     
-    pfs = pd.concat([timeline.days, 
-                     timeline.daystonewtumoreventafterinitialtreatment], 
-                    axis=1).min(1)
-    event = (pfs < timeline.days) | deceased
+    f_vars = ['days', 'daystonewtumoreventafterinitialtreatment', 
+              'daystotumorprogression', 'daystotumorrecurrence',
+              'daystonewtumoreventafterinitialtreatment']
+    followup_cols = list(timeline.columns.intersection(f_vars))
+    pfs = timeline[followup_cols].min(1)
+    #pfs = pd.concat([timeline.days, timeline[followup_cols]], axis=1).min(1)
+    event = ((pfs < timeline.days) + deceased) > 0
     pfs = pd.concat([pfs, event], keys=['days','event'], axis=1)
     pfs = pfs.dropna().stack().astype(float)
     
