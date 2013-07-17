@@ -63,7 +63,7 @@ def log_rank(feature, surv):
         return pd.Series(index=['chi2', 'p'])
     fmla = robjects.Formula('Surv(days, event) ~ feature')
     #use cox function to extract model
-    m = get_cox_ph_ms(surv, feature, return_val='model', formula=fmla)
+    m = get_cox_ph(surv, feature, formula=fmla)
     r_data = m.rx2('call')[2]
     s = survival.survdiff(fmla, r_data)
     p = stats.chi2.sf(s.rx2('chisq')[0], 1)
@@ -118,9 +118,8 @@ def process_covariates(surv, feature=None, cov=None):
     df = convert_to_r_dataframe(df)
     return df, factors
 
-def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='p', 
-                  null_model=None, formula=None, get_model=False,
-                  interactions=True):
+def get_cox_ph(surv, feature=None, covariates=None, formula=None, 
+               interactions=True, get_model=True, print_desc=False):
     '''
     Fit a cox proportial hazzards model to the data.
     Returns a p-value on the hit_vec coefficient. 
@@ -138,36 +137,59 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='p',
     else:
         fmla = robjects.Formula(formula)
         s = survival.coxph(fmla, df)
-  
-    results = convert_robj(base.summary(s).rx2('coefficients'))
-      
-    if return_val == 'model':
+    
+    if print_desc:
+        print '\n\n'.join(str(s).split('\n\n')[-2:])
+        
+    if get_model:
         return s
     
-    elif return_val == 'model_desc':
-        desc = '\n\n'.join(str(s).split('\n\n')[-2:])
-        print desc
-        return desc
+def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='LR', 
+                  null_model=None, formula=None, get_model=True,
+                  interactions=True):
+    '''
+    Fit a cox proportial hazzards model to the data.
+    Returns a p-value on the hit_vec coefficient. 
+    ---------------------------------------------------
+    clinical: DataFrame of clinical variables
+    hit_vec: vector of labels to test against
+    covariates: names of covariates in the cox model,
+                (must be columns in clinical DataFrame)
+    '''
+    print_desc = return_val == 'model_desc'
+    if covariates is None:
+        covariates = pd.DataFrame(index=feature.index)
+    s = get_cox_ph(surv, feature, covariates, formula, interactions,
+                   get_model, print_desc)
+    if s is None:
+        return
     
-    elif return_val in ['LR', 'LR_p']:
-        # check if we need to recompute null model
-        has_null = hasattr(get_cox_ph_ms, 'null_model') or (null_model)
-        recalc = get_cox_ph_ms.params !=  surv.name, list(covariates.columns)
-        if (has_null == False) or (recalc == True): 
-            patients = feature.dropna().index
-            null_model = get_cox_ph_ms(surv, covariates=covariates.ix[patients], 
-                                       return_val='model')
-            get_cox_ph_ms.null_model = null_model
-            get_cox_ph_ms.params = surv.name, list(covariates.columns)
-        else:
-            null_model = get_cox_ph_ms.null_model
-        LR_p = LR_test(s, null_model)
+    results = convert_robj(base.summary(s).rx2('coefficients'))
+    
+    def set_null_model():
+        patients = feature.dropna().index
+        null_model = get_cox_ph(surv, covariates=covariates, 
+                                feature=feature.map(lambda s: 1))
+        get_cox_ph_ms.null_model = null_model
+        get_cox_ph_ms.params = surv.name, str(covariates)
+      
+    # check if we need to recompute null model
+    has_null = hasattr(get_cox_ph_ms, 'null_model') or (null_model)
+    if has_null != True:
+        set_null_model()
         
-        if type(results) == pd.DataFrame and 'feature' in results.index:
-            coef_p = results.ix['feature','Pr(>|z|)']
-            hazzard = results.ix['feature','exp(coef)']
-        else:
-            coef_p, hazzard = np.nan, np.nan
+    recalc = get_cox_ph_ms.params !=  surv.name, str(covariates)
+    if recalc:
+        set_null_model()
+    
+    null_model = get_cox_ph_ms.null_model
+    LR_p = LR_test(s, null_model)
+    
+    if type(results) == pd.DataFrame and 'feature' in results.index:
+        coef_p = results.ix['feature','Pr(>|z|)']
+        hazzard = results.ix['feature','exp(coef)']
+    else:
+        coef_p, hazzard = np.nan, np.nan
             
     if return_val == 'LR_p':
         return LR_p
@@ -178,9 +200,7 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='p',
                              'feature_p': coef_p, 
                              'hazzard': hazzard, 
                              'fmla': f})
-        if get_model:
-            results['model'] = s
-        return results    
+    return results
     
 def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
                  formula=None):
@@ -211,12 +231,14 @@ def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
     res[('5y Survival', 'Surv')] = df['surv']
     res[('5y Survival', 'Upper')] = df['upper']
     return res
-    
+
+'''    
 def get_cox_ph(clinical, hit_vec=None, covariates=[], time_var='days',
                event_var='censored'):
     p = get_cox_ph_ms(clinical, hit_vec, covariates, time_var, event_var, 
                       'LR_p')
     return p
+'''
     
     
 class SurvivalTest(object):
@@ -282,7 +304,7 @@ def cox(feature, surv):
     Perform univariate Cox regression.
     '''
     fmla = 'Surv(days, event) ~ feature'
-    model = get_cox_ph_ms(surv, feature, return_val='model', formula=fmla)
+    model = get_cox_ph(surv, feature, formula=fmla)
     lr = model[3][0]
     p = stats.chi2.sf(lr, 1)
     return pd.Series({'LR': lr, 'p': p})

@@ -4,7 +4,7 @@ Created on Apr 7, 2013
 @author: agross
 '''
 from Processing.Helpers import get_vec_type, to_quants
-from Stats.Survival import get_cox_ph_ms
+from Stats.Survival import get_cox_ph
 
 import pandas as pd
 import matplotlib.pylab as plt
@@ -88,7 +88,7 @@ def process_feature(feature, q, std):
 def draw_survival_curve(feature, surv, q=.25, std=None, **args):
     feature = process_feature(feature, q, std)
     fmla = robjects.Formula('Surv(days, event) ~ feature')           
-    m = get_cox_ph_ms(surv, feature, return_val='model', formula=fmla)
+    m = get_cox_ph(surv, feature)
     r_data = m.rx2('call')[2]
     #s = survival.survdiff(fmla, r_data)
     #p = str(s).split('\n\n')[-1].strip().split(', ')[-1]

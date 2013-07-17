@@ -7,7 +7,7 @@ import numpy as np
 import rpy2.robjects as robjects
 from rpy2.robjects import r
 from Processing.Helpers import get_vec_type ,to_quants
-from Stats.Survival import get_cox_ph_ms, survival
+from Stats.Survival import get_cox_ph, log_rank, survival
 from Reports.NotebookTools import Show
     
 def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', show=False, 
@@ -45,17 +45,17 @@ def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', sho
     def plot_me(sub_f, label):
         if (get_vec_type(sub_f) == 'real') and (len(sub_f.unique()) > 10):
             sub_f = to_quants(sub_f, q=q, std=std)
-        m = get_cox_ph_ms(surv, sub_f, return_val='model', formula=fmla)
+            
+        m = get_cox_ph(surv, sub_f, formula=fmla)
         r_data = m.rx2('call')[2]
-        s = survival.survdiff(fmla, r_data)
-        p = str(s).split('\n\n')[-1].strip().split(', ')[-1]
+        p = log_rank(sub_f, surv)['p']
         ls = r.c(*colors)
         
         r.plot(survival.survfit(fmla, r_data), lty=1, col=ls, lwd=4, cex=1.25, 
                                 xlab='Years to Event', ylab='Survival');
         r.title(label, cex=3.)
         if ann=='p':
-            r.text(3, 0, labels='logrank ' + p, pos=4)
+            r.text(3, 0, labels='logrank %.2f' % p, pos=4)
         elif ann != None:
             r.text(0, labels=ann, pos=4)
 
