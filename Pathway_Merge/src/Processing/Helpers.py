@@ -24,6 +24,7 @@ def transferIndex(source,target):
     return pd.Series(list(target), index=source.index)
 
 def bhCorrection(s, n=None):
+    s = s.fillna(1.)
     if n > len(s):
         p_vals = list(s) + [1]*(n-len(s))
     else:

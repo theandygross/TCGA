@@ -10,7 +10,8 @@ import Stats.Scipy as Tests
 
 from Data.Containers import Dataset
 from Processing.Helpers import frame_svd, extract_pc
-from Processing.Helpers import true_index
+from Processing.Helpers import true_index, screen_feature
+from Stats.Scipy import pearson_pandas
 
 import Data.Intermediate as IM
 
@@ -55,6 +56,18 @@ def get_mirna_features(df):
     real = real.ix[(real == -3).sum(1) < real.shape[1]/2.]
     features = pd.concat([real, binary], keys=['real','binary'])
     return features
+
+def extract_features(df):
+    df_n = df.xs('01', level=1, axis=1)
+    binary = df_n > -1
+    binary = binary[binary.sum(1).isin(range(20, df.shape[1]/2))]
+    
+    real = df_n.ix[df_n.index.diff(binary.index)]
+    singles = real[((real.max(1) - real.min(1)) > 1)]
+    singles = singles[(singles.std(1) > .25)]
+    ch = df.ix[singles.index].apply(exp_change, 1)
+    singles = df_n.ix[true_index(ch.p < .01)]
+    return binary, singles, real
         
 class RealDataset(Dataset):
     '''
@@ -70,20 +83,55 @@ class RealDataset(Dataset):
         self.df = IM.read_data(run.data_path, cancer.name, data_type, 
                                tissue_code='All')
         if patients is not None:
-            self.df = self.df.ix[:, patients].dropna(1)
+            self.df = self.df.ix[:, patients].dropna(axis=1, how='all')
         
+        self.global_vars = pd.DataFrame(index=patients)
+        self.features = {}
+        self.global_loadings = pd.DataFrame(index=self.df.index)
         self._calc_global_pcs(drop_pc1)
+        
+        self._get_real_features()
         
         if create_meta_features is True:
             gs = extract_geneset_pcs(self.df, run.gene_sets, filter_down)
-            self.loadings, self.pct_var, self.features = gs
+            self.loadings, self.pct_var, pathways = gs
             
-        if data_type == 'miRNASeq':
-            self.features = get_mirna_features(self.df.xs('01', axis=1, 
-                                                          level=1))
+            r = screen_feature(self.global_vars.background, pearson_pandas, 
+                               pathways)
+            pathways = pathways.ix[r.p > 10e-5]
+            pathways = ((pathways.T - pathways.mean(1)) / pathways.std(1)).T
+            U, S, pc = frame_svd(pathways)
+            
+            self.pathways = pathways
+            self.features['pathways'] = pathways
+            self.global_vars['pathway_pc1'] = pc[0]
+            self.global_vars['pathway_pc2'] = pc[1]
+            self.global_loadings['pathway_pc1'] = U[0]
+            self.global_loadings['pathway_pc2'] = U[1]
+            
+        self.features = pd.concat(self.features)
             
         if draw_figures is True:
             self._creat_pathway_figures()
+            
+    def _get_real_features(self):
+        binary, singles, real = extract_features(self.df)
+        background_df = real.ix[real.index.diff(singles.index)].dropna()
+        background = extract_pc(background_df, 0)
+        ss = screen_feature(background['pat_vec'], pearson_pandas, singles)
+        singles = singles.ix[ss.p > 10e-5]
+        
+        singles = ((singles.T - singles.mean(1)) / singles.std(1)).T
+        U, S, pc = frame_svd(singles)
+        
+        self.features['binary'] = binary
+        self.features['real'] = singles
+        self.global_vars['background'] = background['pat_vec']
+        self.global_vars['filtered_pc1'] = pc[0]
+        self.global_vars['filtered_pc2'] = pc[1]
+        self.global_loadings['background'] = background['gene_vec']
+        self.global_loadings['filtered_pc1'] = U[0]
+        self.global_loadings['filtered_pc2'] = U[1]
     
     def _calc_global_pcs(self, drop_pc1=False):
         '''
@@ -94,9 +142,10 @@ class RealDataset(Dataset):
         df = self.df.xs('01', axis=1, level=1)
         norm = ((df.T - df.mean(1)) / df.std(1)).T
         U,S,vH = frame_svd(norm)
-        self.pc1, self.pc2 = vH[0], vH[1]
-        self.loading1, self.loading2 = U[0], U[1]
-        
+        self.global_vars['pc1'] = vH[0]
+        self.global_vars['pc2'] = vH[0]
+        self.global_loadings['pc1'] = U[0]
+        self.global_loadings['pc2'] = U[1]        
         if drop_pc1 is True:
             S_n = S.copy()
             S_n[0] = 0

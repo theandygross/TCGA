@@ -112,7 +112,7 @@ def get_submaf(data_path, cancer, genes='All', fields='basic'):
                             
     maf['Alt_Allele'] = maf.apply(get_allele, 1)
     if fields == 'basic':
-        maf = maf[['Hugo_Symbol', 'Chromosome', 'Start_position', 
+        maf = maf[['Hugo_Symbol','NCBI_Build', 'Chromosome', 'Start_position', 
                    'End_position', 'Strand', 'Reference_Allele', 
                    'Alt_Allele', 'Tumor_Sample_Barcode']]
     maf = maf.set_index('Hugo_Symbol', append=True)

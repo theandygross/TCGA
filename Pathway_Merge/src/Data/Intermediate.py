@@ -52,7 +52,7 @@ def read_methylation(data_path, cancer, patients=None, tissue_code='01'):
     if patients is not None:
         meth  = meth.ix[:, patients]
     meth = meth.astype(np.float)
-    meth = meth.dropna(thresh=100)
+    meth = meth.dropna(how='all')
     if tissue_code != 'All':
         meth = meth.T.xs(tissue_code, level=1).T #pandas bug
     return meth

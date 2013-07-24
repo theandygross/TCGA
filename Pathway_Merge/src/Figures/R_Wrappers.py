@@ -55,7 +55,7 @@ def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', sho
                                 xlab='Years to Event', ylab='Survival');
         r.title(label, cex=3.)
         if ann=='p':
-            r.text(3, 0, labels='logrank %.2f' % p, pos=4)
+            r.text(.2, 0, labels='logrank p = {0:.1e}'.format(p), pos=4)
         elif ann != None:
             r.text(0, labels=ann, pos=4)
 

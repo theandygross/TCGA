@@ -18,6 +18,20 @@ robjects.r.options(warn=-1);
 zz = robjects.r.file("all.Rout", open="wt")
 robjects.r.sink(zz, type='message')
 
+def log_rank(feature, surv):
+    '''
+    Perform log-rank test using r.survival.survdiff function.
+    '''
+    feature = sanitize_lr(feature)
+    if type(feature) is type(None):
+        return pd.Series(index=['chi2', 'p'])
+    fmla = robjects.Formula('Surv(days, event) ~ feature')
+    #use cox function to extract model
+    m = get_cox_ph(surv, feature, formula=fmla)
+    r_data = m.rx2('call')[2]
+    s = survival.survdiff(fmla, r_data)
+    p = stats.chi2.sf(s.rx2('chisq')[0], len(feature.unique()) - 1)
+    return pd.Series({'chi2': s.rx2('chisq')[0], 'p': p})
 
 def cox_model_selection(fmla, df):
     '''
@@ -53,21 +67,6 @@ def sanitize_lr(feature):
     if len(feature.value_counts()) > 5:
         return None
     return feature
-
-def log_rank(feature, surv):
-    '''
-    Perform log-rank test using r.survival.survdiff function.
-    '''
-    feature = sanitize_lr(feature)
-    if type(feature) is type(None):
-        return pd.Series(index=['chi2', 'p'])
-    fmla = robjects.Formula('Surv(days, event) ~ feature')
-    #use cox function to extract model
-    m = get_cox_ph(surv, feature, formula=fmla)
-    r_data = m.rx2('call')[2]
-    s = survival.survdiff(fmla, r_data)
-    p = stats.chi2.sf(s.rx2('chisq')[0], 1)
-    return pd.Series({'chi2': s.rx2('chisq')[0], 'p': p})
 
 def get_formula(factors, get_interactions=True):
     if len(factors) > 1:
@@ -167,9 +166,10 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='LR',
     results = convert_robj(base.summary(s).rx2('coefficients'))
     
     def set_null_model():
-        patients = feature.dropna().index
+        #patients = feature.dropna().index
         null_model = get_cox_ph(surv, covariates=covariates, 
-                                feature=feature.map(lambda s: 1))
+                                feature=feature.map(lambda s: 1), 
+                                interactions=interactions)
         get_cox_ph_ms.null_model = null_model
         get_cox_ph_ms.params = surv.name, str(covariates)
       
@@ -201,7 +201,7 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='LR',
                              'hazzard': hazzard, 
                              'fmla': f})
     return results
-    
+
 def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
                  formula=None):
     df, factors = process_covariates(surv, feature, covariates)
@@ -227,11 +227,21 @@ def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
     df = pd.DataFrame({d: list(summary.rx2(d)) for d in 
                        ['strata','surv','lower','upper']},
                       index=idx)
-    res[('5y Survival', 'Lower')] = df['lower']
     res[('5y Survival', 'Surv')] = df['surv']
+    res[('5y Survival', 'Lower')] = df['lower']
     res[('5y Survival', 'Upper')] = df['upper']
     return res
 
+def get_surv_fit_lr(surv, feature=None):
+    t = get_surv_fit(surv, feature)
+    s = log_rank(feature, surv)
+    num_f = len(feature.dropna().unique())
+    t[('Log-Rank','chi2')] = [''] * num_f
+    t[('Log-Rank','p')] = [''] * num_f
+    t = t.append(pd.Series([''] * (8) + [s['chi2'], s['p']], index=t.columns, name=''))
+    t = t.sort([('Stats','# Patients')], ascending=False)
+    return t
+    
 '''    
 def get_cox_ph(clinical, hit_vec=None, covariates=[], time_var='days',
                event_var='censored'):
@@ -293,8 +303,7 @@ def run_feature_matrix(df, test, fp_cutoff=.5):
 
 def stratified_cox(feature, surv, strata):
     fmla = 'Surv(days, event) ~ feature + strata({})'.format(strata.name)
-    model = get_cox_ph_ms(surv, feature, covariates=strata, return_val='model',
-                          formula=fmla)
+    model = get_cox_ph(surv, feature, covariates=strata, formula=fmla)
     lr = model[3][0]
     p = stats.chi2.sf(lr, 1)
     return pd.Series({'LR': lr, 'p': p})
