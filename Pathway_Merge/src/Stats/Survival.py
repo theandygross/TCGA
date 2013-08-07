@@ -13,6 +13,7 @@ from Processing.Helpers import get_vec_type, bhCorrection
 
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
+mass = robjects.packages.importr('MASS')
 
 robjects.r.options(warn=-1);
 zz = robjects.r.file("all.Rout", open="wt")
@@ -38,7 +39,7 @@ def cox_model_selection(fmla, df):
     Perform stepwise model selection on a cox model using r.step.
     '''
     s = survival.coxph(fmla, df)
-    reduced = robjects.r.step(s, direction='both', trace=0)
+    reduced =mass.stepAIC(s, direction='both', trace=0, k=2)
     fmla_reduced = reduced.rx2('formula')
     s_reduced = survival.coxph(fmla_reduced, df)
     return s_reduced
@@ -73,6 +74,9 @@ def get_formula(factors, get_interactions=True):
         interactions = ' + '.join(factors)
         if get_interactions:
             interactions += ' + '
+        if get_interactions == 'just_first':
+            interactions += ' + '.join((':'.join([factors[0],b]) for b in factors[1:]))
+        else: #all pairs
             interactions += ' + '.join((':'.join([a,b]) for a in factors 
                                       for b in factors if a<b))
     elif len(factors) == 1: 

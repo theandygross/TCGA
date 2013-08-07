@@ -84,8 +84,10 @@ class RealDataset(Dataset):
                                tissue_code='All')
         if patients is not None:
             self.df = self.df.ix[:, patients].dropna(axis=1, how='all')
+        else:
+            self.patients = self.df.columns.get_level_values(0)
         
-        self.global_vars = pd.DataFrame(index=patients)
+        self.global_vars = pd.DataFrame(index=self.patients)
         self.features = {}
         self.global_loadings = pd.DataFrame(index=self.df.index)
         self._calc_global_pcs(drop_pc1)
@@ -95,7 +97,6 @@ class RealDataset(Dataset):
         if create_meta_features is True:
             gs = extract_geneset_pcs(self.df, run.gene_sets, filter_down)
             self.loadings, self.pct_var, pathways = gs
-            
             r = screen_feature(self.global_vars.background, pearson_pandas, 
                                pathways)
             pathways = pathways.ix[r.p > 10e-5]
@@ -108,6 +109,7 @@ class RealDataset(Dataset):
             self.global_vars['pathway_pc2'] = pc[1]
             self.global_loadings['pathway_pc1'] = U[0]
             self.global_loadings['pathway_pc2'] = U[1]
+            
             
         self.features = pd.concat(self.features)
             

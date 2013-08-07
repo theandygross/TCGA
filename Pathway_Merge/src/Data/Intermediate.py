@@ -41,7 +41,7 @@ def read_methylation(data_path, cancer, patients=None, tissue_code='01'):
 
     tissue_code: ['01','11','All']  #if all returns MultiIndex
     '''
-    path = '{}/ucsd_processing/{}/'.format(data_path, cancer)
+    path = '{}ucsd_processing/{}/'.format(data_path, cancer)
     data_types = filter(lambda f: f[:11] == 'methylation', os.listdir(path))
     data_type = sorted([d for d in data_types 
                         if os.path.isfile(path + d + '/meta_probes.csv')])[-1]

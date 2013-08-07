@@ -1,0 +1,5 @@
+Error in eval(expr, envir, enclos) : object 'old' not found
+Error in parse(text = x) : <text>:2:0: unexpected end of input
+1: Surv(days, event) ~ 
+  ^
+Error in eval(expr, envir, enclos) : object 'test' not found

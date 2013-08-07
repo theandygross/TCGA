@@ -194,10 +194,11 @@ def format_survival_from_data_portal(path, cancer):
     time_vars = ['days_to_last_followup', 'days_to_last_known_alive', 
                  'days_to_death']
     time_cols = list(f.columns.intersection(time_vars))
-    f['vital_status'] = f.vital_status.dropna() == 'DECEASED'
+    f['vital_status'] = f.vital_status.dropna().isin(['DECEASED','Dead'])
     
     f = f.sort(columns=['vital_status'] + time_cols, ascending=True)
     f = f.groupby(lambda s: s[:12], axis=0).last()
+
     
     timeline = f[time_cols].dropna(how='all')
     timeline['days'] = timeline.astype(float).max(1)

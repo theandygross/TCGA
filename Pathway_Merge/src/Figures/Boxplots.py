@@ -60,7 +60,8 @@ def box_plot_pandas(bin_vec, real_vec, ax='None'):
     if type(bin_vec.name) == str:
         ax.set_title(bin_vec.name +' x '+ real_vec.name)
         
-def violin_plot_pandas(bin_vec, real_vec, ann='p', ax=None, filename=None):
+def violin_plot_pandas(bin_vec, real_vec, ann='p', order=None, ax=None, 
+                       filename=None):
     '''
     http://pyinsci.blogspot.com/2009/09/violin-plot-with-matplotlib.html
     Wrapper around matplotlib's boxplot function to add violin profile.
@@ -70,17 +71,21 @@ def violin_plot_pandas(bin_vec, real_vec, ann='p', ax=None, filename=None):
         real_vec: Series of measurements to be grouped according to bin_vec
     '''   
     fig, ax = init_ax(ax)
+    ax.set_ylabel(real_vec.name)
+    ax.set_xlabel(bin_vec.name)
     bin_vec, real_vec = match_series(bin_vec, real_vec)
     try:
-        categories = bin_vec.value_counts().index
+        if order is None:
+            categories = bin_vec.value_counts().index
+        else:
+            categories = order
         _violin_plot(ax, [real_vec[bin_vec==num] for num in categories], 
                      pos=categories, bp=True)
         ax.set_xticklabels([str(c) +'\n(n=%i)'%sum(bin_vec==c) 
                             for c in categories])
     except:
         box_plot_pandas(bin_vec, real_vec, ax=ax)
-    ax.set_ylabel(real_vec.name)
-    ax.set_xlabel(bin_vec.name)
+        
     if type(bin_vec.name) == str:
         ax.set_title(str(bin_vec.name) +' x '+ str(real_vec.name))
         
