@@ -108,7 +108,7 @@ def violin_plot_series(s, **kw_args):
     Wrapper for drawing a violin plot on a series with a multi-index.
     The second level of the index is used as the binning variable. 
     '''
-    assert s.index.levshape[1] == 2
+    assert s.index.levshape[1] > 1
     violin_plot_pandas(pd.Series(s.index.get_level_values(1), s.index), s,
                         **kw_args)
 

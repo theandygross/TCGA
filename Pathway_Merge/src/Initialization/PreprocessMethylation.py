@@ -10,6 +10,7 @@ import numpy as np
 from subprocess import call, check_output
 from Processing.Helpers import extract_pc, true_index
 from Data.Firehose import fix_barcode_columns
+from Data.Intermediate import get_beta_values
 
 def extract_betas(folder, meth_file, probes='All', outfile='beta_values.txt'):
     '''
@@ -37,19 +38,6 @@ def extract_betas(folder, meth_file, probes='All', outfile='beta_values.txt'):
     call(['rm', 'tmp', 'idx'])
     
     os.chdir(curdir)
-    
-def get_beta_values(data_path, cancer, patients=None, tissue_code='01'):
-    ''' 
-    This file still has all of the probes by pateints so it still eats my kill
-    a  computer without a lot of memory (takes ~2GB for HNSC). 
-    '''
-    path = '{}/ucsd_processing/{}/methylation450/'.format(data_path, cancer)
-    t = pd.read_table(path + 'beta_values.txt', skiprows=[1], index_col=[0])
-    t = t.rename(columns=lambda s: s if s!=t.columns[0] else 'symbol')
-    t = t.set_index('symbol', append=True)
-    t = t.swaplevel(0,1)
-    t = fix_barcode_columns(t, patients, tissue_code)
-    return t
 
 def peel_pc(df):
     '''
@@ -90,7 +78,7 @@ def process_meth(data_path, cancer, probeset='All'):
     outfile = outpath + ('beta_values.txt' if probeset == 'All' else 
                          'beta_values_picked.txt')
     
-    if not os.path.isfile(outpath + outfile):
+    if not os.path.isfile(outfile):
         extract_betas(meth_path, meth_file, probeset, outfile) 
     
     table = get_beta_values(data_path, cancer)

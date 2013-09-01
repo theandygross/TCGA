@@ -15,7 +15,7 @@ def draw_survival_curves(feature, surv, assignment=None, filename='tmp.png', sho
                         show_legend=True, q=.25, std=None):
     if assignment is None:
         num_panels = 1
-        assignment = np.ones_like(feature)
+        assignment = feature.map(lambda s: 1)
         name = lambda v: str(feature.name) if feature.name != None else ''
     else:
         num_panels = len(assignment.unique())

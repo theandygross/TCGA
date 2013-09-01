@@ -70,6 +70,17 @@ def kruskal_pandas(hit_vec, response_vec, min_size=5):
     except:
         return pd.Series(index=['H','p'])
     
+def rev_kruskal(response_vec, hit_vec, min_size=5):
+    '''
+    Wrapper to do a one way anova on pandas Series.
+    Same code as kruskal_pandas, different order of arguments.
+    ------------------------------------------------
+    response_vec: Series of measurements
+    hit_vec: Series of labels
+    '''
+    return kruskal_pandas(hit_vec, response_vec)
+
+    
 def spearman_pandas(a, b, min_size=5):
     '''
     Wrapper to do a one way anova on pandas Series
@@ -121,3 +132,18 @@ def ttest_rel(a,b):
     a,b = _match_series(a,b)
     z, p = stats.ttest_rel(a, b)
     return pd.Series({'t': z, 'p': p})
+
+def chi2_cont_test(hit_vec, response_vec):
+    '''
+    Wrapper to do a fischer's exact test on pandas Series
+    ------------------------------------------------
+    hit_vec: Series of labels (boolean, or (0,1))
+    response_vec: Series of measurements (boolean, or (0,1))
+    '''
+    hit_vec.name = 'h' #crosstab can't handle multi_index
+    response_vec.name = 'd' #so we use dummy names
+    cont_table = pd.crosstab(hit_vec, response_vec)
+    #if (cont_table.shape != (2,2)):
+    #    return pd.Series(index=['odds_ratio','p'])
+    #return cont_table
+    return pd.Series(stats.chi2_contingency(cont_table)[:3], index=['chi2','p', 'dof'])

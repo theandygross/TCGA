@@ -17,7 +17,7 @@ from Stats.Scipy import kruskal_pandas
 from Processing.Helpers import true_index, bhCorrection
 from Processing.Helpers import frame_svd
 
-def get_beta_values(data_path, cancer, patients=None, tissue_code='01'):
+def get_beta_values(data_path, cancer, patients=None, tissue_code='All'):
     '''
     Retrieve methylation beta-values from my pre-processed file.  
     TCGA has a lot more columns that eat up memory, so I parse out the 
@@ -30,6 +30,7 @@ def get_beta_values(data_path, cancer, patients=None, tissue_code='01'):
     t = t.rename(columns=lambda s: s if s!=t.columns[0] else 'symbol')
     t = t.set_index('symbol', append=True)
     t = t.swaplevel(0,1)
+    t = t.sort_index() #think this is a bug that it needs to be sorted
     t = FH.fix_barcode_columns(t, patients, tissue_code)
     return t
 
@@ -192,8 +193,8 @@ def get_cna_rates(data_path, cancer, patients=None):
     lesions = FH.get_gistic_lesions(data_path, cancer)
     amp_lesion_all = (lesions.ix['Amplification'] >= 1).sum()
     amp_lesion_high = (lesions.ix['Amplification'] == 2).sum()
-    del_lesion_all = (lesions.ix['Amplification'] <= -1).sum()
-    del_lesion_homo = (lesions.ix['Amplification'] == -2).sum()
+    del_lesion_all = (lesions.ix['Deletion'] <= -1).sum()
+    del_lesion_homo = (lesions.ix['Deletion'] == -2).sum()
     
     arm_cn = FH.get_gistic_arm_values(data_path, cancer)
     chromosomal_instability = arm_cn.abs().mean()

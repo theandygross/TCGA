@@ -47,7 +47,10 @@ def format_drugs(br):
     ft = pd.MultiIndex.from_tuples #long Pandas names
     drug_annot = ft(map(lambda s: tuple(s.split('.')[2:4]), drugs.index))
     drugs.index = drug_annot
-    drugs = drugs.groupby(level=[0,1]).first() ##get rud of dups, need to fix
+    #drugs = drugs.groupby(level=[0,1]).first() ##get rud of dups, need to fix
+    l = drugs.sort_index().groupby(level=[0,1], axis=0)
+    drugs = pd.DataFrame({i: s.ix[s.count(1).idxmax()] for i,s in l}).T
+    drugs.index = ft(drugs.index)
     drugs = drugs.stack().unstack(level=1)
     drugs.index = drugs.index.swaplevel(0,1)
     drugs = drugs.sort_index()
@@ -68,17 +71,22 @@ def format_followup(br):
     followup = br.select(row_filter)
     if len(followup) == 0:
         return
-    followup['field'] = pd.Series([s.split('.')[-1] for s in followup.index], 
-                                  followup.index)
-    followup['label'] = pd.Series(['.'.join(s.split('.')[:-1]) for s in 
-                                   followup.index], 
-                                  followup.index)
-    followup = followup.set_index(['field','label'])
-    followup = followup.stack().unstack(level='field') #rearranging levels
+    ft = pd.MultiIndex.from_tuples #long Pandas names
+    followup.index = ft([(s.split('.')[-1], '.'.join(s.split('.')[:-1])) 
+                         for s in followup.index])
+    followup = followup.stack().unstack(level=0)
     followup.index = followup.index.reorder_levels([1,0])
     followup = followup.sort_index()
     followup = fix_date(followup)
     return followup
+
+def format_stage(br):
+    row_filter = lambda s: s.startswith('patient.stageevent')
+    stage = br.select(row_filter)
+    stage = stage.dropna(how='all')
+    stage = stage.rename(index=lambda s: s.split('.')[-1])
+    stage = stage.T
+    return stage
 
 def format_radiation(br):
     '''
@@ -250,8 +258,9 @@ def get_clinical(cancer, data_path, patients=None, **params):
     
     drugs = format_drugs(tab)
     followup = format_followup(tab)
+    stage = format_stage(tab)
     #radiation = format_radiation(tab)
     clin = format_clinical_var(tab)
     survival,timeline = format_survival(clin, followup)
     
-    return clin, drugs, followup, timeline, survival
+    return clin, drugs, followup, stage, timeline, survival

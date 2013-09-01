@@ -75,8 +75,8 @@ class RealDataset(Dataset):
     data.
     '''
     def __init__(self, run, cancer, data_type, patients=None, drop_pc1=False,
-                 create_meta_features=True, filter_down=True, 
-                 draw_figures=False):
+                 create_real_features=True, create_meta_features=True, 
+                 filter_down=True, draw_figures=False):
         '''
         '''
         Dataset.__init__(self, cancer.path, data_type, compressed=True)
@@ -84,32 +84,20 @@ class RealDataset(Dataset):
                                tissue_code='All')
         if patients is not None:
             self.df = self.df.ix[:, patients].dropna(axis=1, how='all')
+            self.patients = patients
         else:
-            self.patients = self.df.columns.get_level_values(0)
+            self.patients = self.df.xs('01',1,1).columns
         
         self.global_vars = pd.DataFrame(index=self.patients)
         self.features = {}
         self.global_loadings = pd.DataFrame(index=self.df.index)
         self._calc_global_pcs(drop_pc1)
         
-        self._get_real_features()
+        if create_real_features is True:
+            self._get_real_features()
         
         if create_meta_features is True:
-            gs = extract_geneset_pcs(self.df, run.gene_sets, filter_down)
-            self.loadings, self.pct_var, pathways = gs
-            r = screen_feature(self.global_vars.background, pearson_pandas, 
-                               pathways)
-            pathways = pathways.ix[r.p > 10e-5]
-            pathways = ((pathways.T - pathways.mean(1)) / pathways.std(1)).T
-            U, S, pc = frame_svd(pathways)
-            
-            self.pathways = pathways
-            self.features['pathways'] = pathways
-            self.global_vars['pathway_pc1'] = pc[0]
-            self.global_vars['pathway_pc2'] = pc[1]
-            self.global_loadings['pathway_pc1'] = U[0]
-            self.global_loadings['pathway_pc2'] = U[1]
-            
+            self._get_meta_features(run.gene_sets, filter_down)
             
         self.features = pd.concat(self.features)
             
@@ -134,6 +122,24 @@ class RealDataset(Dataset):
         self.global_loadings['background'] = background['gene_vec']
         self.global_loadings['filtered_pc1'] = U[0]
         self.global_loadings['filtered_pc2'] = U[1]
+        
+    def _get_meta_features(self, gene_sets, filter_down):
+        gs = extract_geneset_pcs(self.df, gene_sets, filter_down)
+        self.loadings, self.pct_var, pathways = gs
+        if hasattr(self.global_vars, 'background'):
+            r = screen_feature(self.global_vars.background, pearson_pandas, 
+                               pathways)
+            pathways = pathways.ix[r.p > 10e-5]
+        pathways = ((pathways.T - pathways.mean(1)) / pathways.std(1)).T
+        U, S, pc = frame_svd(pathways)
+        
+        self.pathways = pathways
+        self.features['pathways'] = pathways
+        self.global_vars['pathway_pc1'] = pc[0]
+        self.global_vars['pathway_pc2'] = pc[1]
+        self.global_loadings['pathway_pc1'] = U[0]
+        self.global_loadings['pathway_pc2'] = U[1]
+        
     
     def _calc_global_pcs(self, drop_pc1=False):
         '''
@@ -145,7 +151,7 @@ class RealDataset(Dataset):
         norm = ((df.T - df.mean(1)) / df.std(1)).T
         U,S,vH = frame_svd(norm)
         self.global_vars['pc1'] = vH[0]
-        self.global_vars['pc2'] = vH[0]
+        self.global_vars['pc2'] = vH[1]
         self.global_loadings['pc1'] = U[0]
         self.global_loadings['pc2'] = U[1]        
         if drop_pc1 is True:
@@ -176,8 +182,9 @@ class RealDataset(Dataset):
             
         
 def initialize_real(cancer_type, report_path, data_type, patients=None, 
-                    drop_pc1=False, create_meta_features=True, 
-                    filter_down=False, draw_figures=False, save=True):
+                    drop_pc1=False, create_real_features=True, 
+                    create_meta_features=True, filter_down=False, 
+                    draw_figures=False, save=True):
     '''
     Initialize real-valued data for down-stream analysis.
     '''
@@ -189,7 +196,8 @@ def initialize_real(cancer_type, report_path, data_type, patients=None,
         draw_figures=False
     
     data = RealDataset(run, cancer, data_type, patients, drop_pc1, 
-                       create_meta_features, filter_down, draw_figures)
+                       create_real_features, create_meta_features, filter_down, 
+                       draw_figures)
 
     if save is True:
         data.save()

@@ -24,6 +24,7 @@ class Run(object):
     Entry level for loading data from pre-processed dumps in the ucsd_analyses
     file tree.
     '''
+    
     def __init__(self, date, version, data_path, result_path, parameters, 
                  cancer_codes, sample_matrix, description=''):
         self.date = date
@@ -133,7 +134,7 @@ class Clinical(object):
         self.run_path = run.report_path
         
         tup = get_clinical(cancer.name, run.data_path, patients)
-        (self.clinical, self.drugs, self.followup, 
+        (self.clinical, self.drugs, self.followup, self.stage,
          self.timeline, self.survival) = tup
         
     def __repr__(self):

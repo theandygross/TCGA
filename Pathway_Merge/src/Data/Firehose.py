@@ -68,12 +68,14 @@ def get_dataset_path(data_path, cancer, data_type, ext):
     data_types = filter(lambda f: f.startswith(data_type), 
                         os.listdir(stddata_path))
     if data_type in data_types: #get the paths
-        path = [f[0] for f in list(os.walk(stddata_path + '/' + data_type)) if 
-                (ext + '/data') in f[0]][0]   
+        paths = [f[0] for f in list(os.walk(stddata_path + '/' + data_type)) if 
+                (ext + '/data') in f[0]]
     else:
         return
-    f = [f for f in os.listdir(path) if 'data' in f][0] #pull the data file
-    return path + '/'+ f
+    f = [path + '/'+ f for path in paths 
+                       for f in os.listdir(path) 
+                       if 'data' in f] #pull the data file
+    return f
 
 
 def get_mutation_matrix(data_path, cancer, tissue_code='01'):
@@ -182,11 +184,13 @@ def read_rnaSeq(data_path, cancer, patients=None, average_on_genes=True,
     Data is log-transformed and a lower bound of -3 (1/8 read per million) 
     is set.
     '''
-    f = get_dataset_path(data_path, cancer, 'rnaseqv2', 
-                         'RSEM_genes_normalized')
-    if f is None:
+    files = get_dataset_path(data_path, cancer, 'rnaseqv2', 
+                             'RSEM_genes_normalized')
+    if files is None:
         return 
-    rnaSeq = pd.read_table(f, index_col=0, skiprows=[1])
+    
+    rnaSeq = pd.concat([pd.read_table(f, index_col=0, skiprows=[1])
+                        for f in files])
     rnaSeq = np.log2(rnaSeq).replace(-np.inf, -3.) #close enough to 0
     if average_on_genes:  #Pretty much all duplicates are unknown ('?')
         rnaSeq = rnaSeq.groupby(by=lambda n: n.split('|')[0]).mean()
@@ -199,11 +203,12 @@ def read_rnaSeq_splice_junctions(data_path, cancer, patients=None,
     Reads in gene by patient rnaSeq mRNA splice junction matrix. 
     Values are raw counts. 
     '''
-    f = get_dataset_path(data_path, cancer, 'rnaseqv2', 
+    files = get_dataset_path(data_path, cancer, 'rnaseqv2', 
                          'junction_quantification')
-    if f is None:
+    if files is None:
         return 
-    rnaSeq = pd.read_table(f, index_col=0, skiprows=[1])
+    rnaSeq = pd.concat([pd.read_table(f, index_col=0, skiprows=[1])
+                        for f in files])
     rnaSeq = fix_barcode_columns(rnaSeq, patients, tissue_code)
     return rnaSeq
 
@@ -211,9 +216,13 @@ def read_mrna(data_path, cancer, patients=None, tissue_code='01'):
     '''
     Reads in gene by patient microarray gene expression.
     '''
-    f = get_dataset_path(data_path, cancer, 'transcriptome', 
-                         'unc_lowess_normalization_gene_level')
-    mrna = pd.read_table(f,index_col=0, skiprows=[1], na_values=['null'])
+    files = get_dataset_path(data_path, cancer, 'transcriptome', 
+                             'unc_lowess_normalization_gene_level')
+    if files is None:
+        return 
+    mrna = pd.concat([pd.read_table(f,index_col=0, skiprows=[1], 
+                                    na_values=['null'])
+                      for f in files])
     mrna = fix_barcode_columns(mrna, patients, tissue_code)
     return mrna
 

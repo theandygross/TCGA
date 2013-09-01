@@ -9,6 +9,8 @@ import pickle as pickle
 import numpy as np
 import pandas as pd
 
+import itertools as it
+
 import matplotlib.pyplot as plt
 from numpy.linalg import LinAlgError, svd
 from numpy import array, diag, sort
@@ -244,5 +246,12 @@ def combine(a,b):
 def true_index(s):
     '''Return indicies for which the variable is true'''
     return s[s].index
+
+def powerset(iterable):
+    "http://docs.python.org/2/library/itertools.html#recipes"
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+    return it.chain.from_iterable(it.combinations(s, r) for r in 
+                                  range(len(s)+1))
 
 ti = true_index

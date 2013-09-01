@@ -9,7 +9,8 @@ import scipy.stats as stats
 
 import rpy2.robjects as robjects
 from pandas.rpy.common import convert_to_r_dataframe, convert_robj
-from Processing.Helpers import get_vec_type, bhCorrection
+from Processing.Helpers import get_vec_type, bhCorrection, powerset, combine
+from Stats.Scipy import fisher_exact_test
 
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
@@ -34,15 +35,73 @@ def log_rank(feature, surv):
     p = stats.chi2.sf(s.rx2('chisq')[0], len(feature.unique()) - 1)
     return pd.Series({'chi2': s.rx2('chisq')[0], 'p': p})
 
-def cox_model_selection(fmla, df):
+def log_rank_more(feature, surv):
     '''
-    Perform stepwise model selection on a cox model using r.step.
+    Perform log-rank test using r.survival.survdiff function.
     '''
-    s = survival.coxph(fmla, df)
-    reduced =mass.stepAIC(s, direction='both', trace=0, k=2)
-    fmla_reduced = reduced.rx2('formula')
-    s_reduced = survival.coxph(fmla_reduced, df)
-    return s_reduced
+    feature = sanitize_lr(feature)
+    if type(feature) is type(None):
+        return pd.Series(index=['chi2', 'p'])
+    fmla = robjects.Formula('Surv(days, event) ~ feature')
+    #use cox function to extract model
+    m = get_cox_ph(surv, feature, formula=fmla)
+    r_data = m.rx2('call')[2]
+    s = survival.coxph(fmla, r_data)
+    
+    b = base.summary(s)
+    print b
+
+    hazard = convert_robj(b.rx2('conf.int')).ix[0]
+    stat = pd.Series(b.rx2('logtest'), index=['stat', 'df', 'p'])
+    concordance = pd.Series(b.rx2('concordance'), index=['stat','se'])
+    ret = pd.concat([hazard, stat, concordance], keys=['hazard','LR','concordance'])
+    return ret
+
+
+def test_model(p):
+    interactions = [t for t in p if ':' in t] 
+    for t in interactions:
+        term = t.split(':')[-1]
+        if term not in p:
+            return False
+        if 'feature' not in p:
+            return False
+    return True
+
+def get_models(factors, interactions='just_feature'):
+    if interactions == 'just_feature':
+        cov = [c for c in factors if c != 'feature']
+        models = ['feature:' + c for c in cov]
+        models = [p for p in powerset(['feature'] + cov + models) if 
+                  test_model(p)]
+    elif interactions == True:
+        int_terms = [':'.join([a,b]) for a in factors for b in factors 
+                     if a<b]
+        models = list(powerset(factors + int_terms))
+    else:
+        models = list(powerset(factors))
+    models = map(lambda s: ' + '.join(s), models)
+    models[0] = '1'
+    return models
+    
+def cox_model_selection(surv, feature=None, covariates=None, interactions=True):
+    df, factors = process_covariates(surv, feature, covariates)
+    models = get_models(factors, interactions)      
+    ll = {}
+    for m in models:
+        fmla = robjects.Formula('Surv(days, event) ~ ' + m)
+        s = survival.coxph(fmla, df)
+        ll[m] = max(s.rx2('loglik'))
+    ll = pd.Series(ll)
+    
+    dof = pd.Series(ll.index, ll.index)
+    dof = dof.apply(lambda s: s.count('+') + 1)
+    q = 3
+    AIC = (-2*ll) + (dof*q)
+    best_model = AIC.idxmin()
+    best_model = robjects.Formula('Surv(days, event) ~ ' + best_model)
+    best_res = survival.coxph(best_model, df)
+    return best_res
 
 def LR_test(full, reduced):
     '''
@@ -61,13 +120,25 @@ def LR_test(full, reduced):
     return stats.chi2.sf(2*full_ll[1] - 2*reduced_ll[1], df)
 
 def sanitize_lr(feature):
+    if feature is None:
+        return None
+    if feature.dtype not in ['str','object','bool']:
+        return feature
     if len(feature.unique()) == 1:
         return None
-    if feature.dtype is np.dtype('bool'):
-        feature = 1.*feature
+    try:
+        feature = feature.astype(float)
+        return feature
+    except:
+        pass
     if len(feature.value_counts()) > 5:
-        return None
+        try:
+            feature = feature.astype(float)
+            return feature
+        except:
+            pass
     return feature
+    
 
 def get_formula(factors, get_interactions=True):
     if len(factors) > 1:
@@ -109,9 +180,12 @@ def process_covariates(surv, feature=None, cov=None):
     elif type(cov) == list:
         assert map(type, cov) == ([pd.Series] * len(cov))
         cov = pd.concat(cov, axis=1)
+    cov = cov.apply(sanitize_lr)
+    feature = sanitize_lr(feature)
     c_real = cov.ix[:,cov.dtypes.isin([np.dtype(float), np.dtype(int)])]
     c_real = (c_real - c_real.mean()) / c_real.std()
-    cov[c_real.columns] = c_real
+    if c_real.shape[1] > 0:
+        cov[c_real.columns] = c_real
     df = cov.join(surv.unstack()).dropna()
     df['days'] = df['days'] / 365.
     df = df.groupby(level=0).first()
@@ -132,12 +206,10 @@ def get_cox_ph(surv, feature=None, covariates=None, formula=None,
     covariates: names of covariates in the cox model,
                 (must be columns in clinical DataFrame)
     '''
-    df, factors = process_covariates(surv, feature, covariates)
     if formula is None:
-        formula = get_formula(factors, interactions)
-        fmla = robjects.Formula(formula)
-        s = cox_model_selection(fmla, df)
+        s = cox_model_selection(surv, feature, covariates, interactions)
     else:
+        df, _ = process_covariates(surv, feature, covariates)
         fmla = robjects.Formula(formula)
         s = survival.coxph(fmla, df)
     
@@ -169,22 +241,23 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='LR',
     
     results = convert_robj(base.summary(s).rx2('coefficients'))
     
-    def set_null_model():
-        #patients = feature.dropna().index
+    def set_null_model(feature, covariates):
+        null_int = False if interactions == 'just_feature' else interactions
+        patients = covariates.index.intersection(feature.dropna().index)
+        covariates = covariates.ix[patients]
         null_model = get_cox_ph(surv, covariates=covariates, 
-                                feature=feature.map(lambda s: 1), 
-                                interactions=interactions)
+                                interactions=null_int)
         get_cox_ph_ms.null_model = null_model
         get_cox_ph_ms.params = surv.name, str(covariates)
       
     # check if we need to recompute null model
     has_null = hasattr(get_cox_ph_ms, 'null_model') or (null_model)
     if has_null != True:
-        set_null_model()
+        set_null_model(feature, covariates)
         
     recalc = get_cox_ph_ms.params !=  surv.name, str(covariates)
     if recalc:
-        set_null_model()
+        set_null_model(feature, covariates)
     
     null_model = get_cox_ph_ms.null_model
     LR_p = LR_test(s, null_model)
@@ -234,6 +307,10 @@ def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
     res[('5y Survival', 'Surv')] = df['surv']
     res[('5y Survival', 'Lower')] = df['lower']
     res[('5y Survival', 'Upper')] = df['upper']
+    try:
+        res.index = map(int, res.index)
+    except:
+        pass
     return res
 
 def get_surv_fit_lr(surv, feature=None):
@@ -314,18 +391,41 @@ def stratified_cox(feature, surv, strata):
 
 def cox(feature, surv):
     '''
-    Perform univariate Cox regression.
+    Perform log-rank test using r.survival.survdiff function.
     '''
-    fmla = 'Surv(days, event) ~ feature'
-    model = get_cox_ph(surv, feature, formula=fmla)
-    lr = model[3][0]
-    p = stats.chi2.sf(lr, 1)
-    return pd.Series({'LR': lr, 'p': p})
+    if feature.dtype in ['str','object','bool']:
+        feature = sanitize_lr(feature)
+    if type(feature) is type(None):
+        return cox(feature)
+    fmla = robjects.Formula('Surv(days, event) ~ feature')
+    #use cox function to extract model
+    s = get_cox_ph(surv, feature, formula=fmla)
+    b = base.summary(s)
 
-def cox_screen(df, surv):
-    rr = df.apply(cox, args=(surv,), axis=1)
-    rr['q'] = bhCorrection(rr.p)
-    rr = rr.sort('p')
+    hazard = convert_robj(b.rx2('conf.int')).ix[0]
+    stat = pd.Series(b.rx2('logtest'), index=['stat', 'df', 'p'])
+    concordance = pd.Series(b.rx2('concordance'), index=['stat','se'])
+    ret = pd.concat([hazard, stat, concordance], keys=['hazard','LR','concordance'])
+    return ret
+
+def get_stats(s):
+    b = base.summary(s)
+    hazard = convert_robj(b.rx2('conf.int')).ix['feature']
+    stat = pd.Series(b.rx2('logtest'), index=['stat', 'df', 'p'])
+    concordance = pd.Series(b.rx2('concordance'), index=['stat','se'])
+    ret = pd.concat([hazard, stat, concordance], keys=['hazard','LR','concordance'])
+    return ret
+
+def cox_screen(df, surv, axis=1):
+    c = df.apply(pd.value_counts).count()
+    df = df.ix[:, c[c>1].index]
+    
+    rr = df.apply(lambda s: cox(s.dropna(), surv), axis=axis)
+    if axis==0:
+        rr = rr.T
+    rr[('LR', 'q')] = bhCorrection(rr['LR']['p'])
+    rr = rr.sort([('LR','q')])
+    rr = rr.sortlevel(0, axis=1)
     return rr
 
 def lr_screen(df, surv):
@@ -333,3 +433,23 @@ def lr_screen(df, surv):
     rr['q'] = bhCorrection(rr.p)
     rr = rr.sort('p')
     return rr
+
+def _interaction(a,b, surv):
+    a,b = a.copy(), b.copy()
+    a.name, b.name = 'a','b'
+    m1 = get_cox_ph(surv, covariates=[a,b], formula='Surv(days, event) ~ a + b')
+    if fisher_exact_test(a,b)['odds_ratio'] > 1:
+        int_direction = 'both'
+    else:
+        int_direction = 'neither'
+        
+    int_var = 1.*(combine(a,b)==int_direction)
+    int_var.name = 'interaction'
+    m2 = get_cox_ph(surv, int_var)
+    return pd.Series({'interaction': int_direction, 'p': LR_test(m2, m1)})
+
+def interaction(a,b, surv):
+    try:
+        return _interaction(a,b, surv)
+    except:
+        return pd.Series(index=['interaction','p'])
