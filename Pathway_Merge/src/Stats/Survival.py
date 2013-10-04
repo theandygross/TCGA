@@ -9,7 +9,8 @@ import scipy.stats as stats
 
 import rpy2.robjects as robjects
 from pandas.rpy.common import convert_to_r_dataframe, convert_robj
-from Processing.Helpers import get_vec_type, bhCorrection, powerset, combine
+from Processing.Helpers import get_vec_type, bhCorrection, powerset
+from Processing.Helpers import match_series, combine
 from Stats.Scipy import fisher_exact_test
 
 survival = robjects.packages.importr('survival')
@@ -121,11 +122,11 @@ def LR_test(full, reduced):
 
 def sanitize_lr(feature):
     if feature is None:
-        return None
+        return feature
+    if len(feature.unique()) <= 1:
+        return feature.map(lambda s: np.nan)
     if feature.dtype not in ['str','object','bool']:
         return feature
-    if len(feature.unique()) == 1:
-        return None
     try:
         feature = feature.astype(float)
         return feature
@@ -173,6 +174,8 @@ def process_covariates(surv, feature=None, cov=None):
     Coerce covariates and feature into format suitable for R's
     survival functions. 
     '''
+    if type(feature) is type(None):
+        feature = pd.Series(index=surv.index.levels[0])
     if type(cov) is type(None):
         cov = pd.DataFrame(index=feature.index)
     if type(cov) == pd.Series:
@@ -186,12 +189,15 @@ def process_covariates(surv, feature=None, cov=None):
     c_real = (c_real - c_real.mean()) / c_real.std()
     if c_real.shape[1] > 0:
         cov[c_real.columns] = c_real
+    cov = cov.dropna(1, how='all')
     df = cov.join(surv.unstack()).dropna()
     df['days'] = df['days'] / 365.
     df = df.groupby(level=0).first()
+    if len(feature.dropna()) == 0:
+        feature = None 
     df, factors = process_factors(df, feature, list(cov.columns))
     df = df[factors + ['days','event']]
-    df = df.dropna()
+    df = df.dropna(axis=1, how='all')
     df = convert_to_r_dataframe(df)
     return df, factors
 
@@ -234,6 +240,10 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='LR',
     print_desc = return_val == 'model_desc'
     if covariates is None:
         covariates = pd.DataFrame(index=feature.index)
+    elif type(covariates) == list:
+        assert map(type, covariates) == ([pd.Series] * len(covariates))
+        covariates = pd.concat(covariates, axis=1)
+        
     s = get_cox_ph(surv, feature, covariates, formula, interactions,
                    get_model, print_desc)
     if s is None:
@@ -280,7 +290,7 @@ def get_cox_ph_ms(surv, feature=None, covariates=None, return_val='LR',
     return results
 
 def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
-                 formula=None):
+                 formula=None, time_cutoff=5):
     df, factors = process_covariates(surv, feature, covariates)
     if formula is None:
         fmla = get_formula(factors, interactions)
@@ -289,9 +299,14 @@ def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
         fmla = robjects.Formula(formula)
     
     s = survival.survfit(fmla, df)
-    summary = base.summary(s, times=robjects.r.c(5))
-    #return summary
+    summary = base.summary(s, times=robjects.r.c(time_cutoff))
     res =  convert_robj(summary.rx2('table'))
+    
+    if type(res) == list:
+        r = summary.rx2('table')
+        r = pd.Series(r, r.names)
+        res = pd.DataFrame({'feature=all': r}).T
+        
     res = res.rename(index=lambda idx: idx.split('=')[1])
     res = res[['records','events','median','0.95LCL','0.95UCL']]
     res.columns = pd.MultiIndex.from_tuples([('Stats','# Patients'), 
@@ -299,14 +314,21 @@ def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
                                              ('Median Survival', 'Median'), 
                                              ('Median Survival', 'Lower'),
                                              ('Median Survival', 'Upper')])
-    idx = map(lambda s: s.replace('feature=',''), 
-              summary.rx2('strata').iter_labels())
-    df = pd.DataFrame({d: list(summary.rx2(d)) for d in 
-                       ['strata','surv','lower','upper']},
-                      index=idx)
-    res[('5y Survival', 'Surv')] = df['surv']
-    res[('5y Survival', 'Lower')] = df['lower']
-    res[('5y Survival', 'Upper')] = df['upper']
+    if feature is None:
+        for f in ['surv','lower','upper']:
+            res[(str(time_cutoff) + 'y Survival', 
+                 f.capitalize())] = summary.rx2(f)
+    else:
+        idx = map(lambda s: s.replace('feature=',''), 
+                  summary.rx2('strata').iter_labels())
+        
+        df = pd.DataFrame({d: list(summary.rx2(d)) for d in 
+                           ['strata','surv','lower','upper']},
+                          index=idx)
+        for f in ['surv','lower','upper']:
+            res[(str(time_cutoff) + 'y Survival',
+                 f.capitalize())] = df[f]
+            
     try:
         res.index = map(int, res.index)
     except:
@@ -417,12 +439,12 @@ def get_stats(s):
     return ret
 
 def cox_screen(df, surv, axis=1):
-    c = df.apply(pd.value_counts).count()
-    df = df.ix[:, c[c>1].index]
-    
-    rr = df.apply(lambda s: cox(s.dropna(), surv), axis=axis)
     if axis==0:
-        rr = rr.T
+        df = df.T
+    c = df.apply(pd.value_counts, axis=1).count(1)
+    df = df.ix[c[c>1].index]
+    rr = df.apply(lambda s: cox(s.dropna(), surv), axis=1)
+    
     rr[('LR', 'q')] = bhCorrection(rr['LR']['p'])
     rr = rr.sort([('LR','q')])
     rr = rr.sortlevel(0, axis=1)
@@ -453,3 +475,62 @@ def interaction(a,b, surv):
         return _interaction(a,b, surv)
     except:
         return pd.Series(index=['interaction','p'])
+    
+def extract_chi2(full, reduced):
+    '''
+    Extract chi2 statstic of likelihood ratio test 
+    on two R models. 
+    '''
+    full_ll = list(full.rx2('loglik'))
+    reduced_ll = list(reduced.rx2('loglik'))
+    chi2 = 2*full_ll[1] - 2*reduced_ll[1]
+    return chi2
+
+def get_interaction(a,b, surv, int_direction='both'):
+    '''
+    Get test statistic (chi2 distributed) of interaction between 
+    two event vectors.  
+    '''
+    a,b = a.copy(), b.copy()
+    a.name, b.name = 'a','b'
+    m1 = get_cox_ph(surv, covariates=[a,b], 
+                    formula='Surv(days, event) ~ a + b')
+
+    int_var = 1.*(combine(a,b)==int_direction)
+    int_var.name = 'interaction'
+    m2 = get_cox_ph(surv, int_var)
+    chi2 = extract_chi2(m2, m1)
+    return chi2
+
+def interaction_empirical_p(a, b, surv, num_perm=101, check_first=True):
+    '''
+    Calculate an empirical p-value for an interaction by sampling
+    with replacement.  
+    
+    We first test if there is an improvement in model fit by 
+    considering the interaction of the two events.  If so, we 
+    then derive an empirical p-value. 
+    '''
+    a,b = match_series(a,b)
+    if fisher_exact_test(a,b)['odds_ratio'] > 1:
+        int_direction = 'both'
+    else:
+        int_direction = 'neither'
+    r = get_interaction(a, b, surv)
+    if (r < 0) and (check_first is True):
+        return pd.Series({'p': 1, 'interaction': int_direction})
+    
+    mat = np.random.choice(a.index, size=(num_perm, len(a.index)))
+    
+    vec = {}
+    for i,idx in enumerate(mat):
+        a_p = pd.Series(list(a.ix[idx]), range(len(idx)))
+        b_p = pd.Series(list(b.ix[idx]), range(len(idx)))
+        surv_p = pd.DataFrame(surv.unstack().ix[a.index].as_matrix(), 
+                              index=range(len(idx)), 
+                              columns=['days','event']).stack()
+        vec[i] = get_interaction(a_p, b_p, surv_p, int_direction)
+    vec = pd.Series(vec)
+    
+    empirical_p = 1.*(len(vec) - sum(vec <= r)) / len(vec)
+    return pd.Series({'p': empirical_p, 'interaction': int_direction})

@@ -93,7 +93,7 @@ def process_firehose_get(data_path, cancer, date):
 
     Input:
         data_path: base path where data is stored
-        date: date of Firehose run
+        date: date of versioned firehose run in YYYY_MM_DD format.
         cancer: name of cancer to process
     '''
     cancer_dir = '{}/analyses__{}/{}/'.format(data_path, date, cancer)
@@ -108,5 +108,11 @@ def process_firehose_get(data_path, cancer, date):
     clean_file_tree(new_path)
     
 def process_all_cancers(firehose_path, date):
+    '''
+    Process data retrieved using firehose_get.
+    
+    firehose_path: Path to top level directory where firehose_get was run.
+    date: date of versioned firehose run in YYYY_MM_DD format.
+    '''
     for cancer in os.listdir('{}/stddata__{}'.format(firehose_path, date)):
         process_firehose_get(firehose_path, cancer, date)

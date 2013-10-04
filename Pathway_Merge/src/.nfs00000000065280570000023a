@@ -1,0 +1,2 @@
+Error in strwidth(legend, units = "user", cex = cex, font = text.font) : 
+  plot.new has not been called yet

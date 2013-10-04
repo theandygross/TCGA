@@ -30,6 +30,12 @@ def fix_date(df):
     except:
         pass
     return df
+
+def try_float(s):
+    try:
+        return float(s)
+    except:
+        return np.nan
     
 def format_drugs(br):
     '''
@@ -187,53 +193,6 @@ def format_survival(clin, followup):
                          axis=1)
     return survival,timeline
 
-def format_survival_from_data_portal(path, cancer):
-    cancer = cancer.lower()
-    na_vals = ['[Completed]', '[Not Available]', '[Not Applicable]']
-    pat = pd.read_table(path + 'clinical_patient_{}.txt'.format(cancer), 
-                        index_col=0, na_values=na_vals)
-    f = pat.dropna(axis=1, how='all')
-    for fu in os.listdir(path):
-        if 'clinical_follow_up' not in fu:
-            continue
-        followup = pd.read_table(path + fu, index_col=0, na_values=na_vals)
-        f = pd.concat([f, followup])
-    
-    time_vars = ['days_to_last_followup', 'days_to_last_known_alive', 
-                 'days_to_death']
-    time_cols = list(f.columns.intersection(time_vars))
-    f['vital_status'] = f.vital_status.dropna().isin(['DECEASED','Dead'])
-    
-    f = f.sort(columns=['vital_status'] + time_cols, ascending=True)
-    f = f.groupby(lambda s: s[:12], axis=0).last()
-
-    
-    timeline = f[time_cols].dropna(how='all')
-    timeline['days'] = timeline.astype(float).max(1)
-    deceased = f.vital_status.dropna()
-    events = f.select(lambda s: 'days' in s, 1)
-    events = events.replace('null', np.nan)
-    timeline = events.combine_first(timeline).astype(float)
-    timeline[timeline < -1] = np.nan
-    survival = pd.concat([timeline.days, deceased], keys=['days','event'], 
-                         axis=1)
-    survival = survival.dropna().stack().astype(float)
-    
-    f_vars = ['days', 'daystonewtumoreventafterinitialtreatment', 
-              'daystotumorprogression', 'daystotumorrecurrence',
-              'daystonewtumoreventafterinitialtreatment']
-    followup_cols = list(timeline.columns.intersection(f_vars))
-    pfs = timeline[followup_cols].min(1)
-    #pfs = pd.concat([timeline.days, timeline[followup_cols]], axis=1).min(1)
-    event = ((pfs < timeline.days) + deceased) > 0
-    pfs = pd.concat([pfs, event], keys=['days','event'], axis=1)
-    pfs = pfs.dropna().stack().astype(float)
-    
-    survival = pd.concat([survival, pfs], 
-                         keys=['survival','event_free_survival'], 
-                         axis=1)
-    timeline['age'] = f.age_at_initial_pathologic_diagnosis.astype(float)
-    return survival, timeline
 
 def get_clinical(cancer, data_path, patients=None, **params):
     '''

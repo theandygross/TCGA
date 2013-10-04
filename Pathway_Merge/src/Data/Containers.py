@@ -112,16 +112,17 @@ class Cancer(object):
     def initialize_data(self, run, save=False, get_vars=False):
         clinical = Clinical(self, run)
         clinical.artificially_censor(5)
-        global_vars = IM.get_global_vars(run.data_path, self.name)
-        global_vars = global_vars.groupby(level=0).first()
+        #global_vars = IM.get_global_vars(run.data_path, self.name)
+        #global_vars = global_vars.groupby(level=0).first()
         
         if save is True:
             self.save()
             clinical.save()
-            global_vars.to_csv(self.path + '/Global_Vars.csv') 
+            #global_vars.to_csv(self.path + '/Global_Vars.csv') 
         
         if get_vars is True:
-            return clinical, global_vars        
+            return clinical
+            #return clinical, global_vars        
     
     def save(self):
         self.path = '{}/{}'.format(self.run_path, self.name)

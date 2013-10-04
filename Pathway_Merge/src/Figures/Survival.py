@@ -17,7 +17,7 @@ import numpy as np
 survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
 
-colors = plt.rcParams['axes.color_cycle']
+colors_global = plt.rcParams['axes.color_cycle']*10
 
 def get_markers(censoring, survival):
     '''
@@ -32,7 +32,7 @@ def get_markers(censoring, survival):
         markers += [(cc, survival[t])]
     return markers
 
-def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None):
+def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None, ms=80, alpha=1):
     '''
     Takes an R survfit.
     '''
@@ -45,8 +45,11 @@ def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None):
     call = com.convert_robj(fit.rx2('call')[2])
     
     groups = robjects.r.sort(robjects.r.c(*call.feature.unique()))
-
-    if len(tab.strata.unique()) != len(groups):
+    
+    if 'strata' not in tab:
+        groups = [0]
+        tab['strata'] = 1
+    elif len(tab.strata.unique()) != len(groups):
         gg = list(call[call.event > 0].feature.unique())
         gg = [g for g in groups if g in gg]
         bg = [g for g in groups if g not in gg]
@@ -60,15 +63,16 @@ def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None):
             surv = surv.set_value(censoring.max(), surv.iget(-1)).sort_index()
 
         censoring_pos = get_markers(censoring, surv)
-        ax.step(surv.index, surv, lw=3, where='post', alpha=.7, label=group)
+        ax.step(surv.index, surv, lw=3, where='post', alpha=alpha, label=group)
         if colors is not None:
             try:
+                '''fix for R-Python str-to-int conversion'''
                 color = colors[group]
             except:
                 color = colors[i]
             ax.lines[-1].set_color(color)
         if len(censoring_pos) > 0:
-            ax.scatter(*zip(*censoring_pos), marker='|', s=80, 
+            ax.scatter(*zip(*censoring_pos), marker='|', s=ms, 
                        color=ax.lines[-1].get_color())
         
     ax.set_ylim(0,1.05)
@@ -104,7 +108,7 @@ def draw_survival_curves(feature, surv, assignment=None):
         draw_survival_curve(s, surv, ax=axs[i], 
                             title='{} = {}'.format(assignment.name,l))
         
-def survival_stat_plot(t, upper_lim=5, axs=None):
+def survival_stat_plot(t, upper_lim=5, axs=None, colors=None):
     '''
     t is the DataFrame returned from a get_surv_fit call.
     '''
@@ -115,6 +119,8 @@ def survival_stat_plot(t, upper_lim=5, axs=None):
     else:
         ax, ax2 = axs
         fig = plt.gcf()
+    if colors is None:
+        colors = colors_global
     for i,(idx,v) in enumerate(t.iterrows()):
         conf_int = v['Median Survival']
         median_surv = v[('Median Survival','Median')]
@@ -122,7 +128,7 @@ def survival_stat_plot(t, upper_lim=5, axs=None):
             median_surv = np.nanmin([median_surv, 20])
             conf_int['Upper'] = np.nanmin([conf_int['Upper'], 20])
         l = ax.plot(*zip(*[[conf_int['Lower'],i], [median_surv,i], [conf_int['Upper'],i]]), lw=3, ls='--', 
-                    marker='o', dash_joinstyle='bevel')
+                    marker='o', dash_joinstyle='bevel', color=colors[i])
         ax.scatter(median_surv,i, marker='s', s=100, color=l[0].get_color(), edgecolors=['black'], zorder=10,
                    label=idx)
     ax.set_yticks(range(len(t)))
@@ -141,7 +147,8 @@ def survival_stat_plot(t, upper_lim=5, axs=None):
     ax2.set_yticks([])
     fig.tight_layout()
     
-def survival_and_stats(feature, surv, upper_lim=5, axs=None, figsize=(7,5), title=None, order=None):
+def survival_and_stats(feature, surv, upper_lim=5, axs=None, figsize=(7,5), title=None, 
+                       order=None, colors=None, **args):
     if axs is None:
         fig = plt.figure(figsize=figsize)
         ax1 = plt.subplot2grid((3,3), (0,0), colspan=3, rowspan=2)
@@ -152,6 +159,8 @@ def survival_and_stats(feature, surv, upper_lim=5, axs=None, figsize=(7,5), titl
         fig = plt.gcf()
     if feature.dtype != str:
         feature = feature.astype(str)
+    if colors is None:
+        colors = colors_global
     
     t = get_surv_fit(surv, feature)
     if order is None:
@@ -162,7 +171,7 @@ def survival_and_stats(feature, surv, upper_lim=5, axs=None, figsize=(7,5), titl
     r = pd.Series({s:i for i,s in enumerate(t.index)})
     color_lookup = {c: colors[i % len(colors)] for i,c in enumerate(t.index)}
     
-    draw_survival_curve(feature, surv, ax=ax1, colors=color_lookup)
+    draw_survival_curve(feature, surv, ax=ax1, colors=color_lookup, **args)
     ax1.legend().set_visible(False)
     if title:
         ax1.set_title(title)

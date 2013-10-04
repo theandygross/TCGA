@@ -52,6 +52,7 @@ def extract_geneset_pcs(df, gene_sets, filter_down=True):
 def get_mirna_features(df):
     binary = (df[(df < -1).sum(1) > (df.shape[1]/2)] >= -1)*1.
     binary = binary[binary.sum(1).isin(range(20, df.shape[1]/2))]
+    
     real = df[((df.max(1) - df.min(1)) > 2)]
     real = real.ix[(real == -3).sum(1) < real.shape[1]/2.]
     features = pd.concat([real, binary], keys=['real','binary'])
@@ -61,6 +62,8 @@ def extract_features(df):
     df_n = df.xs('01', level=1, axis=1)
     binary = df_n > -1
     binary = binary[binary.sum(1).isin(range(20, df.shape[1]/2))]
+    rr = df.ix[binary.index].apply(exp_change, 1)
+    binary = binary.ix[true_index(rr.p < .05)]
     
     real = df_n.ix[df_n.index.diff(binary.index)]
     singles = real[((real.max(1) - real.min(1)) > 1)]

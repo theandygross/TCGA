@@ -43,8 +43,14 @@ def fix_barcode_columns(df, patients=None, tissue_code='All', get_batch=False):
     if patients is not None:
         df  = df.ix[:, patients]
     if tissue_code != 'All':
-        df = df.T.xs(tissue_code, level=1).T #pandas bug
-        df = df.groupby(axis=1, level=0).first()
+        try:
+            df = df.T.xs(tissue_code, level=1).T #pandas bug
+            df = df.groupby(axis=1, level=0).first()
+        except KeyError: #try different cross-seciton
+            new_code = pd.value_counts(df.columns.get_level_values(1)).idxmax()
+            df = df.T.xs(new_code, level=1).T #pandas bug
+            df = df.groupby(axis=1, level=0).first()
+            
     else:
         df = df.groupby(axis=1, level=[0,1]).first()
     return df

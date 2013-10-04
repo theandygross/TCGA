@@ -10,6 +10,7 @@ import matplotlib.pylab as plt
 import Stats.Scipy as Stats
 from Figures.Helpers import latex_float, init_ax
 from Processing.Helpers import match_series
+colors = plt.rcParams['axes.color_cycle']*10
         
 def _violin_plot(ax, data,pos=[], bp=False):
     '''
@@ -113,7 +114,7 @@ def violin_plot_series(s, **kw_args):
                         **kw_args)
 
 
-def paired_boxplot(boxes):
+def paired_boxplot_o(boxes):
     '''
     Wrapper around plt.boxplot to draw paired boxplots
     for a set of boxes. 
@@ -126,7 +127,7 @@ def paired_boxplot(boxes):
     plt.subplots_adjust(left=0.075, right=0.95, top=0.9, bottom=0.25)
     bp = ax1.boxplot(boxes, notch=0, positions=np.arange(len(boxes)) + 
                      1.5*(np.arange(len(boxes)) / 2), patch_artist=True);
-    [p.set_color('r') for p in bp['boxes'][::2]]
+    [p.set_color(colors[0]) for p in bp['boxes'][::2]]
     [p.set_color('black') for p in bp['whiskers']]
     [p.set_color('black') for p in bp['fliers']]
     [p.set_alpha(.4) for p in bp['fliers']]
@@ -141,7 +142,31 @@ def paired_boxplot(boxes):
     ax1.set_xticks(3.5*np.arange(len(boxes)/2) + .5);
     return ax1, bp
 
-def paired_boxplot_tumor_normal(df):
+def paired_boxplot(boxes, ax1=None):
+    if not ax1:
+        fig = plt.figure(figsize=(len(boxes)/2.5,4))
+        ax1 = fig.add_subplot(111)
+    plt.subplots_adjust(left=0.075, right=0.95, top=0.9, bottom=0.25)
+    bp = ax1.boxplot(boxes, notch=0, positions=np.arange(len(boxes)) + 
+                     1.5*(np.arange(len(boxes)) / 2), patch_artist=True);
+    [p.set_color(colors[0]) for p in bp['boxes'][::2]]
+    [p.set_color(colors[1]) for p in bp['boxes'][1::2]]
+    [p.set_color('black') for p in bp['whiskers']]
+    [p.set_color('black') for p in bp['fliers']]
+    [p.set_alpha(.4) for p in bp['fliers']]
+    [p.set_alpha(.8) for p in bp['boxes']];
+    [p.set_edgecolor('black') for p in bp['boxes']];
+    ax1.yaxis.grid(True, linestyle='-', which='major', color='lightgrey',
+                  alpha=0.5)
+    
+    # Hide these grid behind plot objects
+    ax1.set_axisbelow(True)
+    ax1.set_ylabel('$Log_{2}$ RNA Expression')
+    ax1.set_xticks(3.5*np.arange(len(boxes)/2) + .5);
+    return ax1, bp
+
+def paired_boxplot_tumor_normal(df, sig=True, cutoffs=[.01, .00001], 
+                                order=None, ax=None):
     '''
     Draws a paired boxplot given a DataFrame with both tumor and normal
     samples on the index. '01' and '11' are hard-coded as the ids for
@@ -149,32 +174,39 @@ def paired_boxplot_tumor_normal(df):
     '''
     n = df.groupby(level=0).size()==2
     df = df.ix[n[n].index]
-    o = df.xs('11', level=1).median().order().index
-    df = df[o[::-1]]
+    if order is None:
+        o = df.xs('11', level=1).median().order().index
+        df = df[o[::-1]]
+    else:
+        df = df[order]
     l1 = list(df.xs('01', level=1).as_matrix().T)
     l2 = list(df.xs('11', level=1).as_matrix().T)
     boxes = [x for t in zip(l1, l2) for x in t]
-    ax1, bp = paired_boxplot(boxes)
+    ax1, bp = paired_boxplot(boxes, ax)
     
     test = lambda v: Stats.ttest_rel(v.unstack()['01'], v.unstack()['11'])
     res = df.apply(test).T
     p = res.p
     
-    pts = [(i*3.5 +.5,18) for i,n in enumerate(p) if n < .00001]
-    if len(pts) > 0:
-        s1 = ax1.scatter(*zip(*pts), marker='$**$', label='$p<10^{-5}$', s=200)
+    if sig:
+        pts = [(i*3.5 +.5,18) for i,n in enumerate(p) if n < cutoffs[1]]
+        if len(pts) > 0:
+            s1 = ax1.scatter(*zip(*pts), marker='$**$', label='$p<10^{-5}$', s=200)
+        else:
+            s1 = None
+        pts = [(i*3.5 +.5,18) for i,n in enumerate(p) 
+                              if (n < cutoffs[0]) and (n > cutoffs[1])]
+        if len(pts) > 0:
+            s2 = ax1.scatter(*zip(*pts), marker='$*$', label='$p<10^{-2}$', s=30)
+        else:
+            s2 = None
+        ax1.legend(bp['boxes'][:2] + [s2,s1], 
+                   ('Tumor','Normal', '$p<10^{-2}$', '$p<10^{-5}$'), 
+                   loc='best', scatterpoints=1);
     else:
-        s1 = None
-    pts = [(i*3.5 +.5,18) for i,n in enumerate(p) 
-                          if (n < .01) and (n > .00001)]
-    if len(pts) > 0:
-        s2 = ax1.scatter(*zip(*pts), marker='$*$', label='$p<10^{-2}$', s=30)
-    else:
-        s2 = None
+        ax1.legend(bp['boxes'][:2], ('Tumor','Normal'), loc='best');
     ax1.set_xticklabels(df.columns);
-    ax1.legend(bp['boxes'][:2] + [s2,s1], 
-               ('Tumor','Normal', '$p<10^{-2}$', '$p<10^{-5}$'), 
-               loc='best', scatterpoints=1);
+
     
 def boxplot_pannel(hit_vec, response_df):
     '''
