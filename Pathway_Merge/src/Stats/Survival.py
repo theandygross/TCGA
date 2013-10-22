@@ -475,7 +475,7 @@ def interaction(a,b, surv):
         return _interaction(a,b, surv)
     except:
         return pd.Series(index=['interaction','p'])
-    
+
 def extract_chi2(full, reduced):
     '''
     Extract chi2 statstic of likelihood ratio test 
@@ -486,7 +486,7 @@ def extract_chi2(full, reduced):
     chi2 = 2*full_ll[1] - 2*reduced_ll[1]
     return chi2
 
-def get_interaction(a,b, surv, int_direction='both'):
+def get_interaction_simple(a,b, surv, int_direction='both'):
     '''
     Get test statistic (chi2 distributed) of interaction between 
     two event vectors.  
@@ -502,7 +502,64 @@ def get_interaction(a,b, surv, int_direction='both'):
     chi2 = extract_chi2(m2, m1)
     return chi2
 
-def interaction_empirical_p(a, b, surv, num_perm=101, check_first=True):
+def get_interaction(a,b, surv, int_direction='both'):
+    '''
+    Get test statistic (chi2 distributed) of interaction between 
+    two event vectors.  
+    
+    We define 3 models: 
+        1) a + b
+        2) a:b
+        3) a + b + a:b
+        
+    We return the improvement of fit from 2 to 1 minus the 
+    improvement of fit from 3 to 2. That is we want to capture
+    as much of the information in the interaction term as possible.
+    '''
+    a,b = a.copy(), b.copy()
+    a.name, b.name = 'a','b'
+    m1 = get_cox_ph(surv, covariates=[a,b], 
+                    formula='Surv(days, event) ~ a + b')
+    int_var = 1.*(combine(a,b)==int_direction)
+    int_var.name = 'interaction'
+    m2 = get_cox_ph(surv, int_var)
+    
+    m3 = get_cox_ph(surv, combine(a,b))
+    
+    chi2_a = extract_chi2(m2, m1)
+    chi2_b = extract_chi2(m3, m2)
+    return chi2_a - chi2_b
+
+def interaction_empirical_p(a, b, surv, num_perm=101):
+    '''
+    Calculate an empirical p-value for an interaction by sampling
+    with replacement.  
+    
+    We first test if there is an improvement in model fit by 
+    considering the interaction of the two events.  If so, we 
+    then derive an empirical p-value. 
+    '''
+    a,b = match_series(a,b)
+    if fisher_exact_test(a,b)['odds_ratio'] > 1:
+        int_direction = 'both'
+    else:
+        int_direction = 'neither'
+    r = get_interaction(a, b, surv)
+    mat = np.array([np.random.permutation(a.index) for i in range(num_perm)])
+    
+    vec = {}
+    for i,idx in enumerate(mat):
+        a_p = pd.Series(list(a.ix[idx]), range(len(idx)))
+        b_p = pd.Series(list(b.ix[idx]), range(len(idx)))
+        surv_p = pd.DataFrame(surv.unstack().ix[a.index].as_matrix(), 
+                              index=range(len(idx)), 
+                              columns=['days','event']).stack()
+        vec[i] = get_interaction(a_p, b_p, surv_p, int_direction)
+    vec = pd.Series(vec).dropna()
+    empirical_p = 1.*(len(vec) - sum(vec <= r)) / len(vec)
+    return pd.Series({'p': empirical_p, 'interaction': int_direction})
+
+def interaction_empirical_p_resample(a, b, surv, num_perm=101, check_first=True):
     '''
     Calculate an empirical p-value for an interaction by sampling
     with replacement.  

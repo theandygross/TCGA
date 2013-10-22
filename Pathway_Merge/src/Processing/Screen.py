@@ -4,10 +4,13 @@ Created on Aug 27, 2013
 @author: agross
 '''
 import pandas as pd
+import numpy as np
 
 import Processing.Helpers as H
 import Stats.Survival as Surv
 from Stats.Scipy import rev_kruskal, fisher_exact_test
+from Stats.Scipy import spearman_pandas
+from Initialization.InitializeReal import exp_change
 
 def fc(hit_vec, response_vec):
     f = response_vec.groupby(hit_vec).median()
@@ -88,3 +91,51 @@ def filter_binary(df, cutoff):
     binary = df[vc > cutoff]
     return binary
 
+def binarize_feature(f):
+    '''
+    Binarize a feature to minimize the difference in sum of squares between 
+    the two resulting groups.  
+    '''
+    f = f - f.mean()
+    f2 = (f.order()**2)
+    split = f.ix[(f2.cumsum() - (f2.sum() / 2.)).abs().idxmin()]
+    return f > split
+
+def remove_redundant_pathways(pathways, background, cutoff=.7,
+                              binarize=False):
+    '''
+    Screens out redundant pathways with high correlation above _cutoff_.
+    Pathways are ranked based on lack of correlation to the background signal.
+    Then if two pathways have high correlation the lower ranked pathway is 
+    removed.  
+    '''
+    bg = H.screen_feature(background, spearman_pandas, pathways)
+    dd = pathways.ix[bg.index[::-1]].T.corr()
+    dd = pd.DataFrame(np.triu(dd, 1), dd.index, dd.index)
+    dd = dd.replace(0, np.nan).stack()
+    drop = dd[dd.abs() > cutoff].index.get_level_values(1)
+    pathways_to_keep = pathways.index.diff(drop.unique())
+    pathways =  pathways.ix[pathways_to_keep]
+    if binarize is False:
+        return pathways
+    else:
+        binary_pathways = pathways.apply(binarize_feature, 1)
+        return binary_pathways
+    
+
+def extract_diff_exp_rna(rna, n=300, binarize=False):
+    '''
+    Pull the most differentially expressed genes from the rna expression 
+    object. 
+    '''
+    genes = rna.features.ix[['real','binary']].index.get_level_values(1)
+    dd = rna.df.ix[genes].dropna()
+    rr = dd.apply(exp_change, 1)
+    d2 = dd.ix[rr.sort('F').index[-n:]].xs('01',1,1)
+    if binarize is False:
+        return d2
+    else:
+        real_genes = rna.features.ix['real'].index
+        tf = lambda s: binarize_feature(s) if s.name in real_genes else s < -1
+        d3 = d2.apply(tf, 1)
+        return d3

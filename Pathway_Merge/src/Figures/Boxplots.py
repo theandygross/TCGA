@@ -44,7 +44,7 @@ def _violin_plot(ax, data,pos=[], bp=False):
                              widths=.25)
         return boxPlot
     
-def box_plot_pandas(bin_vec, real_vec, ax='None'):
+def box_plot_pandas(bin_vec, real_vec, ax=None):
     '''
     Wrapper around matplotlib's boxplot function.
     
@@ -53,13 +53,26 @@ def box_plot_pandas(bin_vec, real_vec, ax='None'):
         real_vec: Series of measurements to be grouped according to bin_vec
     '''
     _, ax = init_ax(ax)
+    bin_vec, real_vec = match_series(bin_vec, real_vec)
     categories = bin_vec.value_counts().index
-    ax.boxplot([real_vec[bin_vec==num] for num in categories], 
-               positions=categories);
-    ax.set_ylabel('Sub-Cohort Gene Expression')
-    ax.set_xlabel('Number of Mutations')
-    if type(bin_vec.name) == str:
-        ax.set_title(bin_vec.name +' x '+ real_vec.name)
+    data = [real_vec[bin_vec==num] for num in categories]
+    bp = ax.boxplot(data, positions=range(len(categories)), widths=.3,
+                    patch_artist=True);
+    if real_vec.name:
+        ax.set_ylabel(real_vec.name)
+    if bin_vec.name:
+        ax.set_xlabel(bin_vec.name)
+    [p.set_visible(False) for p in bp['fliers']]
+    [p.set_visible(False) for p in bp['caps']]
+    [p.set_visible(False) for p in bp['whiskers']]
+    for p in bp['medians']:
+        p.set_color(colors[0])
+        p.set_lw(3)
+        p.set_alpha(.8)
+    for p in bp['boxes']:
+        p.set_color('grey')
+        p.set_lw(3)
+        p.set_alpha(.7)
         
 def violin_plot_pandas(bin_vec, real_vec, ann='p', order=None, ax=None, 
                        filename=None):

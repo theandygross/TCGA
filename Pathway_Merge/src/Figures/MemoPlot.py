@@ -60,11 +60,11 @@ def memo_plot(df, ax=None):
     ax.set_xbound(-.5, len(W)-.5)
     ax.set_ybound(-.5, len(W[0])-.5)
     
-def pathway_plot(df, ax=None):
+def pathway_plot(df, ax=None, bar='both'):
     df = df.ix[df.sum(1) > 0, df.sum() > 0]
     df = df.ix[df.sum(1).order(ascending=False).index]
-    o = np.sort(df.apply(lambda s: ''.join(map(str, s)))).index[::-1]
-    df = df[o]
+    o = df.astype(int).apply(lambda s: ''.join(map(str, s))).order()
+    df = df[o.index[::-1]]
     
     if df.shape[0] > 20:
         rest = pd.Series(df.ix[10:].sum().clip_upper(1.), name='rest')
@@ -75,16 +75,19 @@ def pathway_plot(df, ax=None):
     else:
         fig = ax.get_figure()
     memo_plot(df, ax=ax)
-    ax.bar(np.arange(len(df.columns)) - .3, 1.*df.sum() / df.sum().max(), 
-           bottom=-1.5, width=.6, alpha=.5)
-    counts = df.sum(1)[::-1]
-    width = df.shape[1]
-    
-    ax.barh(np.arange(len(counts)) - .3, (1.*counts / counts.max())*width*.25, 
-            left=width - .2, height=.6, alpha=.5)
+    if bar in ['x', 'both']:
+        ax.bar(np.arange(len(df.columns)) - .3, 1.*df.sum() / df.sum().max(), 
+               bottom=-1.5, width=.6, alpha=.5)
+    if bar in ['y', 'both']:
+        counts = df.sum(1)[::-1]
+        width = df.shape[1]
+        ax.barh(np.arange(len(counts)) - .3, (1.*counts / counts.max())*width*.25, 
+                left=width - .2, height=.6, alpha=.5)
+        
     ax.set_frame_on(False)
     ax.tick_params(right='off')
     fig.tight_layout()
+    return df
     
 def draw_pathway_overlaps(mat, bars, filename=None):  
     fig, ax = plt.subplots(figsize=(25,5))   

@@ -167,7 +167,7 @@ def survival_and_stats(feature, surv, upper_lim=5, axs=None, figsize=(7,5), titl
         t = t.sort([('5y Survival','Surv')], ascending=True)
     else:
         t = t.ix[order]
-    survival_stat_plot(t, axs=[ax2, ax3], upper_lim=upper_lim)
+    survival_stat_plot(t, axs=[ax2, ax3], upper_lim=upper_lim, colors=colors)
     r = pd.Series({s:i for i,s in enumerate(t.index)})
     color_lookup = {c: colors[i % len(colors)] for i,c in enumerate(t.index)}
     

@@ -93,7 +93,7 @@ def count_plot(vec, name=None, ax=None):
     ax.set_ylabel('# of Patients')
     ax.set_xlabel(name if name is not None else vec.name)
 
-def venn_pandas(a,b):
+def venn_pandas_o(a,b):
     from matplotlib_venn import venn2
     
     colors = plt.rcParams['axes.color_cycle']
@@ -105,3 +105,20 @@ def venn_pandas(a,b):
     v.patches[0].set_alpha(.7)
     v.patches[1].set_alpha(.7)
     v.patches[2].set_alpha(.7)
+    
+def venn_pandas(a,b, colors=None, alpha=.7):
+    from matplotlib_venn import venn2
+    
+    if colors is None:
+        colors = np.array(plt.rcParams['axes.color_cycle'])[[0,2,4]]
+    gc = pd.concat([a,b], axis=1).dropna().astype(int).astype(str).apply(lambda s: ''.join(s), axis=1)
+    v = venn2(gc.value_counts().sort_index()[1:], set_labels=[b.name, a.name], normalize_to=1.0)
+    v.patches[0].set_facecolor(colors[0])
+    v.patches[1].set_facecolor(colors[1])
+    v.patches[2].set_facecolor(colors[2])
+    for p in v.patches:
+        p.set_alpha(alpha)
+        p.set_lw(2)
+    for l in v.subset_labels:
+        l.set_fontsize(12)
+    return v

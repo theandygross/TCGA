@@ -68,6 +68,11 @@ def format_survival_data(timeline, clin):
 def update_clinical_object(clinical, path):
     cancer = clinical.cancer
     f = read_clinical_data(path, cancer)
+    fix_cols = lambda df: df.columns.map(lambda s: s.replace('_','').lower())
+    f.columns = fix_cols(f)
+    clinical.clinical.columns = fix_cols(clinical.clinical)
+    clinical.timeline.columns = fix_cols(clinical.timeline)
+    clinical.stage.columns = fix_cols(clinical.stage)
     
     clin = f.combine_first(clinical.clinical).ix[:,clinical.clinical.columns]
     timeline = f.combine_first(clinical.timeline).ix[:,clinical.timeline.columns]
