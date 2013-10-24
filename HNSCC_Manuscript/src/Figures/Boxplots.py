@@ -69,10 +69,12 @@ def box_plot_pandas(bin_vec, real_vec, ax=None):
         p.set_color(colors[0])
         p.set_lw(3)
         p.set_alpha(.8)
-    for p in bp['boxes']:
+    for i,p in enumerate(bp['boxes']):
         p.set_color('grey')
         p.set_lw(3)
         p.set_alpha(.7)
+        if len(data[i]) < 3:
+            p.set_alpha(0)
         
 def violin_plot_pandas(bin_vec, real_vec, ann='p', order=None, ax=None, 
                        filename=None):

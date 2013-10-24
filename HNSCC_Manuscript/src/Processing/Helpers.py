@@ -255,3 +255,13 @@ def powerset(iterable):
                                   range(len(s)+1))
 
 ti = true_index
+
+def binarize(f):
+    '''
+    Binarize a continuous vector by minimizing the difference in 
+    variance between the two resulting groups.
+    '''
+    f = f - f.mean()
+    f2 = (f.order()**2)
+    split = f.ix[(f2.cumsum() - (f2.sum() / 2.)).abs().idxmin()]
+    return f > split
