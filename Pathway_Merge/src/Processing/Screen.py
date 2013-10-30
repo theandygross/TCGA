@@ -60,23 +60,6 @@ def process_real(df):
         df_c.index = map(lambda s: '_'.join(s), df_c.index)
     return df_c.T
 
-def get_interactions(df, cov_df, surv, test):
-    binary = df[df.T.describe().ix['unique'] == 2]
-    n_tests = (len(binary) * (len(binary) - 1)) / 2
-    s = pd.DataFrame({(a,b): Surv.interaction(v1,v2, surv) 
-                          for a,v1 in binary.iterrows()
-                          for b,v2 in binary.iterrows()
-                          if (a < b)
-                          and fisher_exact_test(v1,v2).ix['p'] < (.3 / n_tests)}).T
-    int_pairs =  s.ix[s.p < 1].sort('p')
-    
-    int_associations = {}
-    for p,vals in int_pairs.iterrows():
-        combo = H.combine(binary.ix[p[0]], binary.ix[p[1]])
-        vec = combo == vals['interaction']
-        int_associations[p] = test(vec, surv, cov_df) 
-    int_associations = pd.DataFrame(int_associations).T
-    return s, int_associations
 
 def binary_filter_fx(s):
     vc = s.value_counts()
