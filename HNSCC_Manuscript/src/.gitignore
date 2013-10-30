@@ -1,0 +1,15 @@
+# R output files
+*.Rout
+
+# log of Firehose download
+tmp
+
+# zip files
+*.zip
+
+# firehose_get script
+firehose_get
+
+# data directories (intermediate)
+analyses__*
+stddata__*
