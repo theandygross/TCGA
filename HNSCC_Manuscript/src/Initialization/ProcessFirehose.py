@@ -115,4 +115,6 @@ def process_all_cancers(firehose_path, date):
     date: date of versioned firehose run in YYYY_MM_DD format.
     '''
     for cancer in os.listdir('{}/stddata__{}'.format(firehose_path, date)):
+        if '.' in cancer:  #random files stuck in the directory
+            break
         process_firehose_get(firehose_path, cancer, date)
