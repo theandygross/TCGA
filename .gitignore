@@ -16,5 +16,6 @@
 # user specific parameter file
 global_params.txt
 
+# Data folder
 Data/
 

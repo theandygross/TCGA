@@ -1,8 +1,8 @@
-'''
+"""
 Created on Apr 7, 2013
 
 @author: agross
-'''
+"""
 from Processing.Helpers import get_vec_type, to_quants
 from Stats.Survival import get_cox_ph
 
@@ -19,12 +19,13 @@ base = robjects.packages.importr('base')
 
 colors_global = plt.rcParams['axes.color_cycle'] * 10
 
+
 def get_markers(censoring, survival):
-    '''
+    """
     Get locations for markers in KM plot.
     censoring is a list of censoring times.
     survival is a time-series of survival values
-    '''
+    """
     markers = []
     for cc in censoring:
         d = (pd.Series(survival.index, survival.index, dtype=float) - cc)
@@ -32,10 +33,11 @@ def get_markers(censoring, survival):
         markers += [(cc, survival[t])]
     return markers
 
+
 def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None, ms=80, alpha=1):
-    '''
+    """
     Takes an R survfit.
-    '''
+    """
     if ax is None:
         _, ax = plt.subplots(1, 1, figsize=(4, 3))
     s = base.summary(fit)
@@ -66,7 +68,7 @@ def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None, ms=80, alpha
         ax.step(surv.index, surv, lw=3, where='post', alpha=alpha, label=group)
         if colors is not None:
             try:
-                '''fix for R-Python str-to-int conversion'''
+                """fix for R-Python str-to-int conversion"""
                 color = colors[group]
             except:
                 color = colors[i]
@@ -83,11 +85,13 @@ def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None, ms=80, alpha
     ax.set_xlabel('Years')
     if title:
         ax.set_title(title)
-        
+
+
 def process_feature(feature, q, std):
     if (get_vec_type(feature) == 'real') and (len(feature.unique()) > 10):
         feature = to_quants(feature, q=q, std=std, labels=True)
     return feature
+
 
 def draw_survival_curve(feature, surv, q=.25, std=None, **args):
     feature = process_feature(feature, q, std)
@@ -97,8 +101,9 @@ def draw_survival_curve(feature, surv, q=.25, std=None, **args):
     # s = survival.survdiff(fmla, r_data)
     # p = str(s).split('\n\n')[-1].strip().split(', ')[-1]
     draw_survival_curves_mpl(survival.survfit(fmla, r_data), **args)
-    
-def draw_survival_curves(feature, surv, assignment=None):
+
+
+def draw_survival_curves(feature, surv, assignment=None, legend='out'):
     if assignment is None:
         draw_survival_curve(feature, surv)
         return
@@ -107,11 +112,13 @@ def draw_survival_curves(feature, surv, assignment=None):
     for i, (l, s) in enumerate(feature.groupby(assignment)):
         draw_survival_curve(s, surv, ax=axs[i],
                             title='{} = {}'.format(assignment.name, l))
+        if legend is 'out':
+            axs[i].get_legend().set_visible(False)
         
 def survival_stat_plot(t, upper_lim=5, axs=None, colors=None):
-    '''
+    """
     t is the DataFrame returned from a get_surv_fit call.
-    '''
+    """
     if axs is None:
         fig = plt.figure(figsize=(6, 1.5))
         ax = plt.subplot2grid((1, 3), (0, 0), colspan=2)
