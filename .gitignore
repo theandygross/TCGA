@@ -10,6 +10,9 @@
 # R output files
 *.Rout
 
+# PyCharm File
+.idea/
+
 # user specific parameter file
 global_params.txt
 
