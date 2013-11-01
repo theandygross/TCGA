@@ -1,8 +1,8 @@
-'''
+"""
 Created on Aug 27, 2013
 
 @author: agross
-'''
+"""
 import pandas as pd
 import numpy as np
 
@@ -12,15 +12,17 @@ from Stats.Scipy import rev_kruskal, fisher_exact_test
 from Stats.Scipy import spearman_pandas
 from Initialization.InitializeReal import exp_change
 
+
 def fc(hit_vec, response_vec):
     f = response_vec.groupby(hit_vec).median()
     return f[0] > f[1]
 
+
 def mut_filter(df, rate, binary_cutoff=12):
-    '''
+    """
     Filter out mutation features, ensuring that a feature
     is not entirely an artifact of mutation rate.
-    '''
+    """
     df = df[df.sum(1) >= binary_cutoff]
     cc = H.screen_feature(rate, rev_kruskal, df)
     
@@ -35,10 +37,11 @@ def mut_filter(df, rate, binary_cutoff=12):
     df = df.dropna(axis=1)
     return df
 
+
 def cn_filter(df, binary_cutoff=12):
-    '''
+    """
     Extract copy number features.
-    '''
+    """
     del_df = (df.ix['Deletion'].dropna(1) < 0).astype(int)
     del_df = del_df[del_df.sum(1) >= binary_cutoff]
     del_df.index = del_df.index.droplevel(1)
@@ -49,10 +52,11 @@ def cn_filter(df, binary_cutoff=12):
     amp_df = amp_df.T
     return amp_df, del_df
 
+
 def process_real(df):
-    '''
+    """
     Process real valued feature into binary feature.
-    '''
+    """
     df_c = df.copy()
     df_c = df_c.apply(lambda s: H.to_quants(s, std=1), axis=1)
     df_c = df_c > 0
@@ -68,30 +72,33 @@ def binary_filter_fx(s):
     else:
         return vc.min()
 
+
 def filter_binary(df, cutoff):
     df = df.dropna(how='all')
     vc = df.apply(binary_filter_fx, axis=1)
     binary = df[vc > cutoff]
     return binary
 
+
 def binarize_feature(f):
-    '''
+    """
     Binarize a feature to minimize the difference in sum of squares between 
     the two resulting groups.  
-    '''
+    """
     f = f - f.mean()
     f2 = (f.order() ** 2)
     split = f.ix[(f2.cumsum() - (f2.sum() / 2.)).abs().idxmin()]
     return f > split
 
+
 def remove_redundant_pathways(pathways, background, cutoff=.7,
                               binarize=False):
-    '''
+    """
     Screens out redundant pathways with high correlation above _cutoff_.
     Pathways are ranked based on lack of correlation to the background signal.
     Then if two pathways have high correlation the lower ranked pathway is 
     removed.  
-    '''
+    """
     bg = H.screen_feature(background, spearman_pandas, pathways)
     dd = pathways.ix[bg.index[::-1]].T.corr()
     dd = pd.DataFrame(np.triu(dd, 1), dd.index, dd.index)
@@ -107,10 +114,10 @@ def remove_redundant_pathways(pathways, background, cutoff=.7,
     
 
 def extract_diff_exp_rna(rna, n=300, binarize=False):
-    '''
+    """
     Pull the most differentially expressed genes from the rna expression 
     object. 
-    '''
+    """
     genes = rna.features.ix[['real', 'binary']].index.get_level_values(1)
     dd = rna.df.ix[genes].dropna()
     rr = dd.apply(exp_change, 1)
@@ -122,11 +129,12 @@ def extract_diff_exp_rna(rna, n=300, binarize=False):
         tf = lambda s: binarize_feature(s) if s.name in real_genes else s < -1
         d3 = d2.apply(tf, 1)
         return d3
-    
+
+
 def corrections(vec):
-    '''
+    """
     Correct p-values multiple ways along multi-index.
-    '''
+    """
     bonf_all = vec * len(vec)
     bonf_within = vec.groupby(level=0).apply(lambda s: s * len(s))
     
@@ -139,31 +147,32 @@ def corrections(vec):
                         'two_step'], axis=1)
     return q
 
+
 class Screen(object):
-    '''
+    """
     Object to hold data and results for survival screen.
-    '''
+    """
     
     def __init__(self, mut, cn, rna, mirna, clinical_df): 
         
-        '''Process Gene / Pathway Expression'''
+        """Process Gene / Pathway Expression"""
         pathways = remove_redundant_pathways(rna.pathways, rna.global_vars.background,
                                              binarize=True)
         rna_gene_df = extract_diff_exp_rna(rna, n=300, binarize=True)
         self.rna_df = pd.concat([rna_gene_df, pathways]).T
         
-        '''Process miRNA Expression'''
+        """Process miRNA Expression"""
         mirna_binarized = mirna.features.ix['real'].apply(binarize_feature, 1)
         self.mirna_df = pd.concat([mirna.features.ix['binary'], mirna_binarized]).T
         
-        '''Process mutation data'''
+        """Process mutation data"""
         self.rate = mut.df.sum()
         self.mut_df = mut.features
         
-        '''Process CNA data'''
+        """Process CNA data"""
         self.cna_df = cn.features
         
-        '''Process Clinical Data'''
+        """Process Clinical Data"""
         self.clinical_df = clinical_df
         
     def get_patient_set(self, filters):
@@ -190,11 +199,12 @@ class Screen(object):
         df = df.ix[:, keepers_o]
         df = filter_binary(df, cutoff)
         return df
-    
+
+
 class ScreenResult(object):
-    '''
+    """
     Object to hold results for survival screen iteration.
-    '''
+    """
     def __init__(self, results, pairs, full, univariate, patients, df):
         self.patients = patients
         self.features = univariate.index
