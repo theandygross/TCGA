@@ -1,0 +1,185 @@
+Firehose_ID,SAMPLE_NAME,PAIRED_SAMPLE,TUMOR_NORMAL,Final_74_exome_analysis,WGS,CANCER_SITE,TUMOR_TYPE,Tumor_HPV_ISH,Tumor_HPV_PCR,Tumor_HPV_PathSeq,Alcohol,Tobacco,Cigarette,Cigarette_Pack_Years,SNP array ID
+HN_00076-Normal,Blood_102,Tumor_102,Normal,1,,,,,,,1,1,0,0,
+HN_00076-Tumor,Tumor_102,Blood_102,Tumor,1,,ORAL_CAVITY,PRIMARY,Not Evaluated,Negative,Negative,1,1,0,0,
+HN_00122-Normal,Blood_121,Tumor_121,Normal,1,,,,,,,0,1,1,49,
+HN_00122-Tumor,Tumor_121,Blood_121,Tumor,1,,LARYNX,RECURRENCE,Negative,Negative,Negative,0,1,1,49,
+HN_00133-Normal,Blood_122,Tumor_122,Normal,0,,,,,,,1,1,1,49,
+HN_00133-Tumor,Tumor_122,Blood_122,Tumor,0,,OROPHARYNX,RECURRENCE,Negative,Negative,Negative,1,1,1,49,
+HN_00176-Normal,Blood_151,Tumor_151,Normal,0,,,,,,,1,1,1,1.5,
+HN_00176-Tumor,Tumor_151,Blood_151,Tumor,0,,ORAL_CAVITY,PRIMARY   ,Negative,Negative,Negative,1,1,1,1.5,
+HN_00190-Normal,Blood_154,Tumor_154,Normal,1,,,,,,,1,1,1,76.25,
+HN_00190-Tumor,Tumor_154,Blood_154,Tumor,1,,ORAL_CAVITY,PRIMARY   ,Negative,Negative,Negative,1,1,1,76.25,
+HN_00313-Normal,Blood_105,Tumor_105,Normal,1,,,,,,,1,1,1,25,
+HN_00313-Tumor,Tumor_105,Blood_105,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,25,
+HN_00338-Normal,Blood_140,Tumor_140,Normal,1,,,,,,,1,0,0,0,
+HN_00338-Tumor,Tumor_140,Blood_140,Tumor,1,,OROPHARYNX,PRIMARY   ,Positive,Positive,Positive,1,0,0,0,
+HN_00361-Normal,Blood_157,Tumor_157,Normal,1,,,,,,,1,1,1,16,
+HN_00361-Tumor,Tumor_157,Blood_157,Tumor,1,,SINONASAL,PRIMARY   ,Positive,Positive,Positive,1,1,1,16,
+HN_00378-Normal,Blood_155,Tumor_155,Normal,1,,,,,,,1,1,1,20,
+HN_00378-Tumor,Tumor_155,Blood_155,Tumor,1,,ORAL_CAVITY,PRIMARY   ,Negative,Negative,Negative,1,1,1,20,
+HN_00443-Normal,Blood_156,Tumor_156,Normal,1,,,,,,,1,1,1,80,
+HN_00443-Tumor,Tumor_156,Blood_156,Tumor,1,,ORAL_CAVITY,PRIMARY   ,Negative,Negative,Positive,1,1,1,80,
+HN_00466-Normal,Blood_141,Tumor_141,Normal,1,,,,,,,1,1,1,18.75,
+HN_00466-Tumor,Tumor_141,Blood_141,Tumor,1,,OROPHARYNX,PRIMARY   ,Positive,Positive,Positive,1,1,1,18.75,
+HN_0-046-Normal,Blood_152,Tumor_152,Normal,1,,,,,,,1,1,1,25,
+HN_0-046-Tumor,Tumor_152,Blood_152,Tumor,1,,ORAL_CAVITY,PRIMARY   ,Negative,Negative,Negative,1,1,1,25,
+HN_0-064-Normal,Blood_150,Tumor_150,Normal,1,,,,,,,1,1,1,32,
+HN_0-064-Tumor,Tumor_150,Blood_150,Tumor,1,,ORAL_CAVITY,PRIMARY   ,Negative,Negative,Negative,1,1,1,32,
+HN_00750-Normal,Blood_109,Tumor_109,Normal,0,,,,,,,0,1,1,37,
+HN_00750-Tumor,Tumor_109,Blood_109,Tumor,0,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,0,1,1,37,
+HN_00761-Normal,Blood_129,Tumor_129,Normal,1,,,,,,,1,1,1,29.4,
+HN_00761-Tumor,Tumor_129,Blood_129,Tumor,1,,LARYNX,RECURRENCE,Negative,Negative,Negative,1,1,1,29.4,
+HN_01000-Normal,Blood_115,Tumor_115,Normal,1,,,,,,,1,1,1,35,
+HN_01000-Tumor,Tumor_115,Blood_115,Tumor,1,,LARYNX,PRIMARY   ,Negative,Negative,Negative,1,1,1,35,
+HN_62237-Normal,62237-8_Blood,62237-8_Tumor,Normal,1,,,,,,,1,0,0,0,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_F01_592330
+HN_62237-Tumor,62237-8_Tumor,62237-8_Blood,Tumor,1,,HYPOPHARYNX,PRIMARY,Negative,Negative,Negative,1,0,0,0,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_F02_592320
+HN_62273-Normal,62273-4_Blood,62273-4_Tumor,Normal,0,,,,,,,1,1,1,45,
+HN_62273-Tumor,62273-4_Tumor,62273-4_Blood,Tumor,0,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,45,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_F03_592414
+HN_62275-Normal,62275-0_Blood,62275-0_Tumor,Normal,0,,,,,,,1,1,1,85.5,BLADE_p_ICPp4_TCGAb23_SNP_N_GenomeWideSNP_6_A12_530058
+HN_62275-Tumor,62275-0_Tumor,62275-0_Blood,Tumor,0,,ORAL_CAVITY,PRIMARY,Not Evaluated,Negative,Negative,1,1,1,85.5,BLADE_p_ICPp4_TCGAb23_SNP_N_GenomeWideSNP_6_B08_530142
+HN_62276-Normal,62276-3_Blood,62276-3_Tumor,Normal,0,,,,,,,1,1,1,39,
+HN_62276-Tumor,62276-3_Tumor,62276-3_Blood,Tumor,0,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,39,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_A01_592450
+HN_62298-Normal,Blood_106,Tumor_106,Normal,1,,,,,,,1,1,1,64.5,
+HN_62298-Tumor,Tumor_106,Blood_106,Tumor,1,,ORAL_CAVITY,PRIMARY   ,Not Evaluated,Negative,Negative,1,1,1,64.5,
+HN_62300-Normal,62300-5_Blood,62300-5_Tumor,Normal,0,,,,,,,1,1,1,35,
+HN_62300-Tumor,62300-5_Tumor,62300-5_Blood,Tumor,0,,OROPHARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,35,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_F07_592268
+HN_62302-Normal,62302-1_Blood,62302-1_Tumor,Normal,0,,,,,,,0,1,1,24.6,
+HN_62302-Tumor,62302-1_Tumor,62302-1_Blood,Tumor,0,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,0,1,1,24.6,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_F09_592324
+HN_62315-Normal,62315-7_Blood,62315-7_Tumor,Normal,0,,,,,,,1,1,1,90,
+HN_62315-Tumor,62315-7_Tumor,62315-7_Blood,Tumor,0,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,90,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_G01_592366
+HN_62318-Normal,62318-6_Blood,62318-6_Tumor,Normal,1,,,,,,,0,1,1,13,
+HN_62318-Tumor,62318-6_Tumor,62318-6_Blood,Tumor,1,,OROPHARYNX,PRIMARY,Positive,Positive,Positive,0,1,1,13,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_A06_592446
+HN_62332-Normal,62332-2_Blood,62332-2_Tumor,Normal,1,,,,,,,1,1,1,5.75,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_F11_592244
+HN_62332-Tumor,62332-2_Tumor,62332-2_Blood,Tumor,1,,OROPHARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,5.75,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_F12_592322
+HN_62338-Normal,62338-0_Blood,62338-0_Tumor,Normal,1,,,,,,,1,1,1,67.5,
+HN_62338-Tumor,62338-0_Tumor,62338-0_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,67.5,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_B06_592528
+HN_62374-Normal,62374-6_Blood,62374-6_Tumor,Normal,1,,,,,,,1,1,1,46,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_A04_592568
+HN_62374-Tumor,62374-6_Tumor,62374-6_Blood,Tumor,1,,OROPHARYNX,PRIMARY,Positive,Positive,Positive,1,1,1,46,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_A05_592474
+HN_62376-Normal,62376-2_Blood,62376-2_Tumor,Normal,1,,,,,,,1,1,1,76,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_G04_592388
+HN_62376-Tumor,62376-2_Tumor,62376-2_Blood,Tumor,1,,HYPOPHARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,76,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_G05_592406
+HN_62397-Normal,62397-9_Blood,62397-9_Tumor,Normal,0,,,,,,,1,1,1,60,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_B01_592580
+HN_62397-Tumor,62397-9_Tumor,62397-9_Blood,Tumor,0,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,60,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_B02_592440
+HN_62415-Normal,62415-6_Blood,62415-6_Tumor,Normal,1,,,,,,,1,1,1,50,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_B10_592576
+HN_62415-Tumor,62415-6_Tumor,62415-6_Blood,Tumor,1,,LARYNX,PRIMARY,Not Evaluated,Negative,Negative,1,1,1,50,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_B11_592470
+HN_62417-Normal,62417-2_Blood,62417-2_Tumor,Normal,1,,,,,,,1,1,1,31,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_B12_592540
+HN_62417-Tumor,62417-2_Tumor,62417-2_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Not Evaluated,Negative,Negative,1,1,1,31,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_C01_592466
+HN_62421-Normal,62421-1_Blood,62421-1_Tumor,Normal,1,,,,,,,0,0,0,0,BLADE_p_ICPp4_TCGAb23_SNP_N_GenomeWideSNP_6_A11_530038
+HN_62421-Tumor,62421-1_Tumor,62421-1_Blood,Tumor,1,,HYPOPHARYNX,PRIMARY,Negative,Negative,Negative,0,0,0,0,BLADE_p_ICPp4_TCGAb23_SNP_N_GenomeWideSNP_6_B11_530072
+HN_62426-Normal,62426-6_Blood,62426-6_Tumor,Normal,1,,,,,,,1,1,0,0,
+HN_62426-Tumor,62426-6_Tumor,62426-6_Blood,Tumor,1,,OROPHARYNX,PRIMARY,Positive,Positive,Positive,1,1,0,0,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_E03_592612
+HN_62427-Normal,62427-9_Blood,62427-9_Tumor,Normal,0,,,,,,,1,1,1,19,
+HN_62427-Tumor,62427-9_Tumor,62427-9_Blood,Tumor,0,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,19,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_C02_592520
+HN_62432-Normal,62432-1_Blood,62432-1_Tumor,Normal,1,,,,,,,1,1,1,54,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_A11_592492
+HN_62432-Tumor,62432-1_Tumor,62432-1_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,54,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_A12_592600
+HN_62469-Normal,62469-3_Blood,62469-3_Tumor,Normal,1,1,,,,,,1,1,1,50,BLADE_p_ICPp4_TCGAb23_SNP_N_GenomeWideSNP_6_B04_530160
+HN_62469-Tumor,62469-3_Tumor,62469-3_Blood,Tumor,1,1,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,50,BLADE_p_ICPp4_TCGAb23_SNP_N_GenomeWideSNP_6_B07_530014
+HN_62481-Normal,62481-3_Blood,62481-3_Tumor,Normal,1,,,,,,,1,1,1,49.5,
+HN_62481-Tumor,62481-3_Tumor,62481-3_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,49.5,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_F02_592602
+HN_62493-Normal,62493-6_Blood,62493-6_Tumor,Normal,1,,,,,,,9,1,0,0,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_F04_592564
+HN_62493-Tumor,62493-6_Tumor,62493-6_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Positive,9,1,0,0,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_F05_592438
+HN_62505-Normal,62505-8_Blood,62505-8_Tumor,Normal,1,,,,,,,1,1,1,36.5,BLADE_p_ICPp4_TCGAb23_SNP_N_GenomeWideSNP_6_B03_529986
+HN_62505-Tumor,62505-8_Tumor,62505-8_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,36.5,BLADE_p_ICPp4_TCGAb23_SNP_N_GenomeWideSNP_6_B12_529982
+HN_62506-Normal,62506-1_Blood,62506-1_Tumor,Normal,1,,,,,,,1,1,1,33,
+HN_62506-Tumor,62506-1_Tumor,62506-1_Blood,Tumor,1,,LARYNX,PRIMARY,Not Evaluated,Negative,Negative,1,1,1,33,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_B04_592472
+HN_62512-Normal,62512-6_Blood,62512-6_Tumor,Normal,0,,,,,,,1,0,0,0,
+HN_62512-Tumor,62512-6_Tumor,62512-6_Blood,Tumor,0,,ORAL_CAVITY,RECURRENCE,Negative,Negative,Negative,1,0,0,0,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_C08_592448
+HN_62515-Normal,62515-5_Blood,62515-5_Tumor,Normal,1,,,,,,,1,1,1,4,
+HN_62515-Tumor,62515-5_Tumor,62515-5_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,4,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_A08_592606
+HN_62521-Normal,62521-0_Blood,62521-0_Tumor,Normal,0,,,,,,,1,1,1,40,
+HN_62521-Tumor,62521-0_Tumor,62521-0_Blood,Tumor,0,,OROPHARYNX,RECURRENCE,Not Evaluated,Negative,Negative,1,1,1,40,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_B08_592494
+HN_62532-Normal,62532-0_Blood,62532-0_Tumor,Normal,1,,,,,,,1,1,1,52,
+HN_62532-Tumor,62532-0_Tumor,62532-0_Blood,Tumor,1,,LARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,52,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_C06_592584
+HN_62539-Normal,62539-1_Blood,62539-1_Tumor,Normal,1,,,,,,,1,1,1,4.05,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_C12_592610
+HN_62539-Tumor,62539-1_Tumor,62539-1_Blood,Tumor,1,,LARYNX,PRIMARY,Negative,Not Evaluated,Negative,1,1,1,4.05,
+HN_62561-Normal,62561-8_Blood,62561-8_Tumor,Normal,0,,,,,,,1,1,1,25.65,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_F10_592522
+HN_62561-Tumor,62561-8_Tumor,62561-8_Blood,Tumor,0,,ORAL_CAVITY,PRIMARY,Not Evaluated,Negative,Negative,1,1,1,25.65,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_F11_592504
+HN_62601-Normal,62601-5_Blood,62601-5_Tumor,Normal,1,,,,,,,0,0,0,0,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_D02_592614
+HN_62601-Tumor,62601-5_Tumor,62601-5_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Not Evaluated,Negative,Negative,0,0,0,0,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_D03_592572
+HN_62602-Normal,62602-8_Blood,62602-8_Tumor,Normal,1,,,,,,,0,0,0,0,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_A11_592368
+HN_62602-Tumor,62602-8_Tumor,62602-8_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,0,0,0,0,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_A12_592346
+HN_62621-Normal,62621-9_Blood,62621-9_Tumor,Normal,0,,,,,,,1,1,1,42,
+HN_62621-Tumor,62621-9_Tumor,62621-9_Blood,Tumor,0,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,42,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_D09_592590
+HN_62624-Normal,62624-8_Blood,62624-8_Tumor,Normal,1,,,,,,,1,1,1,36,
+HN_62624-Tumor,62624-8_Tumor,62624-8_Blood,Tumor,1,,LARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,36,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_E08_592618
+HN_62646-Normal,62646-8_Blood,62646-8_Tumor,Normal,1,,,,,,,1,1,1,72,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_D11_592556
+HN_62646-Tumor,62646-8_Tumor,62646-8_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Not Evaluated,Negative,Negative,1,1,1,72,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_D12_592516
+HN_62652-Normal,62652-3_Blood,62652-3_Tumor,Normal,1,,,,,,,1,1,1,8.75,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_C10_592428
+HN_62652-Tumor,62652-3_Tumor,62652-3_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,8.75,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_C11_592616
+HN_62671-Normal,62671-4_Blood,62671-4_Tumor,Normal,1,,,,,,,1,1,1,28,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_G03_592442
+HN_62671-Tumor,62671-4_Tumor,62671-4_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Positive,1,1,1,28,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_G04_592582
+HN_62672-Normal,62672-7_Blood,62672-7_Tumor,Normal,1,,,,,,,0,1,1,39,
+HN_62672-Tumor,62672-7_Tumor,62672-7_Blood,Tumor,1,,HYPOPHARYNX,PRIMARY,Negative,Negative,Negative,0,1,1,39,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_G01_592552
+HN_62686-Normal,62686-6_Blood,62686-6_Tumor,Normal,1,,,,,,,0,1,1,89,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_E01_592490
+HN_62686-Tumor,62686-6_Tumor,62686-6_Blood,Tumor,1,,LARYNX,PRIMARY,Negative,Negative,Negative,0,1,1,89,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_E02_592508
+HN_62699-Normal,62699-2_Blood,62699-2_Tumor,Normal,1,1,,,,,,1,1,1,86,BLADE_p_ICPp4_TCGAb23_SNP_N_GenomeWideSNP_6_C01_530070
+HN_62699-Tumor,62699-2_Tumor,62699-2_Blood,Tumor,1,1,HYPOPHARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,86,BLADE_p_ICPp4_TCGAb23_SNP_N_GenomeWideSNP_6_B01_530000
+HN_62728-Normal,62728-9_Blood,62728-9_Tumor,Normal,0,,,,,,,1,1,0,0,
+HN_62728-Tumor,62728-9_Tumor,62728-9_Blood,Tumor,0,,ORAL_CAVITY,PRIMARY,Not Evaluated,Negative,Negative,1,1,0,0,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_D05_592608
+HN_62739-Normal,62739-9_Blood,62739-9_Tumor,Normal,1,,,,,,,0,1,1,14,
+HN_62739-Tumor,62739-9_Tumor,62739-9_Blood,Tumor,1,,LARYNX,PRIMARY,Negative,Negative,Negative,0,1,1,14,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_F08_592546
+HN_62740-Normal,62740-9_Blood,62740-9_Tumor,Normal,1,,,,,,,1,0,0,0,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_E12_592532
+HN_62740-Tumor,62740-9_Tumor,62740-9_Blood,Tumor,1,,HYPOPHARYNX,PRIMARY,Positive,Positive,Positive,1,0,0,0,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_F01_592432
+HN_62741-Normal,62741-2_Blood,62741-2_Tumor,Normal,1,,,,,,,1,1,1,32,
+HN_62741-Tumor,62741-2_Tumor,62741-2_Blood,Tumor,1,,LARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,32,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_F06_592598
+HN_62755-Normal,62755-1_Blood,62755-1_Tumor,Normal,1,,,,,,,1,1,1,39,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_E05_592596
+HN_62755-Tumor,62755-1_Tumor,62755-1_Blood,Tumor,1,,LARYNX,PRIMARY,Not Evaluated,Negative,Negative,1,1,1,39,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_E06_592530
+HN_62756-Normal,62756-4_Blood,62756-4_Tumor,Normal,1,,,,,,,1,1,1,43.75,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_B01_592270
+HN_62756-Tumor,62756-4_Tumor,62756-4_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,43.75,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_B02_592284
+HN_62807-Normal,62807-1_Blood,62807-1_Tumor,Normal,1,,,,,,,0,1,1,13,
+HN_62807-Tumor,62807-1_Tumor,62807-1_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,0,1,1,13,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_A09_592352
+HN_62810-Normal,62810-7_Blood,62810-7_Tumor,Normal,1,,,,,,,1,1,1,63,
+HN_62810-Tumor,62810-7_Tumor,62810-7_Blood,Tumor,1,,OROPHARYNX,PRIMARY,Positive,Positive,Positive,1,1,1,63,DICEY_p_HN_SNP_2_N_GenomeWideSNP_6_E10_592518
+HN_62814-Normal,62814-9_Blood,62814-9_Tumor,Normal,1,,,,,,,1,1,1,19,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_B03_592242
+HN_62814-Tumor,62814-9_Tumor,62814-9_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,19,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_B04_592260
+HN_62825-Normal,62825-9_Blood,62825-9_Tumor,Normal,1,,,,,,,1,1,1,102,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_A04_592382
+HN_62825-Tumor,62825-9_Tumor,62825-9_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Positive,Positive,Positive,1,1,1,102,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_A05_592326
+HN_62832-Normal,62832-7_Blood,62832-7_Tumor,Normal,1,,,,,,,1,1,1,32,
+HN_62832-Tumor,62832-7_Tumor,62832-7_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,32,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_A02_592332
+HN_62847-Normal,62847-9_Blood,62847-9_Tumor,Normal,0,,,,,,,1,1,1,6.5,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_B05_592236
+HN_62847-Tumor,62847-9_Tumor,62847-9_Blood,Tumor,0,,OROPHARYNX,PRIMARY,Positive,Not Evaluated,Positive,1,1,1,6.5,
+HN_62854-Normal,62854-7_Blood,62854-7_Tumor,Normal,1,,,,,,,1,0,0,0,
+HN_62854-Tumor,62854-7_Tumor,62854-7_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,0,0,0,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_B07_592328
+HN_62857_2-Normal,Blood_135,Tumor_135,Normal,1,,,,,,,0,0,0,0,
+HN_62857_2-Tumor,Tumor_135,Blood_135,Tumor,1,,ORAL_CAVITY,RECURRENCE,Negative,Negative,Negative,0,0,0,0,
+HN_62860-Normal,62860-2_Blood,62860-2_Tumor,Normal,1,,,,,,,1,1,1,90,
+HN_62860-Tumor,62860-2_Tumor,62860-2_Blood,Tumor,1,,HYPOPHARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,90,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_B11_592340
+HN_62861-Normal,62861-5_Blood,62861-5_Tumor,Normal,1,,,,,,,0,0,0,0,
+HN_62861-Tumor,62861-5_Tumor,62861-5_Blood,Tumor,1,,OROPHARYNX,PRIMARY,Negative,Negative,Negative,0,0,0,0,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_C01_592402
+HN_62863-Normal,62863-1_Blood,62863-1_Tumor,Normal,1,,,,,,,1,1,1,43,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_C03_592364
+HN_62863-Tumor,62863-1_Tumor,62863-1_Blood,Tumor,1,,LARYNX,PRIMARY,Not Evaluated,Negative,Negative,1,1,1,43,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_C04_592264
+HN_62884-Normal,62884-8_Blood,62884-8_Tumor,Normal,0,,,,,,,0,1,1,48,
+HN_62884-Tumor,62884-8_Tumor,62884-8_Blood,Tumor,0,,OROPHARYNX,PRIMARY,Positive,Positive,Positive,0,1,1,48,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_C05_592348
+HN_62897-Normal,62897-4_Blood,62897-4_Tumor,Normal,1,,,,,,,1,1,1,36,
+HN_62897-Tumor,62897-4_Tumor,62897-4_Blood,Tumor,1,,LARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,36,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_C08_592362
+HN_62921-Normal,62921-6_Blood,62921-6_Tumor,Normal,1,,,,,,,0,1,1,20,
+HN_62921-Tumor,62921-6_Tumor,62921-6_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,0,1,1,20,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_C11_592254
+HN_62926-Normal,62926-1_Blood,62926-1_Tumor,Normal,1,,,,,,,1,1,1,88,
+HN_62926-Tumor,62926-1_Tumor,62926-1_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,88,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_D01_592408
+HN_62984-Normal,Blood_144,Tumor_144,Normal,1,,,,,,,1,1,0,0,
+HN_62984-Tumor,Tumor_144,Blood_144,Tumor,1,,ORAL_CAVITY,PRIMARY   ,Negative,Negative,Negative,1,1,0,0,
+HN_62995-Normal,Blood_145,Tumor_145,Normal,1,,,,,,,1,1,1,32,
+HN_62995-Tumor,Tumor_145,Blood_145,Tumor,1,,ORAL_CAVITY,PRIMARY   ,Negative,Negative,Negative,1,1,1,32,
+HN_62996-Normal,62996-0_Blood,62996-0_Tumor,Normal,1,,,,,,,1,1,1,48,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_D04_592336
+HN_62996-Tumor,62996-0_Tumor,62996-0_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,48,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_D05_592272
+HN_63007-Normal,63007-2_Blood,63007-2_Tumor,Normal,1,,,,,,,1,1,1,21,
+HN_63007-Tumor,63007-2_Tumor,63007-2_Blood,Tumor,1,,OROPHARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,21,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_D06_592300
+HN_63021-Normal,63021-8_Blood,63021-8_Tumor,Normal,1,,,,,,,1,1,1,82,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_D08_592238
+HN_63021-Tumor,63021-8_Tumor,63021-8_Blood,Tumor,1,,LARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,82,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_D09_592374
+HN_63027-Normal,Blood_147,Tumor_147,Normal,1,,,,,,,0,1,1,23.3,
+HN_63027-Tumor,Tumor_147,Blood_147,Tumor,1,,OROPHARYNX,PRIMARY   ,Negative,Positive,Positive,0,1,1,23.3,
+HN_63039-Normal,63039-9_Blood,63039-9_Tumor,Normal,1,,,,,,,1,1,1,18,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_D10_592354
+HN_63039-Tumor,63039-9_Tumor,63039-9_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,18,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_D11_592384
+HN_63048-Normal,63048-3_Blood,63048-3_Tumor,Normal,1,,,,,,,1,1,1,11.5,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_D12_592392
+HN_63048-Tumor,63048-3_Tumor,63048-3_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,11.5,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_E01_592344
+HN_63058-Normal,63058-0_Blood,63058-0_Tumor,Normal,1,,,,,,,1,1,1,38,
+HN_63058-Tumor,63058-0_Tumor,63058-0_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,1,1,1,38,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_E02_592250
+HN_63080-Normal,63080-7_Blood,63080-7_Tumor,Normal,1,,,,,,,0,1,1,1.85,
+HN_63080-Tumor,63080-7_Tumor,63080-7_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Negative,Negative,Negative,0,1,1,1.85,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_E04_592288
+HN_63081-Normal,63081-0_Blood,63081-0_Tumor,Normal,1,,,,,,,1,1,1,24.5,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_E06_592310
+HN_63081-Tumor,63081-0_Tumor,63081-0_Blood,Tumor,1,,OROPHARYNX,PRIMARY,Negative,Negative,Negative,1,1,1,24.5,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_E07_592426
+HN_63095-Normal,63095-9_Blood,63095-9_Tumor,Normal,1,,,,,,,1,1,1,70.5,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_A07_592240
+HN_63095-Tumor,63095-9_Tumor,63095-9_Blood,Tumor,1,,HYPOPHARYNX,RECURRENCE,Negative,Negative,Negative,1,1,1,70.5,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_A08_592308
+HN_63114-Normal,63114-9_Blood,63114-9_Tumor,Normal,1,,,,,,,0,1,1,20,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_E08_592420
+HN_63114-Tumor,63114-9_Tumor,63114-9_Blood,Tumor,1,,SINONASAL,PRIMARY,Negative,Negative,Negative,0,1,1,20,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_E09_592252
+HN_63115-Normal,63115-2_Blood,63115-2_Tumor,Normal,1,,,,,,,1,1,1,73,
+HN_63115-Tumor,63115-2_Tumor,63115-2_Blood,Tumor,1,,ORAL_CAVITY,PRIMARY,Positive,Positive,Positive,1,1,1,73,SPITZ_p_HN_SNP_1_N_GenomeWideSNP_6_E10_592356
