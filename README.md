@@ -36,7 +36,7 @@ I highly recomend installing a scientific Python distribution such as [Anaconda]
 
 #Guide to Running 
 
-This repository contains instructions for reproduction and extension of [A prognostic model of head and neck cancer ties TP53 mutation to 3p loss]() by Gross et al.
+This repository contains a number of source packages, as well as IPython notebooks that describe the high level operations and analysis for reproduction of the statics and figures in the manuscript.
 
 ##Initialization
 * __download_data__  
