@@ -40,6 +40,9 @@ This repository contains a number of source packages, as well as IPython noteboo
 
 If you are unfamiliar with this format, I recommend quickly running through [the documentation](http://ipython.org/notebook.html) for instructions on how to view and run these documents.
 
+Notebooks are also represented in HTML format for high level overview without having to set-up the run enviroment.  
+Currently these are located in the Analysis_Notebooks_HTML tarfile (agian this is a temporary solution which will change upon publication). 
+
 ##Initialization
 * __download_data__  
   Pulls all of the necessary data from the net and constructs the file tree and data objects used in the rest of the analysis. 

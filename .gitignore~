@@ -1,0 +1,20 @@
+# Meta-data
+.metadata
+.settings
+.project
+.pydevproject
+
+# compiled Python files
+*.py[cod] 
+
+# R output files
+*.Rout
+
+# PyCharm File
+.idea/
+
+# user specific parameter file
+global_params.txt
+
+Data/
+
