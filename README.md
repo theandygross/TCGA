@@ -32,11 +32,13 @@ I highly recomend installing a scientific Python distribution such as [Anaconda]
   * MASS
    
 ##Command Line Dependencies 
-* curl (http://curl.haxx.se/) for fetching urls
+* [curl](http://curl.haxx.se/) for fetching urls
 
 #Guide to Running 
 
 This repository contains a number of source packages, as well as IPython notebooks that describe the high level operations and analysis for reproduction of the statics and figures in the manuscript.
+
+If you are unfamiliar with this format, I recommend quickly running through [the documentation](http://ipython.org/notebook.html) for instructions on how to view and run these documents.
 
 ##Initialization
 * __download_data__  
