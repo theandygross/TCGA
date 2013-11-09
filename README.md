@@ -11,6 +11,6 @@ It is important to note that this is merely a temporary solution while the manus
 
 The contents of this repository are now located at https://github.com/theandygross/TCGA_Review.
 
-This is accessible under the user-name __TCGA_Review_Temporary__.
+This is accessible under the user-name __TCGA-Review-Temporary__.
 The password is the full name of the 4th author in the list of authors on the manuscript in the format __FIRST_MIDDLE_LAST__ (Note all caps).
 
