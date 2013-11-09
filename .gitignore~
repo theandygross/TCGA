@@ -4,6 +4,9 @@
 .project
 .pydevproject
 
+#temporary files
+~*
+
 # compiled Python files
 *.py[cod] 
 
@@ -16,5 +19,6 @@
 # user specific parameter file
 global_params.txt
 
+# Data folder
 Data/
 

@@ -4,6 +4,9 @@
 .project
 .pydevproject
 
+#temporary files
+*~
+
 # compiled Python files
 *.py[cod] 
 
