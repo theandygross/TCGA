@@ -192,7 +192,6 @@ class Dataset(object):
         self.patients = []
         self.df = None
         self.features = None
-        self.compressed = False
         return
         
     def compress(self):

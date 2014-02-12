@@ -14,6 +14,7 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import auc_score, precision_score
 from sklearn.svm import SVC
 
+
 def SVC_fill_old(feature, df):
     gg = df.apply(lambda s: to_quants(s, std=1) > 0)
     diff = screen_feature(feature, chi2_cont_test, gg)
@@ -50,7 +51,8 @@ def SVC_fill_old(feature, df):
     filled_feature = f.astype(float)
     return {'auc': auc, 'model': best, 'decision_function': fun,
             'inferred_values': inferred, 'filled_feature': filled_feature} 
-    
+
+
 def SVC_fill(feature, df, metric='auc', test_size=.3):
     '''
     ###Support Vector Inference 
