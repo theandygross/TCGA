@@ -31,7 +31,7 @@ def mut_filter(df, rate, binary_cutoff=12):
     direction.name = 'direction'
 
     cc = cc.join(direction)
-    cc = cc[cc.direction is False]
+    cc = cc[cc.direction == False]
 
     df = df.ix[H.true_index(cc.p > .01)]
     df = df.dropna(axis=1)
