@@ -173,22 +173,23 @@ def format_survival(clin, followup):
         f = clin2
     time_vars = ['daystodeath', 'daystolastfollowup', 'daystolastknownalive']
     time_cols = list(f.columns.intersection(time_vars))
-    f = f.sort(columns=time_cols, ascending=False)
+    f = f.ix[f[time_cols].max(1).order().index]
     f = f.groupby(lambda s: s[0][:12]).last()
-    
-    timeline = f[time_cols].dropna(how='all')
-    timeline['days'] = timeline.astype(float).max(1)
-    deceased = f.vitalstatus.dropna() == 'deceased'
-    
+
+    timeline = f[time_cols].dropna(how='all').astype(float)
+    timeline['days'] = timeline.max(1)
+    deceased = timeline.daystodeath.isnull() == False
+
     events = f.select(lambda s: 'days' in s, 1)
     timeline = events.combine_first(timeline).astype(float)
-    timeline[timeline < -1] = np.nan
+    timeline[timeline < 15] = np.nan
     survival = pd.concat([timeline.days, deceased], keys=['days', 'event'],
                          axis=1)
     survival = survival.dropna().stack().astype(float)
-    
+
     f_vars = ['days', 'daystonewtumoreventafterinitialtreatment',
               'daystotumorprogression', 'daystotumorrecurrence',
+              'daystonewtumoreventafterinitialtreatment',
               'daystonewtumoreventafterinitialtreatment']
     followup_cols = list(timeline.columns.intersection(f_vars))
     pfs = timeline[followup_cols].min(1)
