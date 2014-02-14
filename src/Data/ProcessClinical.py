@@ -127,22 +127,29 @@ def format_radiation(br):
 
 def format_clinical_var(br):
     """
-    Format clinical variables that are not associated with drug, follow-up, 
+    Format clinical variables that are not associated with drug, follow-up,
     or radiation.
-    
+
     Input
         br: clinical DataFrame with patient bar-codes on the columns
     """
-    cl = [s for s in br.index if (s.count('.') == 1) 
+    cl = [s for s in br.index if (s.count('.') == 1)
                               and s.startswith('patient')]
     clinical = br.ix[cl]
     clinical.index = clinical.index.map(lambda s: s.split('.')[1])
-    clinical = clinical.T.dropna(axis=1, how='all')
-    
-    clinical['age'] = clinical.ageatinitialpathologicdiagnosis.astype(float)
-    del clinical['ageatinitialpathologicdiagnosis']    
-    return clinical
 
+    cl = [s for s in br.index if (s.count('.') == 2)
+                              and s.startswith('patient.primarypathology')]
+    clinical2 = br.ix[cl]
+    clinical2.index = clinical2.index.map(lambda s: s.split('.')[2])
+
+    clinical = clinical.append(clinical2)
+    clinical = clinical.T.dropna(axis=1, how='all')
+
+
+    clinical['age'] = clinical.ageatinitialpathologicdiagnosis.astype(float)
+    del clinical['ageatinitialpathologicdiagnosis']
+    return clinical
 
 def format_survival(clin, followup):
     """
@@ -165,41 +172,34 @@ def format_survival(clin, followup):
                   timelines
     """
     clin2 = clin.copy()
-    ft = pd.MultiIndex.from_tuples
-    clin2.index = ft([(i, 'surgery', 0) for i in clin2.index])
+    clin2.index = pd.MultiIndex.from_tuples([(i, 'surgery', 0) for i in clin2.index])
     if type(followup) == pd.DataFrame:
         f = followup.append(clin2)
     else:
         f = clin2
-    time_vars = ['daystodeath', 'daystolastfollowup', 'daystolastknownalive']
+    time_vars = ['daystodeath', 'daystolastfollowup', 'daystolastknownalive',
+                 'daystonewtumoreventafterinitialtreatment', 'daystotumorprogression',
+                 'daystotumorrecurrence']
     time_cols = list(f.columns.intersection(time_vars))
-    f = f.ix[f[time_cols].max(1).order().index]
-    f = f.groupby(lambda s: s[0][:12]).last()
-
     timeline = f[time_cols].dropna(how='all').astype(float)
     timeline['days'] = timeline.max(1)
+    timeline = timeline.groupby(level=0).max()
     deceased = timeline.daystodeath.isnull() == False
 
-    events = f.select(lambda s: 'days' in s, 1)
-    timeline = events.combine_first(timeline).astype(float)
-    timeline[timeline < 15] = np.nan
-    survival = pd.concat([timeline.days, deceased], keys=['days', 'event'],
-                         axis=1)
+    days = timeline.days[timeline.days > 7]
+    survival = pd.concat([days, deceased], keys=['days', 'event'], axis=1)
     survival = survival.dropna().stack().astype(float)
 
-    f_vars = ['days', 'daystonewtumoreventafterinitialtreatment',
-              'daystotumorprogression', 'daystotumorrecurrence',
-              'daystonewtumoreventafterinitialtreatment',
-              'daystonewtumoreventafterinitialtreatment']
-    followup_cols = list(timeline.columns.intersection(f_vars))
-    pfs = timeline[followup_cols].min(1)
-    # pfs = pd.concat([timeline.days, timeline[followup_cols]], axis=1).min(1)
-    event = ((pfs < timeline.days) + deceased) > 0
-    pfs = pd.concat([pfs, event], keys=['days', 'event'], axis=1)
+    pfs_var = 'daystonewtumoreventafterinitialtreatment'
+    new_tumor = followup[pfs_var].dropna().groupby(level=0).min()
+    time_to_progression = pd.concat([new_tumor, timeline.days], 1).min(1)
+    time_to_progression = time_to_progression[time_to_progression > 7]
+    progression = (deceased | pd.Series(1, index=new_tumor.index))
+    pfs = pd.concat([time_to_progression, progression], keys=['days', 'event'],
+                    axis=1)
     pfs = pfs.dropna().stack().astype(float)
-    
-    survival = pd.concat([survival, pfs],
-                         keys=['survival', 'event_free_survival'],
+
+    survival = pd.concat([survival, pfs], keys=['survival', 'event_free_survival'],
                          axis=1)
     return survival, timeline
 
@@ -221,7 +221,7 @@ def get_clinical(cancer, data_path, patients=None, **params):
     """
     f = '{}stddata/{}/Clinical/{}.clin.merged.txt'.format(data_path, cancer,
                                                           cancer)
-    tab = pd.read_table(f, index_col=0)
+    tab = pd.read_table(f, index_col=0, low_memory=False)
     tab.columns = tab.ix['patient.bcrpatientbarcode'].map(str.upper)
     tab = tab.T.sort_index().drop_duplicates().T
     
