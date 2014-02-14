@@ -191,14 +191,16 @@ def format_survival(clin, followup):
     survival = survival.dropna().stack().astype(float)
 
     pfs_var = 'daystonewtumoreventafterinitialtreatment'
-    new_tumor = followup[pfs_var].dropna().groupby(level=0).min()
-    time_to_progression = pd.concat([new_tumor, timeline.days], 1).min(1)
-    time_to_progression = time_to_progression[time_to_progression > 7]
-    progression = (deceased | pd.Series(1, index=new_tumor.index))
-    pfs = pd.concat([time_to_progression, progression], keys=['days', 'event'],
-                    axis=1)
-    pfs = pfs.dropna().stack().astype(float)
-
+    if (followup is not None) and (pfs_var in followup):
+        new_tumor = followup[pfs_var].dropna().groupby(level=0).min()
+        time_to_progression = pd.concat([new_tumor, timeline.days], 1).min(1)
+        time_to_progression = time_to_progression[time_to_progression > 7]
+        progression = (deceased | pd.Series(1, index=new_tumor.index))
+        pfs = pd.concat([time_to_progression, progression], keys=['days', 'event'],
+                        axis=1)
+        pfs = pfs.dropna().stack().astype(float)
+    else:
+        pfs = survival
     survival = pd.concat([survival, pfs], keys=['survival', 'event_free_survival'],
                          axis=1)
     return survival, timeline
