@@ -191,7 +191,7 @@ def process_covariates(surv, feature=None, cov=None):
         cov[c_real.columns] = c_real
     cov = cov.dropna(1, how='all')
     df = cov.join(surv.unstack()).dropna()
-    df['days'] = df['days'] / 365.
+    df.loc[:,'days'] = df.loc[:, 'days'] / 365
     df = df.groupby(level=0).first()
     if len(feature.dropna()) == 0:
         feature = None 
