@@ -91,14 +91,15 @@ def get_mutation_matrix(data_path, cancer, tissue_code='01'):
     so I am returning only non-silent mutations.  
     """
     path = '{}/analyses/{}/MutSigNozzleReport2/'.format(data_path, cancer)
-    maf = pd.read_table(path + cancer + '-TP.final_analysis_set.maf')
+    f = [f for f in os.listdir(path) if f.endswith('.maf')][0]
+    maf = pd.read_table(path + f, low_memory=False)
     maf = maf.dropna(how='all', axis=[0, 1])
     maf = maf.set_index(['Hugo_Symbol', 'Tumor_Sample_Barcode'])
     non_silent = maf[maf.is_silent == 0]
     non_silent['counter'] = 1
     hit_matrix = non_silent.counter.groupby(level=[0, 1]).sum().unstack()
     hit_matrix = fix_barcode_columns(hit_matrix, tissue_code=tissue_code)
-    return hit_matrix  
+    return hit_matrix
 
 
 def get_submaf(data_path, cancer, genes='All', fields='basic'):
@@ -109,7 +110,8 @@ def get_submaf(data_path, cancer, genes='All', fields='basic'):
     fields: ['basic', 'all']: if basic, returns reduced version of MAF
     """
     path = '{}/analyses/{}/MutSigNozzleReport2/'.format(data_path, cancer)
-    maf = pd.read_table(path + cancer + '-TP.final_analysis_set.maf')
+    maf = pd.read_table(path + cancer + '-TP.final_analysis_set.maf',
+                        low_memory=False)
     maf = maf.dropna(how='all', axis=[0, 1])
     maf['Tissue_Type'] = maf.Tumor_Sample_Barcode.map(lambda s: s[13:15])
     maf.Tumor_Sample_Barcode = maf.Tumor_Sample_Barcode.map(lambda s: s[:12])
@@ -165,7 +167,8 @@ def get_gistic_lesions(data_path, cancer, patients=None, tissue_code='01'):
     lesions.index = from_tuples([(s[0].split(' ')[0], s[1].strip(), 'Lesion') 
                                  for s in lesions.index])
     lesions = lesions.groupby(level=[0, 1, 2]).first()
-    lesions.T['Deletion'] = (lesions.T['Deletion'] * -1).replace(-0, 0)
+    if 'Deletion' in lesions.index.get_level_values(0):
+        lesions.T['Deletion'] = (lesions.T['Deletion'] * -1).replace(-0, 0)
     lesions = fix_barcode_columns(lesions, patients, tissue_code)
     return lesions
 
