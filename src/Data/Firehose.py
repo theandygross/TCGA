@@ -110,8 +110,8 @@ def get_submaf(data_path, cancer, genes='All', fields='basic'):
     fields: ['basic', 'all']: if basic, returns reduced version of MAF
     """
     path = '{}/analyses/{}/MutSigNozzleReport2/'.format(data_path, cancer)
-    maf = pd.read_table(path + cancer + '-TP.final_analysis_set.maf',
-                        low_memory=False)
+    f = [f for f in os.listdir(path) if f.endswith('.maf')][0]
+    maf = pd.read_table(path + f, low_memory=False)
     maf = maf.dropna(how='all', axis=[0, 1])
     maf['Tissue_Type'] = maf.Tumor_Sample_Barcode.map(lambda s: s[13:15])
     maf.Tumor_Sample_Barcode = maf.Tumor_Sample_Barcode.map(lambda s: s[:12])
