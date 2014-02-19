@@ -186,7 +186,7 @@ def format_survival(clin, followup):
     timeline = timeline.groupby(level=0).max()
     deceased = timeline.daystodeath.isnull() == False
 
-    days = timeline.days[timeline.days > 7]
+    days = timeline.days[((timeline.days > 7) | (deceased == False))]
     survival = pd.concat([days, deceased], keys=['days', 'event'], axis=1)
     survival = survival.dropna().stack().astype(float)
 
