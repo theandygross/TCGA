@@ -90,7 +90,7 @@ def get_mutation_matrix(data_path, cancer, tissue_code='01'):
     Here I filter by the is_silent column in the MAF file, 
     so I am returning only non-silent mutations.  
     """
-    path = '{}/analyses/{}/MutSigNozzleReport2/'.format(data_path, cancer)
+    path = '{}/analyses/{}/Mutation_Assessor/'.format(data_path, cancer)
     f = [f for f in os.listdir(path) if f.endswith('.maf')][0]
     maf = pd.read_table(path + f, low_memory=False)
     maf = maf.dropna(how='all', axis=[0, 1])
@@ -109,7 +109,7 @@ def get_submaf(data_path, cancer, genes='All', fields='basic'):
     genes: list of genes for which to return data
     fields: ['basic', 'all']: if basic, returns reduced version of MAF
     """
-    path = '{}/analyses/{}/MutSigNozzleReport2/'.format(data_path, cancer)
+    path = '{}/analyses/{}/Mutation_Assessor/'.format(data_path, cancer)
     f = [f for f in os.listdir(path) if f.endswith('.maf')][0]
     maf = pd.read_table(path + f, low_memory=False)
     maf = maf.dropna(how='all', axis=[0, 1])
