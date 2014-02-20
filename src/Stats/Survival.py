@@ -104,20 +104,22 @@ def cox_model_selection(surv, feature=None, covariates=None, interactions=True):
     best_res = survival.coxph(best_model, df)
     return best_res
 
-def LR_test(full, reduced):
+
+def LR_test(full, reduced, df=None):
     '''
-    Perform Likelihood ratio test on two R models. 
+    Perform Likelihood ratio test on two R models.
     '''
     full_ll = list(full.rx2('loglik'))
     reduced_ll = list(reduced.rx2('loglik'))
     assert full_ll[0] == reduced_ll[0]
     if len(full_ll) == 1:
         return 1.
-    full_df = len(full.rx2('coefficients')) 
+    full_df = len(full.rx2('coefficients'))
     if len(reduced_ll) == 1:
         return stats.chi2.sf(2 * full_ll[1] - 2 * full_ll[0], full_df)
     reduced_df = len(reduced.rx2('coefficients'))
-    df = max(full_df - reduced_df, 1)
+    if df is None:
+        df = max(full_df - reduced_df, 1)
     return stats.chi2.sf(2 * full_ll[1] - 2 * reduced_ll[1], df)
 
 def sanitize_lr(feature):
@@ -591,25 +593,7 @@ def interaction_empirical_p_resample(a, b, surv, num_perm=101, check_first=True)
     
     empirical_p = 1.*(len(vec) - sum(vec <= r)) / len(vec)
     return pd.Series({'p': empirical_p, 'interaction': int_direction})
-'''
-def get_interactions(df, cov_df, surv, test):
-    binary = df[df.T.describe().ix['unique'] == 2]
-    n_tests = (len(binary) * (len(binary) - 1)) / 2
-    s = pd.DataFrame({(a,b): Surv.interaction(v1,v2, surv) 
-                          for a,v1 in binary.iterrows()
-                          for b,v2 in binary.iterrows()
-                          if (a < b)
-                          and fisher_exact_test(v1,v2).ix['p'] < (.3 / n_tests)}).T
-    int_pairs =  s.ix[s.p < 1].sort('p')
-    
-    int_associations = {}
-    for p,vals in int_pairs.iterrows():
-        combo = H.combine(binary.ix[p[0]], binary.ix[p[1]])
-        vec = combo == vals['interaction']
-        int_associations[p] = test(vec, surv, cov_df) 
-    int_associations = pd.DataFrame(int_associations).T
-    return s, int_associations
-'''
+
 
 def get_interactions(df, cov_df, surv, test):
     binary = df[df.T.describe().ix['unique'] == 2]
