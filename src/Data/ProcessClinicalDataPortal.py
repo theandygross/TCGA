@@ -9,16 +9,21 @@ import numpy as np
 
 from Data.ProcessClinical import try_float
 
+
 def read_clinical_data(path, cancer):
     cancer = cancer.lower()
     na_vals = ['[Completed]', '[Not Available]', '[Not Applicable]', 'null']
+    #pat = pd.read_table(path + 'clinical_patient_{}.txt'.format(cancer),
+    #                    index_col=0, na_values=na_vals)
     pat = pd.read_table(path + 'clinical_patient_{}.txt'.format(cancer),
-                        index_col=0, na_values=na_vals)
+                        index_col=0, skiprows=[0, 2], na_values=na_vals)
     f = pat.dropna(axis=1, how='all')
     for fu in os.listdir(path):
         if 'clinical_follow_up' not in fu:
             continue
-        followup = pd.read_table(path + fu, index_col=0, na_values=na_vals)
+        #followup = pd.read_table(path + fu, index_col=0, na_values=na_vals)
+        followup = pd.read_table(path + fu, index_col=0, skiprows=[0, 2],
+                                 na_values=na_vals)
         f = pd.concat([f, followup])
     f.columns = f.columns.map(lambda s: s.replace('_', '').lower())
     
@@ -52,7 +57,8 @@ def format_survival_data(timeline, clin):
     f_vars = ['days', 'daystonewtumoreventafterinitialtreatment',
               'daystotumorprogression', 'daystotumorrecurrence',
               'daystonewtumoreventafterinitialtreatment',
-              'daystonewtumoreventafterinitialtreatment']
+              'daystonewtumoreventafterinitialtreatment',
+              'newtumoreventdxdaysto', 'daystocompletionofcurativetx']
     followup_cols = list(timeline.columns.intersection(f_vars))
     pfs = timeline[followup_cols].min(1)
     # pfs = pd.concat([timeline.days, timeline[followup_cols]], axis=1).min(1)
