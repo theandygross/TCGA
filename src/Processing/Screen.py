@@ -8,7 +8,7 @@ import numpy as np
 
 import Processing.Helpers as H
 from Stats.Scipy import rev_kruskal
-from Stats.Scipy import spearman_pandas
+from Stats.Scipy import ttest_rel
 from Initialization.InitializeReal import exp_change
 
 
@@ -31,9 +31,10 @@ def mut_filter(df, rate, binary_cutoff=12):
     direction.name = 'direction'
 
     cc = cc.join(direction)
-    cc = cc[cc.direction == False]
+    #cc = cc[cc.direction == False]
+    #return cc
 
-    df = df.ix[H.true_index(cc.p > .01)]
+    df = df.ix[H.true_index((cc.p > .01) | (cc.direction == True))]
     df = df.dropna(axis=1)
     return df
 
@@ -91,16 +92,18 @@ def binarize_feature(f):
     return f > split
 
 
-def remove_redundant_pathways(pathways, background, cutoff=.7,
-                              binarize=False):
+def remove_redundant_pathways(pathways, rna, cutoff=.7, binarize=False):
     """
     Screens out redundant pathways with high correlation above _cutoff_.
     Pathways are ranked based on lack of correlation to the background signal.
     Then if two pathways have high correlation the lower ranked pathway is 
     removed.  
     """
-    bg = H.screen_feature(background, spearman_pandas, pathways)
-    dd = pathways.ix[bg.index[::-1]].T.corr()
+    #bg = H.screen_feature(background, spearman_pandas, pathways)
+    dx = pd.DataFrame({p: ttest_rel(rna.df.ix[l.index].T.dot(l)) for p,l in
+                rna.loadings.iteritems()}).T
+    dx = dx.t.abs()
+    dd = pathways.ix[dx.index[::-1]].T.corr()
     dd = pd.DataFrame(np.triu(dd, 1), dd.index, dd.index)
     dd = dd.replace(0, np.nan).stack()
     drop = dd[dd.abs() > cutoff].index.get_level_values(1)
@@ -153,16 +156,17 @@ class Screen(object):
     Object to hold data and results for survival screen.
     """
 
-    def __init__(self, mut, cn, rna, mirna, clinical_df):
+    def __init__(self, mut, cn, rna, mirna, clinical_df, surv):
+        self.surv = surv
+
         """Process Gene / Pathway Expression"""
-        pathways = remove_redundant_pathways(rna.pathways, rna.global_vars.background,
-                                             binarize=True)
+        pathways = remove_redundant_pathways(rna.pathways, rna, binarize=True)
         rna_gene_df = extract_diff_exp_rna(rna, n=300, binarize=True)
-        self.rna_df = pd.concat([rna_gene_df, pathways]).T
+        self.rna_df = pd.concat([rna_gene_df, pathways])
 
         """Process miRNA Expression"""
         mirna_binarized = mirna.features.ix['real'].apply(binarize_feature, 1)
-        self.mirna_df = pd.concat([mirna.features.ix['binary'], mirna_binarized]).T
+        self.mirna_df = pd.concat([mirna.features.ix['binary'], mirna_binarized])
 
         """Process mutation data"""
         self.rate = mut.df.sum()
@@ -174,6 +178,7 @@ class Screen(object):
         """Process Clinical Data"""
         self.clinical_df = clinical_df
 
+
     def get_patient_set(self, filters):
         f1 = list(filters)
         filter_df = pd.concat(f1, axis=1)
@@ -181,6 +186,9 @@ class Screen(object):
         keepers_o = H.true_index(clinical_filter)
         keepers_o = keepers_o.intersection(self.mut_df.columns)
         keepers_o = keepers_o.intersection(self.cna_df.columns)
+        keepers_o = keepers_o.intersection(self.surv.unstack().index)
+        keepers_o = keepers_o.intersection(self.rna_df.columns)
+        keepers_o = keepers_o.intersection(self.mirna_df.columns)
         return keepers_o
 
     def get_data(self, keepers_o, cutoff=12):
@@ -193,8 +201,8 @@ class Screen(object):
         df = pd.concat({'clinical': self.clinical_df,
                         'mutation': mut_df,
                         'cna': cna_df,
-                        'rna': self.rna_df,
-                        'mirna': self.mirna_df}, axis=1).T
+                        'rna': self.rna_df.T,
+                        'mirna': self.mirna_df.T}, axis=1).T
         df = df.ix[:, keepers_o]
         df = filter_binary(df, cutoff)
         return df
