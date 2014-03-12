@@ -91,7 +91,7 @@ def get_mutation_matrix(data_path, cancer, tissue_code='01'):
     so I am returning only non-silent mutations.  
     """
     path = '{}/analyses/{}/Mutation_Assessor/'.format(data_path, cancer)
-    f = [f for f in os.listdir(path) if f.endswith('.maf')][0]
+    f = [f for f in os.listdir(path) if f.endswith('.maf.annotated')][0]
     maf = pd.read_table(path + f, low_memory=False)
     maf = maf.dropna(how='all', axis=[0, 1])
     maf = maf.set_index(['Hugo_Symbol', 'Tumor_Sample_Barcode'])
@@ -110,7 +110,7 @@ def get_submaf(data_path, cancer, genes='All', fields='basic'):
     fields: ['basic', 'all']: if basic, returns reduced version of MAF
     """
     path = '{}/analyses/{}/Mutation_Assessor/'.format(data_path, cancer)
-    f = [f for f in os.listdir(path) if f.endswith('.maf')][0]
+    f = [f for f in os.listdir(path) if f.endswith('.maf.annotated')][0]
     maf = pd.read_table(path + f, low_memory=False)
     maf = maf.dropna(how='all', axis=[0, 1])
     maf['Tissue_Type'] = maf.Tumor_Sample_Barcode.map(lambda s: s[13:15])
