@@ -60,7 +60,8 @@ def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None, ms=80, alpha
     for i, group in enumerate(groups):
         censoring = call[(call.event == 0) * (call.feature == group)].days
         surv = tab[tab.strata == (i + 1)].surv
-        surv = surv.set_value(0., 1.).sort_index()  # Pandas bug, needs to be float
+        surv = surv.copy().set_value(0., 1.)
+        surv = surv.sort_index()
         if surv.index[-1] < censoring.max():
             surv = surv.set_value(censoring.max(), surv.iget(-1)).sort_index()
 
