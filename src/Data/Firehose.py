@@ -139,7 +139,8 @@ def get_gistic_gene_matrix(data_path, cancer, tissue_code='01'):
     """
     path = '{}/analyses/{}/CopyNumber_Gistic2/'.format(data_path, cancer)
     gistic = pd.read_table(path + 'all_thresholded.by_genes.txt',
-                           index_col=[2, 1, 0]) 
+                           index_col=[2, 1, 0],
+                           low_memory=False)
     gistic = fix_barcode_columns(gistic, tissue_code=tissue_code)
     return gistic
 
@@ -149,7 +150,8 @@ def get_gistic_arm_values(data_path, cancer, tissue_code='01'):
     Reads in arm by patient copy-number alteration matrix.  
     """
     path = '{}/analyses/{}/CopyNumber_Gistic2/'.format(data_path, cancer)
-    gistic = pd.read_table(path + 'broad_values_by_arm.txt', index_col=0) 
+    gistic = pd.read_table(path + 'broad_values_by_arm.txt', index_col=0,
+                           low_memory=False)
     gistic = fix_barcode_columns(gistic, tissue_code=tissue_code)
     return gistic
 
@@ -160,7 +162,8 @@ def get_gistic_lesions(data_path, cancer, patients=None, tissue_code='01'):
     Returns thresholded calls as made by GISTIC2 in the Firehose pipeline. 
     """
     path = '{}/analyses/{}/CopyNumber_Gistic2/'.format(data_path, cancer)
-    gistic = pd.read_table(path + 'all_lesions.conf_99.txt', index_col=[0, 1])
+    gistic = pd.read_table(path + 'all_lesions.conf_99.txt', index_col=[0, 1],
+                           low_memory=False)
     lesions = gistic.select(lambda s: 'TCGA' in s, axis=1) 
     lesions = lesions.select(lambda s: 'values' not in s[0], axis=0) 
     from_tuples = pd.MultiIndex.from_tuples
@@ -185,7 +188,8 @@ def read_rppa(data_path, cancer, patients=None, tissue_code='01'):
     Index is MultiIndex with ['protien','antibody'] on the levels. 
     """
     path = '{}/stddata/{}/RPPA_AnnotateWithGene/'.format(data_path, cancer)
-    rppa = pd.read_table(path + cancer + '.rppa.txt', index_col=0)
+    rppa = pd.read_table(path + cancer + '.rppa.txt', index_col=0,
+                         low_memory=False)
     rppa['protien'] = rppa.index.map(lambda s: s.split('|')[0])
     rppa['antibody'] = rppa.index.map(lambda s: s.split('|')[1])
     rppa = rppa.set_index(['protien', 'antibody'])
@@ -205,7 +209,8 @@ def read_rnaSeq(data_path, cancer, patients=None, average_on_genes=True,
     if files is None:
         return 
     
-    rnaSeq = pd.concat([pd.read_table(f, index_col=0, skiprows=[1])
+    rnaSeq = pd.concat([pd.read_table(f, index_col=0, skiprows=[1],
+                                      low_memory=False)
                         for f in files])
     rnaSeq = np.log2(rnaSeq).replace(-np.inf, -3.)  # close enough to 0
     if average_on_genes:  # Pretty much all duplicates are unknown ('?')
@@ -239,7 +244,8 @@ def read_mrna(data_path, cancer, patients=None, tissue_code='01'):
     if files is None:
         return 
     mrna = pd.concat([pd.read_table(f, index_col=0, skiprows=[1],
-                                    na_values=['null'])
+                                    na_values=['null'],
+                                    low_memory=False)
                       for f in files])
     mrna = fix_barcode_columns(mrna, patients, tissue_code)
     return mrna
@@ -259,7 +265,8 @@ def read_miRNASeq(data_path, cancer, patients=None, tissue_code='01'):
     data = []
     for path in paths:
         f = [f for f in os.listdir(path) if 'data' in f][0]
-        mirna = pd.read_table(path + '/' + f, index_col=0, header=None)
+        mirna = pd.read_table(path + '/' + f, index_col=0, header=None,
+                              low_memory=False)
         data.append(mirna)
     mirna = pd.concat(data, axis=1)
     mirna = mirna.T.set_index(['miRNA_ID', 'Hybridization REF'])
