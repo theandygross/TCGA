@@ -1,0 +1,3 @@
+strict graph test {
+	Hello -- World;
+}
