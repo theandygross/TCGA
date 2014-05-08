@@ -2,13 +2,13 @@
 
 This repository contains instructions for reproduction and extension of [A prognostic model of head and neck cancer ties TP53 mutation to 3p loss]() by Gross et al.
 
-#Dependencies 
+##Dependencies 
 
 This code uses a number of features in the scientific python stack as well as a small set of standard R libraries.  Thus far, this code has only been tested in a Linux enviroment, it may take some modification to run on other operating systems.
 
 I highly recomend installing a scientific Python distribution such as [Anaconda](http://continuum.io/) or [Enthought](https://www.enthought.com/) to handle the majority of the Python dependencies in this project (other than rPy2 and matplotlib_venn).  These are both free for academic use.
 
-##Python Dependencies  
+###Python Dependencies  
 * [Numpy and Scipy](http://www.scipy.org/), numeric calculations and statistics in Python 
 * [matplotlib](http://matplotlib.org/), plotting in Python
 * [Pandas](http://pandas.pydata.org/), data-frames for Python, handles the majority of data-structures  
@@ -24,24 +24,17 @@ I highly recomend installing a scientific Python distribution such as [Anaconda]
   * Only used for Venn diagrams, not essential
   
   
-##R Dependencies
+###R Dependencies
 * Needs to be compiled with shared libraries to communicate with Python (_this can be tricky_)
 * Packages
   * base
   * survival
   * MASS
    
-##Command Line Dependencies 
-* [curl](http://curl.haxx.se/) for fetching urls
+###Command Line Dependencies 
+* curl (http://curl.haxx.se/) for fetching urls
 
 #Guide to Running 
-
-This repository contains a number of source packages, as well as IPython notebooks that describe the high level operations and analysis for reproduction of the statics and figures in the manuscript.
-
-If you are unfamiliar with this format, I recommend quickly running through [the documentation](http://ipython.org/notebook.html) for instructions on how to view and run these documents.
-
-Notebooks are also represented in HTML format for high level overview without having to set-up the run enviroment.
-Currently these are located in the Analysis_Notebooks_HTML tarfile (agian this is a temporary solution which will change upon publication). 
 
 ##Initialization
 * __download_data__  
@@ -55,7 +48,9 @@ Currently these are located in the Analysis_Notebooks_HTML tarfile (agian this i
 * __get_updated_clinical__  
   Script to download and process updated clinical data from the TCGA Data Portal.
   
-##Primary Analysis 
+  
+##Primary Analysis  
+(There are dependencies among these, run them in order.)
 * __Clinical_Inference_HPV__  
   Compile HPV status for all patient tumors, infer values for patients with no recorded status.  
   Calculate global variables and meta feature in the HPV- background. 
@@ -69,17 +64,38 @@ Currently these are located in the Analysis_Notebooks_HTML tarfile (agian this i
   Overview of clinical variables in the TCGA HNSCC cohort and their implications towards patient prognosis.
   
   
-* __HNSCC_subtypes__  
-  Run the iterative prognostic screen for HPV- HNSCC patients.  
+* __HNSCC_biomarkers__  
+  Run the prognostic screen for HPV- HNSCC patients.  
   
-##Targeted Analysis for Support of Main Findings  
+  
+* __HNSCC_biomarkers_next__   
+  Run the prognostic screen for HPV- HNSCC patients with the TP53-3p event.
+  
+  
+* __HNSCC_figures__  
+  Generate some of the figure panels for the HNSCC discovery cohort.  Some of the other figures and figure panels are generated inline with analysis. 
+  
+  
+##Validation Cohorts
+
 * __UPMC_cohort__  
   Validation of primary findings in independent patient cohort from University of Pittsburgh ([Stansky et al.](http://www.sciencemag.org/content/333/6046/1157.full)).
+  
+
+* __HNSCC_Molecular_Validation__  
+Validation of molecular associations in recent TCGA samples
 
 
 * __PANCAN_cohort__  
-  Validation of primary findings across ~3000 TCGA patient tumors.  
+  Validation of primary findings across ~4400 TCGA patient tumors.  
   
+
+
+
+  
+##Targeted Analysis for Support of Main Findings  
+
+
 
 * __TP53_exploration__  
   Detailed characterization of TP53 mutations and their predicted functional impact. 
@@ -100,3 +116,21 @@ Currently these are located in the Analysis_Notebooks_HTML tarfile (agian this i
 * __HNSCC_subtypes_molecular__ 
   Characterization of molecular coorelates of the primary subtypes.  
   Generates most figures that describe the TCGA HNSCC cohort.
+  
+  
+##Variant Calling (optional)
+
+This requires a number of additional dependencies for sequencing analysis and as well as function calls to proprietary software installed on our virtual machine hosed by Annai Systems.  We have included all of the dependencies of this mutation calling step in the supplement as MAF files and highly recomend starting with these as opposed to recalling mutations. 
+
+  
+* __muTect_streamline__  
+  This script is used to generate bash scripts to download and process additional TCGA data from CGHub.  
+  
+  
+* __new_data_process_HNSCC__  
+  Here we process the SNV and indel calls made by the variant calling tools, annotate them and consolidate them into a MAF file.
+  
+  
+* __new_data_process_TP53_Pancancer__  
+  Here we process the SNV and indel calls made by the variant calling tools, annotate them and consolidate them into a MAF file.
+  
