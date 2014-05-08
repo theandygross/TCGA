@@ -17,7 +17,7 @@ survival = robjects.packages.importr('survival')
 base = robjects.packages.importr('base')
 mass = robjects.packages.importr('MASS')
 
-robjects.r.options(warn= -1);
+robjects.r.options(warn= -1)
 zz = robjects.r.file("all.Rout", open="wt")
 robjects.r.sink(zz, type='message')
 
