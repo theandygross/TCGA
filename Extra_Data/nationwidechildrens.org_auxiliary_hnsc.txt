@@ -1,0 +1,519 @@
+bcr_patient_barcode	hpv_call_1	hpv_call_2	hpv_call_3	hpv_status
+CDE_ID:2673794				
+TCGA-CN-6010	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6011	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6012	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6013	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6016	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6017	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6018	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6019	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6020	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6021	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6022	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6023	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6024	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-5323	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CQ-5324	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-5325	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-5327	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-5329	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-5330	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-5332	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-5334	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5430	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5432	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5434	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5435	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5439	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5966	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5970	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5971	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CV-5973	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5976	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5977	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5978	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5979	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6003	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6433	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CV-6436	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6441	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-5152	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BA-6869	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-6870	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-6871	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-6872	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-6873	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-4227	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CN-4733	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-5326	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-5331	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-6467	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CR-6470	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-6471	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CR-6472	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-6473	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-6474	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-6477	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-6478	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-6480	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-6481	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-6482	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-6484	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-6487	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-6491	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-6493	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-D6-6515	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-6516	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-6517	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-DQ-5624	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-DQ-5625	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-DQ-5629	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-DQ-5630	[Not Available]	[Not Available]	[Not Available]	Indeterminate
+TCGA-DQ-5631	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BA-6868	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6988	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6989	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6992	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6994	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6996	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6218	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6219	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6220	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6222	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6223	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6224	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6225	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6227	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6228	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6229	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6933	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6934	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6935	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6936	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6938	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6939	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CV-6940	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6941	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CV-6943	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6945	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6948	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6950	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6951	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6952	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6953	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6954	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6959	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6961	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CV-6962	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-6823	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-6824	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-6825	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-6826	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-6827	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-7269	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5370	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6995	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6997	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-6998	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-5247	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-5248	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-7364	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7365	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7367	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7371	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7372	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7373	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7374	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7377	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7379	HPV18	[Not Available]	[Not Available]	Positive
+TCGA-CR-7380	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7385	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-7386	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7388	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7389	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7390	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7391	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7392	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7393	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7394	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7395	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7397	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7398	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7399	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7401	HPV18	[Not Available]	[Not Available]	Positive
+TCGA-CR-7402	HPV18	[Not Available]	[Not Available]	Positive
+TCGA-CV-6937	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6942	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6955	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6956	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-6960	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7089	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7090	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7091	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7095	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7097	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CV-7099	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7100	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CV-7101	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CV-7102	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CV-7103	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CV-7104	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-CV-7177	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7178	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7180	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7183	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7235	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7236	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7238	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7242	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7243	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7245	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7247	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7248	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7250	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7252	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7253	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7254	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7255	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7261	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7263	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CX-7082	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CX-7085	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CX-7219	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-7229	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-4217	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-6221	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-7065	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-7068	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-6488	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-6492	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7406	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CV-7407	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7410	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7411	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7413	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7414	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7415	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7416	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7418	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7421	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7422	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7423	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7424	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7425	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7427	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CX-7086	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-DQ-7588	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-DQ-7591	HPV35	[Not Available]	[Not Available]	Positive
+TCGA-DQ-7592	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-H7-7774	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-7753	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-7754	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-IQ-7630	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-IQ-7631	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-IQ-7632	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7368	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-7369	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-7370	[Not Available]	[Not Available]	[Not Available]	Indeterminate
+TCGA-CR-7376	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7382	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7383	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-7404	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7428	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7429	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7430	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7432	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7433	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7434	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7435	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7437	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7438	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7440	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7446	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7568	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-7848	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-7831	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-HD-7832	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-BB-7861	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BB-7862	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-7863	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-7864	HPV56	[Not Available]	[Not Available]	Positive
+TCGA-BB-7866	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BB-7870	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-7871	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-7872	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-7067	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-7409	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-DQ-7589	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-DQ-7590	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-DQ-7593	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-DQ-7594	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-DQ-7595	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-DQ-7596	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-HD-7917	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HL-7533	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BB-8596	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-8601	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-5333	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-7063	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-7064	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-7069	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-8568	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-8569	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-8298	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-8489	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-H7-8501	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-H7-8502	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-8224	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-8314	HPV35	[Not Available]	[Not Available]	Positive
+TCGA-HD-8634	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-8635	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-C9-A47Z	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-C9-A480	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A497	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A498	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A499	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-A49A	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A49B	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A49C	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CV-A45O	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A45P	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A45Q	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A45R	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A45T	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A45U	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-A4C1	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-A4C6	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-A4C7	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-A4C9	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-A4CA	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-A4CB	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-A4CD	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A45V	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A45W	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A45X	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A45Y	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A45Z	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A460	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CX-A4AQ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-A4Z9	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-A4ZB	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A4IF	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A4IG	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BA-A4IH	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BA-A4II	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CQ-A4CE	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-A4CG	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-A4CH	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-A4CI	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A461	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A463	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A464	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A465	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A468	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-A50G	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-MT-A51W	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-MT-A51X	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-A5HU	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-A5HY	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-A5HZ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A63T	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A63V	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-A50I	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-A50J	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-A61S	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-A61V	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-A61W	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-A620	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-A622	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-A623	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-A633	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-A634	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-P3-A5Q5	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-P3-A5Q6	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-P3-A5QA	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-P3-A5QE	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-P3-A5QF	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BA-A6DB	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A6DF	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A6DG	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A6DI	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A6DJ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A6DL	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A63U	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A63W	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A63Y	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-A640	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A641	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A642	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-7071	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CQ-7072	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-F7-A624	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-H7-A6C4	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-H7-A6C5	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-IQ-A61E	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-IQ-A61G	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-IQ-A61H	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-IQ-A61I	HPV35	[Not Available]	[Not Available]	Positive
+TCGA-IQ-A61J	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-IQ-A61K	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-IQ-A61L	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-IQ-A61O	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-KU-A66S	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-KU-A66T	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-MT-A67A	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-MT-A67D	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-MT-A67F	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-MT-A67G	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-QK-A64Z	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-QK-A652	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A6D8	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A6DA	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A6DD	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-A6DE	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6JD	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6JE	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6JM	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6JN	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6JT	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6JU	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6JY	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6JZ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6K0	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6K1	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-A6K2	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-A6EK	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-A6EM	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-A6EN	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-A6EO	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-A6EP	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-D6-A6EQ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-A6ES	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-A6HZ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-HD-A6I0	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-KU-A6H7	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-MZ-A6I9	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-QK-A6IF	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-QK-A6IG	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-QK-A6IH	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-QK-A6II	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-QK-A6IJ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BB-A6UM	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BB-A6UO	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-A6UY	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-A6V1	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-A6V3	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-A6V6	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-A6V7	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CV-A6JO	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-D6-A74Q	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-H7-A76A	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-IQ-A6SG	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-IQ-A6SH	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-KU-A6H8	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-MT-A7BN	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-MZ-A5BI	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-MZ-A7D7	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-P3-A6SW	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-P3-A6SX	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-P3-A6T0	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-P3-A6T2	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-P3-A6T3	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-P3-A6T4	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-P3-A6T5	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-P3-A6T6	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-P3-A6T7	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-P3-A6T8	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-QK-A6V9	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-QK-A6VB	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-QK-A6VC	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-RS-A6TO	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-RS-A6TP	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-T2-A6WX	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-T2-A6WZ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-T2-A6X0	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-T2-A6X2	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-TN-A7HI	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-TN-A7HJ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-TN-A7HL	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-UF-A718	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A719	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A71A	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A71B	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A71D	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A71E	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7J9	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JA	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JC	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JD	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JF	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JH	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JJ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JK	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JO	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JS	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JT	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UF-A7JV	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-UP-A6WW	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-WA-A7GZ	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-WA-A7H4	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-4074	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-4075	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-4076	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-4077	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BA-4078	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-5151	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-5153	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BB-4223	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BB-4224	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BB-4225	HPV33	[Not Available]	[Not Available]	Positive
+TCGA-BB-4228	HPV16	HPV33	[Not Available]	Positive
+TCGA-CN-4722	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4723	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4725	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4726	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4727	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4728	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4729	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4730	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4731	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4734	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4735	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4736	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4737	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4740	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4741	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-5355	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5356	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5359	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5360	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5361	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5363	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5364	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-5365	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-5366	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-5367	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5369	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5373	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5374	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-BA-5149	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-5555	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-5556	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-5557	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-5558	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-BA-5559	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CN-4738	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4739	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-4742	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CN-5358	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CR-5243	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-5249	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CR-5250	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CV-5431	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5436	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5440	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5441	[Not Available]	[Not Available]	[Not Available]	Negative
+TCGA-CV-5442	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CV-5443	HPV16	[Not Available]	[Not Available]	Positive
+TCGA-CV-5444	[Not Available]	[Not Available]	[Not Available]	Negative

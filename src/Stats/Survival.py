@@ -337,6 +337,7 @@ def get_surv_fit(surv, feature=None, covariates=None, interactions=None,
         pass
     return res
 
+
 def get_surv_fit_lr(surv, feature=None):
     t = get_surv_fit(surv, feature)
     s = log_rank(feature, surv)
@@ -346,14 +347,6 @@ def get_surv_fit_lr(surv, feature=None):
     t = t.append(pd.Series([''] * (8) + [s['chi2'], s['p']], index=t.columns, name=''))
     t = t.sort([('Stats', '# Patients')], ascending=False)
     return t
-    
-'''    
-def get_cox_ph(clinical, hit_vec=None, covariates=[], time_var='days',
-               event_var='censored'):
-    p = get_cox_ph_ms(clinical, hit_vec, covariates, time_var, event_var, 
-                      'LR_p')
-    return p
-'''
     
     
 class SurvivalTest(object):
@@ -598,7 +591,7 @@ def interaction_empirical_p_resample(a, b, surv, num_perm=101, check_first=True)
 def get_interactions(df, cov_df, surv, test):
     binary = df[df.T.describe().ix['unique'] == 2]
     
-    '''drop redundant features within a data-type'''
+    #drop redundant features within a data-type
     s = {b for i, (a, v1) in enumerate(binary.iterrows())
            for j, (b, v2) in enumerate(binary.iterrows())
            if (i < j)
