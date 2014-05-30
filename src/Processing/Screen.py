@@ -156,15 +156,18 @@ class Screen(object):
     Object to hold data and results for survival screen.
     """
 
-    def __init__(self, mut, cn, rna, mirna, clinical_df, surv):
+    def __init__(self, mut, cn, rna, mirna, clinical_df, surv, keepers):
         self.surv = surv
 
         """Process Gene / Pathway Expression"""
+        rna.pathways = rna.pathways.ix[:, keepers]
+        rna.features = rna.features.ix[:, keepers]
         pathways = remove_redundant_pathways(rna.pathways, rna, binarize=True)
         rna_gene_df = extract_diff_exp_rna(rna, n=300, binarize=True)
         self.rna_df = pd.concat([rna_gene_df, pathways])
 
         """Process miRNA Expression"""
+        mirna.features = mirna.features.ix[:, keepers]
         mirna_binarized = mirna.features.ix['real'].apply(binarize_feature, 1)
         self.mirna_df = pd.concat([mirna.features.ix['binary'], mirna_binarized])
 
@@ -177,7 +180,6 @@ class Screen(object):
 
         """Process Clinical Data"""
         self.clinical_df = clinical_df
-
 
     def get_patient_set(self, filters):
         f1 = list(filters)
@@ -198,7 +200,7 @@ class Screen(object):
         cna_df = pd.concat([del_df, amp_df], keys=['del', 'amp'], axis=1)
         cna_df.columns = map(lambda i: '_'.join(i), cna_df.columns)
 
-        df = pd.concat({'clinical': self.clinical_df,
+        df = pd.concat({'clinical': self.clinical_df.T,
                         'mutation': mut_df,
                         'cna': cna_df,
                         'rna': self.rna_df.T,
