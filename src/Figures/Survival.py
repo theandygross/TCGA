@@ -147,9 +147,10 @@ def survival_stat_plot(t, upper_lim=5, axs=None, colors=None):
     ax.set_xlabel('Median Survival (Years)')
     
     tt = t['5y Survival']
-    b = (tt['Surv']).plot(kind='barh', ax=ax2,
-         color=[l.get_color() for l in ax.lines],
-         xerr=[tt.Surv - tt.Lower, tt.Upper - tt.Surv], ecolor='black')
+    (tt['Surv']).plot(kind='barh', ax=ax2, width=.75,
+                      color=[l.get_color() for l in ax.lines],
+                      xerr=[tt.Surv - tt.Lower, tt.Upper - tt.Surv],
+                      ecolor='black')
     ax2.set_xlabel('5Y Survival')
     ax2.set_xticks([0, .5, 1.])
     ax2.set_yticks([])
