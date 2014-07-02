@@ -58,7 +58,7 @@ def draw_survival_curves_mpl(fit, ax=None, title=None, colors=None, ms=80, alpha
         groups = gg + bg
            
     for i, group in enumerate(groups):
-        censoring = call[(call.event == 0) * (call.feature == group)].days
+        censoring = call[(call.event == 0) & (call.feature == group)].days
         surv = tab[tab.strata == (i + 1)].surv
         surv = surv.copy().set_value(0., 1.)
         surv = surv.sort_index()
@@ -147,9 +147,10 @@ def survival_stat_plot(t, upper_lim=5, axs=None, colors=None):
     ax.set_xlabel('Median Survival (Years)')
     
     tt = t['5y Survival']
-    (tt['Surv']).plot(kind='barh', ax=ax2, width=.75,
+    (tt['Surv']).plot(kind='barh', ax=ax2,
                       color=[l.get_color() for l in ax.lines],
                       xerr=[tt.Surv - tt.Lower, tt.Upper - tt.Surv],
+                      width=.75,
                       ecolor='black')
     ax2.set_xlabel('5Y Survival')
     ax2.set_xticks([0, .5, 1.])
