@@ -107,8 +107,8 @@ def violin_plot_pandas(bin_vec, real_vec, ann='p', order=None, ax=None,
     except:
         box_plot_pandas(bin_vec, real_vec, ax=ax)
         
-    if type(bin_vec.name) == str:
-        ax.set_title(str(bin_vec.name) + ' x ' + str(real_vec.name))
+    #if type(bin_vec.name) == str:
+    #    ax.set_title(str(bin_vec.name) + ' x ' + str(real_vec.name))
         
     p_value = Stats.kruskal_pandas(bin_vec, real_vec)['p']
     if ann == 'p_fancy':
