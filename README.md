@@ -1,6 +1,6 @@
 #Software Overview 
 
-This repository contains instructions for reproduction and extension of [Multi-tiered genomic analysis of head and neck cancer ties TP53 mutation to 3p loss]() by Gross et al. In general code for data-processing and computation is enclosed in standard python modules, while high level analyis was recorded in IPython Notebooks. The analysis for this project was relatively non-linear and has thus been split into a number of notebooks as described in [Analysis Notebooks](./Analysis_Notebooks), but results should be able to be replicated by running these notebooks. 
+This repository contains instructions for reproduction and extension of [Multi-tiered genomic analysis of head and neck cancer ties TP53 mutation to 3p loss]() by Gross et al. In general code for data-processing and computation is enclosed in standard python modules, while high level analyis was recorded in IPython Notebooks. The analysis for this project was relatively non-linear and has thus been split into a number of notebooks as described in [Analysis Notebooks](./Analysis_Notebooks#guide-to-running), but results should be able to be replicated by running these notebooks. 
 
 ##Dependencies 
 
