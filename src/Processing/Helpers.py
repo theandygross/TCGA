@@ -25,6 +25,7 @@ from statsmodels.sandbox.stats import multicomp
 def transferIndex(source, target):
     return pd.Series(list(target), index=source.index)
 
+
 def bhCorrection(s, n=None):
     s = s.fillna(1.)
     if n > len(s):
@@ -34,7 +35,8 @@ def bhCorrection(s, n=None):
     q = multicomp.multipletests(p_vals, method='fdr_bh')[1][:len(s)]
     q = pd.Series(q[:len(s)], s.index, name='p_adj')
     return q
-    
+
+
 def match_series(a, b):
     a, b = a.align(b, join='inner', copy=False)
     valid = pd.notnull(a) & pd.notnull(b)
@@ -42,10 +44,12 @@ def match_series(a, b):
     b = b[valid].groupby(lambda s: s).first()
     return a, b
 
+
 def split_a_by_b(a, b):
     a, b = match_series(a, b)
     groups = [a[b == num] for num in set(b)]
     return groups
+
 
 def screen_feature(vec, test, df):
     s = pd.DataFrame({f: test(vec, feature) for f, feature in df.iterrows()}).T
@@ -53,11 +57,12 @@ def screen_feature(vec, test, df):
     s = s.sort(columns='p')
     return s
 
+
 def frame_svd(data_frame, impute='mean'):
-    '''
+    """
     Wrapper for taking in a pandas DataFrame, preforming SVD
     and outputting the U, S, and vH matricies in DataFrame form.
-    '''
+    """
     if impute == 'mean':
         data_frame = data_frame.dropna(thresh=int(data_frame.shape[1] * .75))
         data_frame = data_frame.fillna(data_frame.mean())
@@ -67,6 +72,7 @@ def frame_svd(data_frame, impute='mean'):
     vH = pd.DataFrame(vH, columns=data_frame.columns).T
     return U, S, vH
 
+
 def extract_pc_old(data_frame, pc_threshold=.2):
     try:
         U, S, vH = frame_svd(((data_frame.T - data_frame.mean(1)) / data_frame.std(1)).T)
@@ -74,6 +80,7 @@ def extract_pc_old(data_frame, pc_threshold=.2):
         return None
     p = S ** 2 / sum(S ** 2)
     return vH[0] if p[0] > pc_threshold else None
+
 
 def extract_pc(df, pc_threshold=.2, standardize=True):
     if standardize:
@@ -92,12 +99,14 @@ def extract_pc(df, pc_threshold=.2, standardize=True):
     ret = {'pat_vec': pat_vec, 'gene_vec': gene_vec, 'pct_var': pct_var}
     return  ret if pct_var > pc_threshold else None
 
+
 def df_to_binary_vec(df):
     cutoff = sort(df.sum())[-int(df.sum(1).mean())]
     if (len(df) > 2) and (cutoff == 1.):
         cutoff = 2
     vec = (df.sum() >= cutoff).astype(int)
     return vec
+
 
 def drop_first_norm_pc(data_frame):
     '''
@@ -109,6 +118,7 @@ def drop_first_norm_pc(data_frame):
     S[0] = 0  # zero out first pc
     rest = U.dot(pd.DataFrame(diag(S)).dot(vH.T))
     return rest
+
 
 def cluster_down(df, agg_function, dist_metric='euclidean', num_clusters=50,
                  draw_dendrogram=False):
@@ -132,6 +142,7 @@ def cluster_down(df, agg_function, dist_metric='euclidean', num_clusters=50,
         return clustered, c, fig
     return clustered, c
 
+
 def get_random_genes(bp, lengths):
     s = 0
     genes = []
@@ -144,6 +155,7 @@ def get_random_genes(bp, lengths):
     genes = lengths.index[genes]
     return genes
 
+
 def do_perm(f, vec, hit_mat, bp, lengths, iterations):
     real_val = f(vec > 0)
     results = []
@@ -151,6 +163,7 @@ def do_perm(f, vec, hit_mat, bp, lengths, iterations):
         perm = hit_mat.ix[get_random_genes(bp, lengths)].sum() > 0
         results.append(f(perm))
     return sum(array(results) < real_val) / float(len(results))
+
 
 def run_rate_permutation(df, hit_mat, gene_sets, lengths, f):
     res = {}
@@ -166,25 +179,28 @@ def run_rate_permutation(df, hit_mat, gene_sets, lengths, f):
     res = sort(pd.Series(res))
     return res
 
+
 def get_vec_type(vec):
     if vec.count() < 10:
         return
     elif vec.dtype in [float, int]:
         return 'real'
     vc = vec.value_counts()
-    if len(vc) == 1 or vc.order()[-2] <= 5:
+    if len(vc) == 1 or vc.order().iloc[-2] <= 5:
         return 
     elif len(vc) == 2:
         return 'boolean'
     elif vec.dtype == 'object':
         return 'categorical'   
-    
+
+
 def make_path_dump(obj, file_path):
     dir_path = '/'.join(file_path.split('/')[:-1])
     if not os.path.isdir(dir_path):
         os.makedirs(dir_path)
     pickle.dump(obj, open(file_path, 'wb'))
-    
+
+
 def merge_redundant(df):
     d = df.sort(axis=1).duplicated()
     features = {n: [n] for n, b in d.iteritems() if b == False}
@@ -200,12 +216,14 @@ def merge_redundant(df):
     df = df.rename(index=features.map(lambda s: '/'.join(s)))
     return df
 
+
 def add_column_level(tab, arr, name):
     tab = tab.T
     tab[name] = arr
     tab = tab.set_index(name, append=True)
     tab.index = tab.index.swaplevel(0, 1)
     return tab.T
+
 
 def to_quants(vec, q=.25, std=None, labels=False):
     vec = (vec - vec.mean()) / vec.std()
@@ -226,10 +244,11 @@ def to_quants(vec, q=.25, std=None, labels=False):
             vec = vec.map({-1: 'low', 0: 'normal', 1:'high'})
     return vec
 
+
 def combine(a, b):
-    '''
+    """
     Combine two categorical features.
-    '''
+    """
     combo = (a * 1.).add(b * 2.)
     combo = combo.dropna()
     if not a.name:
@@ -243,24 +262,31 @@ def combine(a, b):
     return combo
 
 
+
 def true_index(s):
-    '''Return indicies for which the variable is true'''
+    """
+    Return indicies for which the variable is true.
+    """
     return s[s].index
 
+ti = true_index
+
+
 def powerset(iterable):
+    """
     "http://docs.python.org/2/library/itertools.html#recipes"
     "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    """
     s = list(iterable)
     return it.chain.from_iterable(it.combinations(s, r) for r in 
                                   range(len(s) + 1))
 
-ti = true_index
 
 def binarize(f):
-    '''
+    """
     Binarize a continuous vector by minimizing the difference in 
     variance between the two resulting groups.
-    '''
+    """
     f = f - f.mean()
     f2 = (f.order() ** 2)
     split = f.ix[(f2.cumsum() - (f2.sum() / 2.)).abs().idxmin()]
