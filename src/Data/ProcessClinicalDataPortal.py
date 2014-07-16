@@ -13,15 +13,12 @@ from Data.ProcessClinical import try_float
 def read_clinical_data(path, cancer):
     cancer = cancer.lower()
     na_vals = ['[Completed]', '[Not Available]', '[Not Applicable]', 'null']
-    #pat = pd.read_table(path + 'clinical_patient_{}.txt'.format(cancer),
-    #                    index_col=0, na_values=na_vals)
     pat = pd.read_table(path + 'clinical_patient_{}.txt'.format(cancer),
                         index_col=0, skiprows=[0, 2], na_values=na_vals)
     f = pat.dropna(axis=1, how='all')
     for fu in os.listdir(path):
         if 'clinical_follow_up' not in fu:
             continue
-        #followup = pd.read_table(path + fu, index_col=0, na_values=na_vals)
         followup = pd.read_table(path + fu, index_col=0, skiprows=[0, 2],
                                  na_values=na_vals)
         f = pd.concat([f, followup])
@@ -33,8 +30,9 @@ def read_clinical_data(path, cancer):
     
     # f['vitalstatus'] = f['vitalstatus'].map(lambda s: s in 
     #                                        ['DECEASED','Dead','deceased'], 
-    #                                        na_action='skip')
-    f['vitalstatus'] = (f['daystodeath'].isnull() == True)
+    #
+    #                                   na_action='skip')
+    f['vitalstatus'] = f['daystodeath'].isnull()
     
     f = f.sort(columns=['vitalstatus'] + time_cols, ascending=True)
     f = f.groupby(lambda s: s[:12], axis=0).last()
@@ -62,7 +60,7 @@ def format_survival_data(timeline, clin):
     followup_cols = list(timeline.columns.intersection(f_vars))
     pfs = timeline[followup_cols].min(1)
     # pfs = pd.concat([timeline.days, timeline[followup_cols]], axis=1).min(1)
-    event = ((pfs < timeline.days) + deceased) > 0
+    event = (pfs < timeline.days) | deceased
     pfs = pd.concat([pfs, event], keys=['days', 'event'], axis=1)
     pfs = pfs.dropna().stack().astype(float)
     
