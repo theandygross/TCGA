@@ -52,19 +52,19 @@ def format_drugs(br):
         br: clinical DataFrame with patient bar-codes on the columns
     """
     drugs = br.select(lambda s: s.startswith('patient.drugs.drug'))
-    if len(drugs) == 0:
-        return
+
     ft = pd.MultiIndex.from_tuples  # long Pandas names
     drug_annot = ft(map(lambda s: tuple(s.split('.')[2:4]), drugs.index))
     drugs.index = drug_annot
-    # drugs = drugs.groupby(level=[0,1]).first() ##get rud of dups, need to fix
-    l = drugs.sort_index().groupby(level=[0, 1], axis=0)
-    drugs = pd.DataFrame({i: s.ix[s.count(1).idxmax()] for i, s in l}).T
-    drugs.index = ft(drugs.index)
+    c = drugs.count(1)
+    #dx: here we get rid of duplicates by taking the instance with the
+    #    most fields (next 2 lines)
+    drugs = drugs.ix[c.ix[c.argsort()].index]
+    drugs = drugs.groupby(level=[0, 1], axis=0).last()
     drugs = drugs.stack().unstack(level=1)
     drugs.index = drugs.index.swaplevel(0, 1)
     drugs = drugs.sort_index()
-    drugs = fix_date(drugs)    
+    drugs = fix_date(drugs)
     return drugs
 
 
