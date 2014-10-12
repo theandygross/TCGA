@@ -38,10 +38,17 @@ def bhCorrection(s, n=None):
 
 
 def match_series(a, b):
+    """
+    Matches two series on shared data.
+    """
     a, b = a.align(b, join='inner', copy=False)
     valid = pd.notnull(a) & pd.notnull(b)
-    a = a[valid].groupby(lambda s: s).first()  # some sort of duplicate index bug
-    b = b[valid].groupby(lambda s: s).first()
+    a = a[valid]
+    if not a.index.is_unique:
+        a = a.groupby(lambda s: s).first()  # some sort of duplicate index bug
+    b = b[valid]
+    if not b.index.is_unique:
+        b = b.groupby(lambda s: s).first()
     return a, b
 
 
@@ -51,7 +58,9 @@ def split_a_by_b(a, b):
     return groups
 
 
-def screen_feature(vec, test, df):
+def screen_feature(vec, test, df, align=True):
+    if align:
+        df, vec = df.align(vec, axis=1)
     s = pd.DataFrame({f: test(vec, feature) for f, feature in df.iterrows()}).T
     s['q'] = bhCorrection(s.p)
     s = s.sort(columns='p')
