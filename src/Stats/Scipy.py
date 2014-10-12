@@ -17,14 +17,18 @@ from scipy import stats
 def _match_series(a, b):
     """
     Matches two series on shared data.
-    
-    (copied from Processing.Helpers to remove that dependency, 
+
+    (copied from Processing.Helpers to remove that dependency,
      public use should go through Processing.Helpers)
     """
     a, b = a.align(b, join='inner', copy=False)
     valid = pd.notnull(a) & pd.notnull(b)
-    a = a[valid].groupby(lambda s: s).first()  # some sort of duplicate index bug
-    b = b[valid].groupby(lambda s: s).first()
+    a = a[valid]
+    if not a.index.is_unique:
+        a = a.groupby(lambda s: s).first()  # some sort of duplicate index bug
+    b = b[valid]
+    if not b.index.is_unique:
+        b = b.groupby(lambda s: s).first()
     return a, b
 
 
@@ -87,6 +91,8 @@ def anova(hit_vec, response_vec, min_size=5):
     """
     if hit_vec.value_counts().min < min_size:
         return np.nan
+    if not np.alltrue(hit_vec.index == response_vec.index):
+        hit_vec, response_vec = _match_series(hit_vec, response_vec)
     hit_vec, response_vec = _match_series(hit_vec, response_vec)
     res = stats.f_oneway(*[response_vec[hit_vec == num] for num in 
                            hit_vec.unique()])
@@ -116,9 +122,10 @@ def kruskal_pandas(hit_vec, response_vec, min_size=5):
     response_vec: Series of measurements
     """
     try:
-        hit_vec, response_vec = _match_series(hit_vec, response_vec)
+        if not np.alltrue(hit_vec.index == response_vec.index):
+            hit_vec, response_vec = _match_series(hit_vec, response_vec)
         res = stats.kruskal(*[response_vec[hit_vec == num] for num in 
-                          hit_vec.unique()])
+                            hit_vec.unique()])
         return pd.Series(res, index=['H', 'p'])
     except:
         return pd.Series(index=['H', 'p'])
