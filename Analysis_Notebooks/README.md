@@ -1,6 +1,6 @@
-#Guide to Running 
+# Guide to Running 
 
-##Initialization
+## Initialization
 * [__download_data__](./download_data.ipynb)  ([nbviewer](http://nbviewer.ipython.org/github/theandygross/TCGA/blob/master/Analysis_Notebooks/download_data.ipynb))
   Pulls all of the necessary data from the net and constructs the file tree and data objects used in the rest of the analysis. 
   
@@ -13,7 +13,7 @@
   Script to download and process updated clinical data from the TCGA Data Portal.
   
   
-##Primary Analysis  
+## Primary Analysis  
 (There are dependencies among these, run them in order.)
 * [__HPV_Process_Data__](./HPV_Process_Data.ipynb)  ([nbviewer](http://nbviewer.ipython.org/github/theandygross/TCGA/blob/master/Analysis_Notebooks/HPV_Process_Data.ipynb)) 
   Compile HPV status for all patient tumors.  
@@ -34,7 +34,7 @@
   Generate some of the figure panels for the HNSCC discovery cohort.  Some of the other figures and figure panels are generated inline with analysis. 
   
   
-##Validation Cohorts
+## Validation Cohorts
 
 * [__UPMC_cohort__](./UPMC_cohort.ipynb)  ([nbviewer](http://nbviewer.ipython.org/github/theandygross/TCGA/blob/master/Analysis_Notebooks/UPMC_cohort.ipynb)) 
   Validation of primary findings in independent patient cohort from University of Pittsburgh ([Stansky et al.](http://www.sciencemag.org/content/333/6046/1157.full)).
@@ -51,7 +51,7 @@ Validation of molecular associations in recent TCGA samples.
 
 
   
-##Targeted Analysis for Support of Main Findings  
+## Targeted Analysis for Support of Main Findings  
 
 * [__Reviewer_Response__](./Reviewer_Response.ipynb)  ([nbviewer](http://nbviewer.ipython.org/github/theandygross/TCGA/blob/master/Analysis_Notebooks/Reviewer_Response.ipynb)) 
   Specific responses to reviewer comments.
@@ -82,7 +82,7 @@ Validation of molecular associations in recent TCGA samples.
   
   
   
-##Variant Calling (optional)
+## Variant Calling (optional)
 
 This requires a number of additional dependencies for sequencing analysis and as well as function calls to proprietary software installed on our virtual machine hosed by Annai Systems.  We have included all of the dependencies of this mutation calling step in the supplement as MAF files and highly recomend starting with these as opposed to recalling mutations. 
 
